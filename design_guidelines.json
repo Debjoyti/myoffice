@@ -1,0 +1,134 @@
+{
+  "identity": {
+    "name": "E1",
+    "role": "Creative Designer (Top 1%)",
+    "mission": "Create a modern, trustworthy, and efficient Office Management SaaS for the Indian market.",
+    "tone": "Professional, Efficient, Trustworthy, Modern Indian Corporate",
+    "archetype": "Archetype 4: Swiss & High-Contrast (Adapted for Indian Business)"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["600", "700", "800"],
+      "usage": "Page titles, section headers, widget titles",
+      "letter_spacing": "tracking-tight"
+    },
+    "body": {
+      "font_family": "Public Sans, sans-serif",
+      "weights": ["400", "500", "600"],
+      "usage": "General text, data tables, form inputs",
+      "letter_spacing": "tracking-normal"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Code snippets, API keys, Audit logs"
+    }
+  },
+  "colors": {
+    "primary": {
+      "name": "Corporate Indigo",
+      "hex": "#1e293b",
+      "tailwind": "bg-slate-900",
+      "usage": "Primary buttons, active states, sidebar background"
+    },
+    "secondary": {
+      "name": "Growth Green",
+      "hex": "#10b981",
+      "tailwind": "bg-emerald-500",
+      "usage": "Success states, positive trends, 'Active' badges"
+    },
+    "accent": {
+      "name": "Indian Gold",
+      "hex": "#f59e0b",
+      "tailwind": "bg-amber-500",
+      "usage": "Warnings, 'Pending' states, highlights"
+    },
+    "background": {
+      "light": "#f8fafc",
+      "dark": "#0f172a",
+      "paper_light": "#ffffff",
+      "paper_dark": "#1e293b"
+    },
+    "text": {
+      "primary": "#0f172a",
+      "secondary": "#64748b",
+      "muted": "#94a3b8"
+    }
+  },
+  "layout": {
+    "grid_system": "Bento Grid (Mode B: High Density)",
+    "spacing": "Generous (2x standard)",
+    "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "sidebar": {
+      "width": "w-64",
+      "behavior": "Collapsible, fixed",
+      "style": "Dark mode by default for contrast"
+    },
+    "card_style": "Flat with subtle border (border-slate-200 dark:border-slate-700), no shadow by default, shadow-md on hover"
+  },
+  "components": {
+    "buttons": {
+      "style": "Rounded-md, font-medium",
+      "variants": ["default (Primary)", "outline (Secondary)", "ghost (Tertiary)"]
+    },
+    "inputs": {
+      "style": "Rounded-md, border-slate-300 focus:ring-2 focus:ring-indigo-500",
+      "height": "h-10"
+    },
+    "cards": {
+      "style": "bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+    },
+    "tables": {
+      "style": "Dense, striped rows optional, sticky header",
+      "pagination": "Bottom right"
+    },
+    "modals": {
+      "style": "Rounded-lg, backdrop-blur-sm overlay"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": "shadow-sm for cards, shadow-lg for dropdowns/modals",
+    "borders": "1px solid slate-200 (light) / slate-700 (dark)",
+    "radius": "rounded-lg (0.5rem)",
+    "glassmorphism": "Use sparingly on sticky headers (backdrop-blur-md bg-white/80)"
+  },
+  "indian_context": {
+    "currency": "INR (₹)",
+    "date_format": "DD/MM/YYYY",
+    "compliance_fields": ["PAN", "Aadhaar", "GSTIN", "UAN", "ESI"],
+    "address_format": "Flat/House No, Street, Locality, City, State, Pincode"
+  },
+  "image_urls": {
+    "office_backgrounds": [
+      "https://images.unsplash.com/photo-1769556669134-fe947b53bdbf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NjZ8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBjb3Jwb3JhdGUlMjBvZmZpY2UlMjBtb2Rlcm58ZW58MHx8fHwxNzcxNDg2ODk5fDA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1769556353286-b7f50da70d0c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NjZ8MHwxfHNlYXJjaHwyfHxpbmRpYW4lMjBjb3Jwb3JhdGUlMjBvZmZpY2UlMjBtb2Rlcm58ZW58MHx8fHwxNzcxNDg2ODk5fDA&ixlib=rb-4.1.0&q=85"
+    ],
+    "employee_avatars": [
+      "https://images.unsplash.com/photo-1627776880991-808c5996527b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBpbmRpYW4lMjBlbXBsb3llZSUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTQ4NjkwMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1681165558305-6e65c7e85d51?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBpbmRpYW4lMjBlbXBsb3llZSUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTQ4NjkwMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1734604859174-e5976744485b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBpbmRpYW4lMjBlbXBsb3llZSUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTQ4NjkwMnww&ixlib=rb-4.1.0&q=85"
+    ],
+    "placeholders": {
+      "logo": "https://via.placeholder.com/150x50?text=Office+Logo",
+      "product": "https://via.placeholder.com/300"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Use 'Manrope' for all headings and 'Public Sans' for body text.",
+    "Implement a collapsible sidebar navigation with a dark theme.",
+    "Use the 'Bento Grid' layout for the main dashboard overview.",
+    "Ensure all forms support Indian validation (e.g., PAN format: 5 letters, 4 numbers, 1 letter).",
+    "Use 'sonner' for all toast notifications.",
+    "Use 'recharts' or 'shadcn charts' for data visualization (Payroll trends, Attendance stats).",
+    "Ensure high contrast for text (WCAG AA compliance).",
+    "Do NOT use generic 'Lorem Ipsum' - use realistic Indian names and data (e.g., 'Rahul Sharma', 'Mumbai', '₹50,000').",
+    "Add 'data-testid' to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI slop' - no generic gradients or centered layouts.",
+    "Use 2-3x more spacing than standard.",
+    "Micro-animations on all interactions (hover, click, focus).",
+    "Dark mode support is mandatory.",
+    "No 'transparent' backgrounds on overlays."
+  ]
+}
