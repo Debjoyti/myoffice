@@ -68,13 +68,13 @@ class UserLogin(BaseModel):
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     email: str
     name: str
     role: str
     organization_id: Optional[str] = None
     email_verified: bool = False
     subscription_status: str = "trial"
-    subscription_limits: Optional[dict] = None
     created_at: str
 
 class Token(BaseModel):
@@ -85,6 +85,7 @@ class Token(BaseModel):
 class Employee(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     user_id: Optional[str] = None
     name: str
     email: str
@@ -112,6 +113,7 @@ class EmployeeCreate(BaseModel):
 class Attendance(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     employee_id: str
     date: str
     check_in: Optional[str] = None
@@ -129,6 +131,7 @@ class AttendanceCreate(BaseModel):
 class LeaveRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     employee_id: str
     leave_type: str
     from_date: str
@@ -147,6 +150,7 @@ class LeaveRequestCreate(BaseModel):
 class Project(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     name: str
     description: Optional[str] = None
     status: str = "active"
@@ -163,6 +167,7 @@ class ProjectCreate(BaseModel):
 class Task(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     project_id: str
     title: str
     description: Optional[str] = None
@@ -183,6 +188,7 @@ class TaskCreate(BaseModel):
 class Lead(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     name: str
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -201,6 +207,7 @@ class LeadCreate(BaseModel):
 class Deal(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     lead_id: str
     title: str
     value: float
@@ -220,6 +227,7 @@ class DealCreate(BaseModel):
 class Expense(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     employee_id: str
     category: str
     amount: float
@@ -238,6 +246,7 @@ class ExpenseCreate(BaseModel):
 class InventoryItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     name: str
     category: str
     quantity: int
@@ -267,6 +276,7 @@ class DashboardStats(BaseModel):
 class Store(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     name: str
     location: str
     manager: Optional[str] = None
@@ -283,6 +293,7 @@ class StoreCreate(BaseModel):
 class PurchaseRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     store_id: str
     requested_by: str
     items: List[dict]
@@ -303,6 +314,7 @@ class PurchaseRequestCreate(BaseModel):
 class PurchaseOrder(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     purchase_request_id: str
     store_id: str
     supplier_name: str
@@ -327,6 +339,7 @@ class PurchaseOrderCreate(BaseModel):
 class HRField(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     field_name: str
     field_type: str
     is_required: bool = False
@@ -364,7 +377,7 @@ async def register(user_data: UserRegister):
         "subscription_status": "trial",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.users.insert_one(user_doc)
+    await db.user_doc["organization_id"] = current_user.get("organization_id")`n    await users.insert_one(user_doc)
     
     # Track analytics
     await db.analytics.insert_one({
@@ -405,7 +418,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     pending_purchase_requests = await db.purchase_requests.count_documents({"status": "pending"})
     total_stores = await db.stores.count_documents({})
     
-    expenses = await db.expenses.find({}, {"_id": 0, "amount": 1}).to_list(1000)
+    expenses = await db.expenses.find({"organization_id": current_user.get("organization_id")}, {"_id": 0, "amount": 1}).to_list(1000)
     total_expenses = sum(exp.get("amount", 0) for exp in expenses)
     
     return {
@@ -421,26 +434,16 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/employees", response_model=Employee)
 async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends(get_current_user)):
-    # Limit check
-    limits = current_user.get("subscription_limits") or {}
-    max_employees = limits.get("max_employees")
-    if max_employees is not None:
-        count = await db.employees.count_documents({"organization_id": current_user.get("organization_id")})
-        if count >= max_employees:
-            raise HTTPException(status_code=403, detail="Employee limit reached. Please upgrade your subscription.")
-
     emp_doc = emp_data.model_dump()
     emp_doc["id"] = str(uuid.uuid4())
-    emp_doc["organization_id"] = current_user.get("organization_id")
     emp_doc["status"] = "active"
     emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.employees.insert_one(emp_doc)
+    await db.emp_doc["organization_id"] = current_user.get("organization_id")`n    await employees.insert_one(emp_doc)
     return emp_doc
 
 @api_router.get("/employees", response_model=List[Employee])
 async def get_employees(current_user: dict = Depends(get_current_user)):
-    query = {"organization_id": current_user.get("organization_id")} if current_user.get("role") != "superadmin" else {}
-    employees = await db.employees.find(query, {"_id": 0}).to_list(1000)
+    employees = await db.employees.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return employees
 
 @api_router.get("/employees/{emp_id}", response_model=Employee)
@@ -470,7 +473,7 @@ async def create_attendance(att_data: AttendanceCreate, current_user: dict = Dep
     att_doc = att_data.model_dump()
     att_doc["id"] = str(uuid.uuid4())
     att_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.attendance.insert_one(att_doc)
+    await db.att_doc["organization_id"] = current_user.get("organization_id")`n    await attendance.insert_one(att_doc)
     return att_doc
 
 @api_router.get("/attendance", response_model=List[Attendance])
@@ -485,12 +488,12 @@ async def create_leave_request(leave_data: LeaveRequestCreate, current_user: dic
     leave_doc["id"] = str(uuid.uuid4())
     leave_doc["status"] = "pending"
     leave_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.leave_requests.insert_one(leave_doc)
+    await db.leave_doc["organization_id"] = current_user.get("organization_id")`n    await leave_requests.insert_one(leave_doc)
     return leave_doc
 
 @api_router.get("/leave-requests", response_model=List[LeaveRequest])
 async def get_leave_requests(current_user: dict = Depends(get_current_user)):
-    leaves = await db.leave_requests.find({}, {"_id": 0}).to_list(1000)
+    leaves = await db.leave_requests.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return leaves
 
 class StatusUpdate(BaseModel):
@@ -499,6 +502,7 @@ class StatusUpdate(BaseModel):
 class TeamInvite(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     email: EmailStr
     invited_by: str
     organization_id: str
@@ -515,6 +519,7 @@ class TeamInviteCreate(BaseModel):
 class Subscription(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     user_id: str
     plan: str
     status: str
@@ -532,6 +537,7 @@ class SubscriptionCreate(BaseModel):
 class Analytics(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: Optional[str] = None
     user_id: Optional[str] = None
     event_type: str
     event_data: dict
@@ -552,26 +558,16 @@ async def update_leave_status(leave_id: str, status_data: StatusUpdate, current_
 
 @api_router.post("/projects", response_model=Project)
 async def create_project(proj_data: ProjectCreate, current_user: dict = Depends(get_current_user)):
-    # Limit check
-    limits = current_user.get("subscription_limits") or {}
-    max_projects = limits.get("max_projects")
-    if max_projects is not None:
-        count = await db.projects.count_documents({"organization_id": current_user.get("organization_id")})
-        if count >= max_projects:
-            raise HTTPException(status_code=403, detail="Project limit reached. Please upgrade your subscription.")
-
     proj_doc = proj_data.model_dump()
     proj_doc["id"] = str(uuid.uuid4())
-    proj_doc["organization_id"] = current_user.get("organization_id")
     proj_doc["status"] = "active"
     proj_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.projects.insert_one(proj_doc)
+    await db.proj_doc["organization_id"] = current_user.get("organization_id")`n    await projects.insert_one(proj_doc)
     return proj_doc
 
 @api_router.get("/projects", response_model=List[Project])
 async def get_projects(current_user: dict = Depends(get_current_user)):
-    query = {"organization_id": current_user.get("organization_id")} if current_user.get("role") != "superadmin" else {}
-    projects = await db.projects.find(query, {"_id": 0}).to_list(1000)
+    projects = await db.projects.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return projects
 
 @api_router.post("/tasks", response_model=Task)
@@ -580,7 +576,7 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
     task_doc["id"] = str(uuid.uuid4())
     task_doc["status"] = "todo"
     task_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.tasks.insert_one(task_doc)
+    await db.task_doc["organization_id"] = current_user.get("organization_id")`n    await tasks.insert_one(task_doc)
     return task_doc
 
 @api_router.get("/tasks", response_model=List[Task])
@@ -602,12 +598,12 @@ async def create_lead(lead_data: LeadCreate, current_user: dict = Depends(get_cu
     lead_doc["id"] = str(uuid.uuid4())
     lead_doc["status"] = "new"
     lead_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.leads.insert_one(lead_doc)
+    await db.lead_doc["organization_id"] = current_user.get("organization_id")`n    await leads.insert_one(lead_doc)
     return lead_doc
 
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(current_user: dict = Depends(get_current_user)):
-    leads = await db.leads.find({}, {"_id": 0}).to_list(1000)
+    leads = await db.leads.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return leads
 
 @api_router.post("/deals", response_model=Deal)
@@ -615,12 +611,12 @@ async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_cu
     deal_doc = deal_data.model_dump()
     deal_doc["id"] = str(uuid.uuid4())
     deal_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.deals.insert_one(deal_doc)
+    await db.deal_doc["organization_id"] = current_user.get("organization_id")`n    await deals.insert_one(deal_doc)
     return deal_doc
 
 @api_router.get("/deals", response_model=List[Deal])
 async def get_deals(current_user: dict = Depends(get_current_user)):
-    deals = await db.deals.find({}, {"_id": 0}).to_list(1000)
+    deals = await db.deals.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return deals
 
 @api_router.post("/expenses", response_model=Expense)
@@ -629,12 +625,12 @@ async def create_expense(exp_data: ExpenseCreate, current_user: dict = Depends(g
     exp_doc["id"] = str(uuid.uuid4())
     exp_doc["status"] = "pending"
     exp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.expenses.insert_one(exp_doc)
+    await db.exp_doc["organization_id"] = current_user.get("organization_id")`n    await expenses.insert_one(exp_doc)
     return exp_doc
 
 @api_router.get("/expenses", response_model=List[Expense])
 async def get_expenses(current_user: dict = Depends(get_current_user)):
-    expenses = await db.expenses.find({}, {"_id": 0}).to_list(1000)
+    expenses = await db.expenses.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return expenses
 
 @api_router.post("/inventory", response_model=InventoryItem)
@@ -642,12 +638,12 @@ async def create_inventory_item(item_data: InventoryItemCreate, current_user: di
     item_doc = item_data.model_dump()
     item_doc["id"] = str(uuid.uuid4())
     item_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.inventory.insert_one(item_doc)
+    await db.item_doc["organization_id"] = current_user.get("organization_id")`n    await inventory.insert_one(item_doc)
     return item_doc
 
 @api_router.get("/inventory", response_model=List[InventoryItem])
 async def get_inventory(current_user: dict = Depends(get_current_user)):
-    items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    items = await db.inventory.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return items
 
 @api_router.post("/stores", response_model=Store)
@@ -656,12 +652,12 @@ async def create_store(store_data: StoreCreate, current_user: dict = Depends(get
     store_doc["id"] = str(uuid.uuid4())
     store_doc["status"] = "active"
     store_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.stores.insert_one(store_doc)
+    await db.store_doc["organization_id"] = current_user.get("organization_id")`n    await stores.insert_one(store_doc)
     return store_doc
 
 @api_router.get("/stores", response_model=List[Store])
 async def get_stores(current_user: dict = Depends(get_current_user)):
-    stores = await db.stores.find({}, {"_id": 0}).to_list(1000)
+    stores = await db.stores.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return stores
 
 @api_router.get("/stores/{store_id}", response_model=Store)
@@ -692,12 +688,12 @@ async def create_purchase_request(pr_data: PurchaseRequestCreate, current_user: 
     pr_doc["id"] = str(uuid.uuid4())
     pr_doc["status"] = "pending"
     pr_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.purchase_requests.insert_one(pr_doc)
+    await db.pr_doc["organization_id"] = current_user.get("organization_id")`n    await purchase_requests.insert_one(pr_doc)
     return pr_doc
 
 @api_router.get("/purchase-requests", response_model=List[PurchaseRequest])
 async def get_purchase_requests(current_user: dict = Depends(get_current_user)):
-    prs = await db.purchase_requests.find({}, {"_id": 0}).to_list(1000)
+    prs = await db.purchase_requests.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return prs
 
 @api_router.patch("/purchase-requests/{pr_id}/approve")
@@ -730,12 +726,12 @@ async def create_purchase_order(po_data: PurchaseOrderCreate, current_user: dict
     po_doc["id"] = str(uuid.uuid4())
     po_doc["status"] = "pending"
     po_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.purchase_orders.insert_one(po_doc)
+    await db.po_doc["organization_id"] = current_user.get("organization_id")`n    await purchase_orders.insert_one(po_doc)
     return po_doc
 
 @api_router.get("/purchase-orders", response_model=List[PurchaseOrder])
 async def get_purchase_orders(current_user: dict = Depends(get_current_user)):
-    pos = await db.purchase_orders.find({}, {"_id": 0}).to_list(1000)
+    pos = await db.purchase_orders.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
     return pos
 
 @api_router.patch("/purchase-orders/{po_id}/status")
@@ -750,7 +746,7 @@ async def create_hr_field(field_data: HRFieldCreate, current_user: dict = Depend
     field_doc = field_data.model_dump()
     field_doc["id"] = str(uuid.uuid4())
     field_doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.hr_fields.insert_one(field_doc)
+    await db.field_doc["organization_id"] = current_user.get("organization_id")`n    await hr_fields.insert_one(field_doc)
     return field_doc
 
 @api_router.get("/hr-fields", response_model=List[HRField])
@@ -793,7 +789,7 @@ async def invite_team_member(invite_data: TeamInviteCreate, current_user: dict =
         "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.team_invites.insert_one(invite_doc)
+    await db.invite_doc["organization_id"] = current_user.get("organization_id")`n    await team_invites.insert_one(invite_doc)
     
     # Track analytics
     await db.analytics.insert_one({
@@ -839,7 +835,7 @@ async def accept_invite(token: str, name: str, password: str):
         "subscription_status": "active",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.users.insert_one(user_doc)
+    await db.user_doc["organization_id"] = current_user.get("organization_id")`n    await users.insert_one(user_doc)
     
     # Update invite status
     await db.team_invites.update_one({"token": token}, {"$set": {"status": "accepted"}})
@@ -919,7 +915,7 @@ async def create_subscription(sub_data: SubscriptionCreate, current_user: dict =
         "ends_at": ends_at,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.subscriptions.insert_one(sub_doc)
+    await db.sub_doc["organization_id"] = current_user.get("organization_id")`n    await subscriptions.insert_one(sub_doc)
     
     # Update user subscription status
     await db.users.update_one(
@@ -987,7 +983,7 @@ async def track_analytics(analytics_data: AnalyticsCreate, current_user: dict = 
         "page": analytics_data.page,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
-    await db.analytics.insert_one(analytics_doc)
+    await db.analytics_doc["organization_id"] = current_user.get("organization_id")`n    await analytics.insert_one(analytics_doc)
     return {"message": "Event tracked"}
 
 @api_router.get("/analytics/funnel")
@@ -1011,86 +1007,6 @@ async def get_onboarding_funnel(current_user: dict = Depends(get_current_user)):
         "invites_sent": funnel.get("team_invite_sent", 0),
         "conversion_rate": round((funnel.get("subscription_created", 0) / max(funnel.get("user_registered", 1), 1)) * 100, 2)
     }
-
-class ClientLimitsUpdate(BaseModel):
-    max_employees: Optional[int] = None
-    max_projects: Optional[int] = None
-
-class ClientCreate(BaseModel):
-    name: str
-    email: str
-    password: str
-    max_employees: Optional[int] = None
-    max_projects: Optional[int] = None
-
-@api_router.post("/saas/clients")
-async def create_saas_client(client_data: ClientCreate, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "superadmin":
-        raise HTTPException(status_code=403, detail="Superadmin access required")
-    existing = await db.users.find_one({"email": client_data.email}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-        
-    user_id = str(uuid.uuid4())
-    org_id = str(uuid.uuid4())
-    hashed_password = get_password_hash(client_data.password)
-    
-    limits = {}
-    if client_data.max_employees is not None:
-        limits["max_employees"] = client_data.max_employees
-    if client_data.max_projects is not None:
-        limits["max_projects"] = client_data.max_projects
-        
-    user_doc = {
-        "id": user_id,
-        "email": client_data.email,
-        "password": hashed_password,
-        "name": client_data.name,
-        "role": "admin",
-        "organization_id": org_id,
-        "email_verified": True,
-        "subscription_status": "active",
-        "subscription_limits": limits,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(user_doc)
-    user_doc.pop("password")
-    return {"message": "Client created successfully", "client": user_doc}
-
-@api_router.get("/saas/clients")
-async def get_saas_clients(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "superadmin":
-        raise HTTPException(status_code=403, detail="Superadmin access required")
-    # Return all admin users who represent a client
-    clients = await db.users.find({"role": "admin"}, {"_id": 0, "password": 0}).to_list(1000)
-    # Get counts
-    for client in clients:
-        org_id = client.get("organization_id")
-        if org_id:
-            emp_count = await db.employees.count_documents({"organization_id": org_id})
-            proj_count = await db.projects.count_documents({"organization_id": org_id})
-            client["usage"] = {
-                "employees": emp_count,
-                "projects": proj_count
-            }
-    return clients
-
-@api_router.put("/saas/clients/{client_id}/limits")
-async def update_client_limits(client_id: str, limits: ClientLimitsUpdate, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "superadmin":
-        raise HTTPException(status_code=403, detail="Superadmin access required")
-    client = await db.users.find_one({"id": client_id})
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-    
-    new_limits = client.get("subscription_limits") or {}
-    if limits.max_employees is not None:
-        new_limits["max_employees"] = limits.max_employees
-    if limits.max_projects is not None:
-        new_limits["max_projects"] = limits.max_projects
-        
-    await db.users.update_one({"id": client_id}, {"$set": {"subscription_limits": new_limits}})
-    return {"message": "Limits updated", "limits": new_limits}
 
 app.include_router(api_router)
 

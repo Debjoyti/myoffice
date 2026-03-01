@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Users, Calendar, Umbrella, FolderKanban, Briefcase, TrendingUp, Package, Building2, FileText, ClipboardList, Settings, UserPlus } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Users, Calendar, Umbrella, FolderKanban, Briefcase, TrendingUp, Package, Building2, FileText, ClipboardList, Settings, UserPlus, Shield } from 'lucide-react';
 
 const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, setIsSidebarOpen }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    ...(user && user.role === 'superadmin' ? [{ id: 'saas-admin', label: 'SAAS Admin', icon: Shield, path: '/saas-admin' }] : []),
     { id: 'employees', label: 'Employees', icon: Users, path: '/employees' },
     { id: 'attendance', label: 'Attendance', icon: Calendar, path: '/attendance' },
     { id: 'leave', label: 'Leave', icon: Umbrella, path: '/leave' },
@@ -19,32 +20,65 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     { id: 'hr-config', label: 'HR Config', icon: Settings, path: '/hr-config' },
   ];
 
+  const getInitials = (name) => name ? name.charAt(0).toUpperCase() : 'U';
+
   return (
     <>
+      {/* Mobile toggle */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white border border-slate-200 rounded-xl shadow-lg hover:shadow-xl transition-all"
+        style={{
+          position: 'fixed', top: '16px', left: '16px', zIndex: 50,
+          padding: '8px',
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '10px',
+          cursor: 'pointer',
+          display: 'none',
+        }}
+        className="lg:hidden"
         data-testid="sidebar-toggle"
       >
-        {isSidebarOpen ? <X size={20} className="text-slate-700" /> : <Menu size={20} className="text-slate-700" />}
+        {isSidebarOpen ? <X size={20} color="#fff" /> : <Menu size={20} color="#fff" />}
       </button>
 
+      {/* Sidebar panel */}
       <div
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 z-40 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{
+          width: '240px',
+          minWidth: '240px',
+          height: '100vh',
+          background: '#0a1628',
+          borderRight: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'sticky',
+          top: 0,
+          flexShrink: 0,
+        }}
+        className={`fixed lg:sticky top-0 left-0 z-40 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">B</span>
+        {/* Logo */}
+        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '38px', height: '38px',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              borderRadius: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
+            }}>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: '16px' }}>B</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900" data-testid="sidebar-title">BizOps</h1>
-              <p className="text-xs text-slate-500">Enterprise Edition</p>
+              <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: 0 }} data-testid="sidebar-title">BizOps</h1>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: 0 }}>Enterprise Edition</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+        {/* Nav */}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 10px' }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
@@ -53,45 +87,74 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
                 key={item.id}
                 to={item.path}
                 data-testid={`nav-${item.id}`}
-                className={`sidebar-link group ${isActive ? 'active' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                className={`sidebar-link ${isActive ? 'active' : ''}`}
+                style={{
+                  color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
+                  marginBottom: '2px',
+                  textDecoration: 'none',
+                }}
                 onClick={() => {
                   setActivePage(item.id);
                   if (window.innerWidth < 1024) setIsSidebarOpen(false);
                 }}
               >
-                <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'} />
-                <span className="text-sm font-medium">{item.label}</span>
+                <Icon size={16} style={{ color: isActive ? '#818cf8' : 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+                <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 bg-slate-50/50">
-          <div className="mb-3 px-3 py-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-semibold text-xs">{user.name.charAt(0)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900 truncate text-sm" data-testid="user-name">{user.name}</p>
-                <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
-              </div>
+        {/* Footer */}
+        <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '10px 12px', borderRadius: '12px',
+            background: 'rgba(255,255,255,0.05)',
+            marginBottom: '10px',
+          }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 700, fontSize: '13px', flexShrink: 0,
+            }}>
+              {getInitials(user?.name)}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ color: '#fff', fontSize: '13px', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} data-testid="user-name">{user?.name}</p>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: 0, textTransform: 'capitalize' }}>{user?.role}</p>
             </div>
           </div>
           <button
             onClick={onLogout}
             data-testid="logout-btn"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all text-sm font-medium shadow-sm hover:shadow-md"
+            style={{
+              width: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '9px 16px',
+              background: 'rgba(239,68,68,0.12)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              borderRadius: '10px',
+              color: '#f87171',
+              fontSize: '13px', fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; }}
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
             <span>Logout</span>
           </button>
         </div>
       </div>
 
+      {/* Mobile backdrop */}
       {isSidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/20 z-30 backdrop-blur-sm"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 30, backdropFilter: 'blur(4px)' }}
+          className="lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}

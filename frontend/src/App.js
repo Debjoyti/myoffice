@@ -15,6 +15,7 @@ import PurchaseRequests from './pages/PurchaseRequests';
 import PurchaseOrders from './pages/PurchaseOrders';
 import HRConfig from './pages/HRConfig';
 import TeamMembers from './pages/TeamMembers';
+import SaasAdmin from './pages/SaasAdmin';
 import '@/App.css';
 
 function App() {
@@ -96,6 +97,7 @@ function App() {
         <Route path="/purchase-orders" element={user && !needsOnboarding ? <PurchaseOrders user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/hr-config" element={user && !needsOnboarding ? <HRConfig user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/saas-admin" element={user && user.role === 'superadmin' ? <SaasAdmin user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

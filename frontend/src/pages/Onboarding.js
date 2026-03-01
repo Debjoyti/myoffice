@@ -7,57 +7,56 @@ import { Check, ArrowRight, Zap, Users, Shield, TrendingUp } from 'lucide-react'
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+const plans = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    price_monthly: 999,
+    price_yearly: 9999,
+    features: ['Up to 50 employees', 'Basic HR features', 'Email support', 'Mobile app access'],
+  },
+  {
+    id: 'professional',
+    name: 'Professional',
+    price_monthly: 2999,
+    price_yearly: 29999,
+    popular: true,
+    features: ['Up to 200 employees', 'All HR features', 'Priority support', 'Advanced analytics', 'API access'],
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price_monthly: 9999,
+    price_yearly: 99999,
+    features: ['Unlimited employees', 'Custom features', 'Dedicated support', 'Custom integrations', 'SLA guarantee'],
+  },
+];
+
+const feature_tiles = [
+  { icon: Zap, title: 'Instant Setup', desc: 'Get started in minutes' },
+  { icon: Users, title: '200+ Employees', desc: 'Scale with your team' },
+  { icon: Shield, title: 'Secure & Compliant', desc: 'Enterprise-grade security' },
+  { icon: TrendingUp, title: 'Analytics', desc: 'Track your growth' },
+];
+
 const Onboarding = ({ user, onComplete }) => {
-  const [step, setStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState('professional');
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const plans = [
-    {
-      id: 'starter',
-      name: 'Starter',
-      price_monthly: 999,
-      price_yearly: 9999,
-      features: ['Up to 50 employees', 'Basic HR features', 'Email support', 'Mobile app access']
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price_monthly: 2999,
-      price_yearly: 29999,
-      popular: true,
-      features: ['Up to 200 employees', 'All HR features', 'Priority support', 'Advanced analytics', 'API access']
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price_monthly: 9999,
-      price_yearly: 99999,
-      features: ['Unlimited employees', 'Custom features', 'Dedicated support', 'Custom integrations', 'SLA guarantee']
-    }
-  ];
-
   const handleSubscribe = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API}/subscriptions`, {
-        plan: selectedPlan,
-        billing_cycle: billingCycle
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.post(`${API}/subscriptions`, { plan: selectedPlan, billing_cycle: billingCycle }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Track analytics
       await axios.post(`${API}/analytics/track`, {
         event_type: 'onboarding_completed',
         event_data: { plan: selectedPlan, billing_cycle: billingCycle },
-        page: 'onboarding'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+        page: 'onboarding',
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
       toast.success('Subscription activated successfully!');
       onComplete();
@@ -69,95 +68,88 @@ const Onboarding = ({ user, onComplete }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-6xl w-full">
+    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ maxWidth: '1080px', width: '100%' }}>
+
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mb-4 shadow-lg">
-            <span className="text-white font-bold text-2xl">B</span>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '18px', marginBottom: '20px', boxShadow: '0 8px 28px rgba(99,102,241,0.4)' }}>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: '26px' }}>B</span>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Welcome to BizOps! 🎉</h1>
-          <p className="text-lg text-slate-600">Choose the perfect plan for your organization</p>
+          <h1 style={{ color: '#fff', fontSize: '36px', fontWeight: 800, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Welcome to BizOps! 🎉</h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '17px', margin: 0 }}>Choose the perfect plan for your organization</p>
         </div>
 
         {/* Billing Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-white rounded-xl p-1.5 shadow-md border border-slate-200">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all ${
-                billingCycle === 'monthly'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all ${
-                billingCycle === 'yearly'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Yearly
-              <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Save 17%</span>
-            </button>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
+          <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '5px' }}>
+            {['monthly', 'yearly'].map(cycle => (
+              <button key={cycle} onClick={() => setBillingCycle(cycle)}
+                style={{
+                  padding: '9px 24px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                  background: billingCycle === cycle ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                  color: billingCycle === cycle ? '#fff' : 'rgba(255,255,255,0.45)',
+                  boxShadow: billingCycle === cycle ? '0 4px 14px rgba(99,102,241,0.3)' : 'none',
+                }}>
+                {cycle === 'monthly' ? 'Monthly' : (
+                  <span>Yearly <span style={{ marginLeft: '6px', background: 'rgba(16,185,129,0.2)', color: '#34d399', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>Save 17%</span></span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Plan cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '36px' }}>
           {plans.map((plan) => {
             const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
             const isSelected = selectedPlan === plan.id;
 
             return (
-              <div
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
-                className={`relative bg-white rounded-2xl p-8 cursor-pointer transition-all ${
-                  isSelected
-                    ? 'ring-2 ring-blue-600 shadow-xl scale-105'
-                    : 'border border-slate-200 shadow-sm hover:shadow-lg hover:scale-102'
-                } ${plan.popular ? 'md:scale-105' : ''}`}
+              <div key={plan.id} onClick={() => setSelectedPlan(plan.id)}
+                style={{
+                  position: 'relative',
+                  background: isSelected ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: isSelected ? '1.5px solid rgba(99,102,241,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '20px', padding: '32px 24px',
+                  cursor: 'pointer', transition: 'all 0.25s ease',
+                  transform: (isSelected || plan.popular) ? 'scale(1.02)' : 'scale(1)',
+                  boxShadow: isSelected ? '0 12px 40px rgba(99,102,241,0.25)' : 'none',
+                }}
+                onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; } }}
+                onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; } }}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">
-                      MOST POPULAR
-                    </span>
+                  <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', padding: '5px 16px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
+                    MOST POPULAR
                   </div>
                 )}
-
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold text-slate-900">₹{price.toLocaleString('en-IN')}</span>
-                    <span className="text-slate-600">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                  <h3 style={{ color: '#fff', fontSize: '22px', fontWeight: 700, margin: '0 0 10px' }}>{plan.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
+                    <span style={{ color: '#fff', fontSize: '36px', fontWeight: 800 }}>₹{price.toLocaleString('en-IN')}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                   </div>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
-                        <Check size={14} className="text-green-600" />
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Check size={12} color="#34d399" />
                       </div>
-                      <span className="text-slate-700 text-sm">{feature}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '14px' }}>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                <button
-                  className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-700'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {isSelected ? 'Selected' : 'Select Plan'}
+                <button style={{
+                  width: '100%', padding: '12px', borderRadius: '12px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                  background: isSelected ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.08)',
+                  color: isSelected ? '#fff' : 'rgba(255,255,255,0.5)',
+                  boxShadow: isSelected ? '0 4px 16px rgba(99,102,241,0.3)' : 'none',
+                }}>
+                  {isSelected ? 'Selected ✓' : 'Select Plan'}
                 </button>
               </div>
             );
@@ -165,38 +157,44 @@ const Onboarding = ({ user, onComplete }) => {
         </div>
 
         {/* CTA */}
-        <div className="text-center">
-          <button
-            onClick={handleSubscribe}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all disabled:opacity-50"
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <button onClick={handleSubscribe} disabled={loading}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '10px',
+              padding: '16px 40px',
+              background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff', border: 'none', borderRadius: '14px',
+              fontWeight: 700, fontSize: '17px', cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 8px 28px rgba(99,102,241,0.4)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(99,102,241,0.55)'; } }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(99,102,241,0.4)'; }}
           >
-            {loading ? 'Processing...' : 'Start Your Free Trial'}
+            {loading ? 'Processing…' : 'Start Your Free Trial'}
             <ArrowRight size={20} />
           </button>
-          <p className="text-sm text-slate-600 mt-4">14-day free trial • No credit card required • Cancel anytime</p>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', marginTop: '14px' }}>
+            14-day free trial • No credit card required • Cancel anytime
+          </p>
         </div>
 
-        {/* Features Banner */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
-            { icon: Zap, title: 'Instant Setup', desc: 'Get started in minutes' },
-            { icon: Users, title: '200+ Employees', desc: 'Scale with your team' },
-            { icon: Shield, title: 'Secure & Compliant', desc: 'Enterprise-grade security' },
-            { icon: TrendingUp, title: 'Analytics', desc: 'Track your growth' }
-          ].map((item, idx) => {
-            const Icon = item.icon;
+        {/* Feature tiles */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+          {feature_tiles.map((tile, idx) => {
+            const Icon = tile.icon;
             return (
-              <div key={idx} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl mb-3">
-                  <Icon size={24} className="text-blue-600" />
+              <div key={idx} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px 20px', textAlign: 'center' }}>
+                <div style={{ width: '46px', height: '46px', background: 'rgba(99,102,241,0.15)', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                  <Icon size={22} color="#818cf8" />
                 </div>
-                <h4 className="font-semibold text-slate-900 mb-1">{item.title}</h4>
-                <p className="text-sm text-slate-600">{item.desc}</p>
+                <h4 style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>{tile.title}</h4>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: 0 }}>{tile.desc}</p>
               </div>
             );
           })}
         </div>
+
       </div>
     </div>
   );

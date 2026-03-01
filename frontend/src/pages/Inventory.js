@@ -12,29 +12,16 @@ const Inventory = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    quantity: '',
-    unit: '',
-    price_per_unit: '',
-    location: '',
-  });
+  const [formData, setFormData] = useState({ name: '', category: '', quantity: '', unit: '', price_per_unit: '', location: '' });
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  useEffect(() => { fetchItems(); }, []);
 
   const fetchItems = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/inventory`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(`${API}/inventory`, { headers: { Authorization: `Bearer ${token}` } });
       setItems(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch inventory');
-    }
+    } catch { toast.error('Failed to fetch inventory'); }
     setLoading(false);
   };
 
@@ -42,152 +29,94 @@ const Inventory = ({ user, onLogout }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const itemData = {
-        ...formData,
-        quantity: parseInt(formData.quantity),
-        price_per_unit: parseFloat(formData.price_per_unit),
-      };
-      await axios.post(`${API}/inventory`, itemData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(`${API}/inventory`, { ...formData, quantity: parseInt(formData.quantity), price_per_unit: parseFloat(formData.price_per_unit) }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Item added successfully');
       setShowModal(false);
-      setFormData({
-        name: '',
-        category: '',
-        quantity: '',
-        unit: '',
-        price_per_unit: '',
-        location: '',
-      });
+      setFormData({ name: '', category: '', quantity: '', unit: '', price_per_unit: '', location: '' });
       fetchItems();
-    } catch (error) {
-      toast.error('Failed to add item');
-    }
+    } catch { toast.error('Failed to add item'); }
   };
 
-  const totalValue = items.reduce((sum, item) => sum + item.quantity * item.price_per_unit, 0);
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalValue = items.reduce((s, i) => s + i.quantity * i.price_per_unit, 0);
+  const totalItems = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
-    <div className="flex">
-      <Sidebar
-        user={user}
-        onLogout={onLogout}
-        activePage="inventory"
-        setActivePage={() => {}}
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-      />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center mb-8">
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="inventory" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          <div className="page-header">
             <div>
-              <h1 className="text-4xl font-bold text-slate-900 mb-2" data-testid="inventory-title">
-                Inventory
-              </h1>
-              <p className="text-slate-600">Manage inventory items</p>
+              <h1 className="page-title" data-testid="inventory-title">Inventory</h1>
+              <p className="page-subtitle">Manage inventory items and stock</p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              data-testid="add-inventory-btn"
-              className="btn-primary flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold"
-            >
-              <Plus size={20} />
-              Add Item
+            <button onClick={() => setShowModal(true)} data-testid="add-inventory-btn" className="btn-dark-primary">
+              <Plus size={18} /> Add Item
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white rounded-lg border border-slate-200 p-6" data-testid="total-items-card">
-              <p className="text-sm text-slate-600 mb-2">Total Items</p>
-              <p className="text-3xl font-bold text-slate-900">{totalItems}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-slate-200 p-6" data-testid="total-value-card">
-              <p className="text-sm text-slate-600 mb-2">Total Value</p>
-              <p className="text-3xl font-bold text-slate-900">₹{totalValue.toLocaleString('en-IN')}</p>
-            </div>
+          {/* Summary cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { label: 'Total Items', value: totalItems, color: '#818cf8', testId: 'total-items-card' },
+              { label: 'Total Value', value: `₹${totalValue.toLocaleString('en-IN')}`, color: '#34d399', testId: 'total-value-card' },
+            ].map(c => (
+              <div key={c.label} className="dark-card fade-in" style={{ padding: '20px' }} data-testid={c.testId}>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', margin: '0 0 6px' }}>{c.label}</p>
+                <p style={{ color: c.color, fontSize: '26px', fontWeight: 800, margin: 0 }}>{c.value}</p>
+              </div>
+            ))}
           </div>
 
           {loading ? (
-            <div className="text-center py-12">Loading...</div>
+            <div className="dark-loading">Loading inventory…</div>
           ) : items.length === 0 ? (
-            <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-              <p className="text-slate-600 mb-4">No inventory items found</p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="text-emerald-600 hover:text-emerald-700 font-medium"
-              >
-                Add your first item
-              </button>
+            <div className="dark-empty">
+              <p style={{ marginBottom: '12px' }}>No inventory items found</p>
+              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first item</button>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-              <div className="table-container overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Name</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Category</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Quantity</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Unit</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Price/Unit</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Total Value</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Location</th>
+            <div className="dark-table-wrap fade-in">
+              <table>
+                <thead>
+                  <tr><th>Name</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Price/Unit</th><th>Total Value</th><th>Location</th></tr>
+                </thead>
+                <tbody>
+                  {items.map(item => (
+                    <tr key={item.id} data-testid={`inventory-row-${item.id}`}>
+                      <td style={{ color: '#fff', fontWeight: 600 }}>{item.name}</td>
+                      <td style={{ textTransform: 'capitalize' }}>{item.category}</td>
+                      <td style={{ color: '#fff' }}>{item.quantity}</td>
+                      <td>{item.unit}</td>
+                      <td style={{ color: '#fff' }}>₹{item.price_per_unit.toLocaleString('en-IN')}</td>
+                      <td style={{ color: '#34d399', fontWeight: 600 }}>₹{(item.quantity * item.price_per_unit).toLocaleString('en-IN')}</td>
+                      <td>{item.location || '—'}</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {items.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50" data-testid={`inventory-row-${item.id}`}>
-                        <td className="px-6 py-4 text-slate-900 font-medium">{item.name}</td>
-                        <td className="px-6 py-4 text-slate-600 capitalize">{item.category}</td>
-                        <td className="px-6 py-4 text-slate-900">{item.quantity}</td>
-                        <td className="px-6 py-4 text-slate-600">{item.unit}</td>
-                        <td className="px-6 py-4 text-slate-900">₹{item.price_per_unit.toLocaleString('en-IN')}</td>
-                        <td className="px-6 py-4 text-slate-900 font-semibold">
-                          ₹{(item.quantity * item.price_per_unit).toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-6 py-4 text-slate-600">{item.location || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full">
-            <div className="border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-slate-900" data-testid="add-inventory-modal-title">Add Inventory Item</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={24} />
-              </button>
+        <div className="dark-modal-overlay">
+          <div className="dark-modal" style={{ maxWidth: '480px' }}>
+            <div className="dark-modal-header">
+              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-inventory-modal-title">Add Inventory Item</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Item Name *</label>
-                <input
-                  type="text"
-                  required
-                  data-testid="inventory-name-input"
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
+                <label className="dark-label">Item Name *</label>
+                <input type="text" required data-testid="inventory-name-input" className="dark-input"
+                  value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Category *</label>
-                <select
-                  required
-                  data-testid="inventory-category-select"
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                >
+                <label className="dark-label">Category *</label>
+                <select required data-testid="inventory-category-select" className="dark-input"
+                  value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                   <option value="">Select category</option>
                   <option value="furniture">Furniture</option>
                   <option value="electronics">Electronics</option>
@@ -196,71 +125,31 @@ const Inventory = ({ user, onLogout }) => {
                   <option value="other">Other</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Quantity *</label>
-                  <input
-                    type="number"
-                    required
-                    data-testid="inventory-quantity-input"
-                    min="0"
-                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                  />
+                  <label className="dark-label">Quantity *</label>
+                  <input type="number" required data-testid="inventory-quantity-input" min="0" className="dark-input"
+                    value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Unit *</label>
-                  <input
-                    type="text"
-                    required
-                    data-testid="inventory-unit-input"
-                    placeholder="pcs, kg, box"
-                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  />
+                  <label className="dark-label">Unit *</label>
+                  <input type="text" required data-testid="inventory-unit-input" placeholder="pcs, kg, box" className="dark-input"
+                    value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })} />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Price per Unit (₹) *</label>
-                <input
-                  type="number"
-                  required
-                  data-testid="inventory-price-input"
-                  min="0"
-                  step="0.01"
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                  value={formData.price_per_unit}
-                  onChange={(e) => setFormData({ ...formData, price_per_unit: e.target.value })}
-                />
+                <label className="dark-label">Price per Unit (₹) *</label>
+                <input type="number" required data-testid="inventory-price-input" min="0" step="0.01" className="dark-input"
+                  value={formData.price_per_unit} onChange={e => setFormData({ ...formData, price_per_unit: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Location</label>
-                <input
-                  type="text"
-                  data-testid="inventory-location-input"
-                  placeholder="e.g., Warehouse A, Floor 2"
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                />
+                <label className="dark-label">Location</label>
+                <input type="text" data-testid="inventory-location-input" placeholder="e.g., Warehouse A, Floor 2" className="dark-input"
+                  value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
               </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  data-testid="submit-inventory-btn"
-                  className="flex-1 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold"
-                >
-                  Add Item
-                </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-dark-cancel" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" data-testid="submit-inventory-btn" className="btn-dark-primary" style={{ flex: 1, justifyContent: 'center' }}>Add Item</button>
               </div>
             </form>
           </div>

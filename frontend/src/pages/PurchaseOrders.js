@@ -15,19 +15,12 @@ const PurchaseOrders = ({ user, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
-    purchase_request_id: '',
-    store_id: '',
-    supplier_name: '',
-    supplier_contact: '',
-    items: [],
-    total_amount: 0,
-    delivery_date: '',
-    created_by: user.id,
+    purchase_request_id: '', store_id: '', supplier_name: '',
+    supplier_contact: '', items: [], total_amount: 0,
+    delivery_date: '', created_by: user.id,
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
@@ -40,9 +33,7 @@ const PurchaseOrders = ({ user, onLogout }) => {
       setOrders(ordersRes.data);
       setStores(storesRes.data);
       setRequests(requestsRes.data.filter(r => r.status === 'approved'));
-    } catch (error) {
-      toast.error('Failed to fetch data');
-    }
+    } catch { toast.error('Failed to fetch data'); }
     setLoading(false);
   };
 
@@ -50,72 +41,113 @@ const PurchaseOrders = ({ user, onLogout }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API}/purchase-orders`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(`${API}/purchase-orders`, formData, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Purchase order created successfully');
       setShowModal(false);
       fetchData();
-    } catch (error) {
-      toast.error('Failed to create purchase order');
-    }
+    } catch { toast.error('Failed to create purchase order'); }
   };
 
-  const getStoreName = (storeId) => stores.find((s) => s.id === storeId)?.name || 'Unknown';
+  const getStoreName = (id) => stores.find(s => s.id === id)?.name || 'Unknown';
 
   return (
-    <div className="flex">
-      <Sidebar user={user} onLogout={onLogout} activePage="purchase-orders" setActivePage={() => {}} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="flex-1 overflow-auto bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center mb-8">
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="purchase-orders" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          <div className="page-header">
             <div>
-              <h1 className="text-4xl font-bold text-slate-900 mb-2">Purchase Orders</h1>
-              <p className="text-slate-600">Create and manage purchase orders from approved requests</p>
+              <h1 className="page-title">Purchase Orders</h1>
+              <p className="page-subtitle">Create and manage purchase orders from approved requests</p>
             </div>
-            <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg">
-              <Plus size={20} />
-              Create PO
+            <button onClick={() => setShowModal(true)} className="btn-dark-primary">
+              <Plus size={18} /> Create PO
             </button>
           </div>
 
-          {loading ? <div className="text-center py-12">Loading...</div> : orders.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-12 text-center">
-              <p className="text-slate-600 mb-4">No purchase orders found</p>
-              <button onClick={() => setShowModal(true)} className="text-orange-600 hover:text-orange-700 font-medium">Create your first purchase order</button>
+          {loading ? (
+            <div className="dark-loading">Loading purchase orders…</div>
+          ) : orders.length === 0 ? (
+            <div className="dark-empty">
+              <p style={{ marginBottom: '12px' }}>No purchase orders found</p>
+              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase order</button>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-              <div className="table-container overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-orange-50 to-red-50 border-b border-slate-200">
-                    <tr>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">PO ID</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Store</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Supplier</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Amount</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Delivery Date</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Status</th>
+            <div className="dark-table-wrap fade-in">
+              <table>
+                <thead>
+                  <tr><th>PO ID</th><th>Store</th><th>Supplier</th><th>Amount</th><th>Delivery Date</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  {orders.map(order => (
+                    <tr key={order.id}>
+                      <td style={{ fontFamily: 'monospace', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{order.id.slice(0, 8)}</td>
+                      <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(order.store_id)}</td>
+                      <td>{order.supplier_name}</td>
+                      <td style={{ color: '#fff', fontWeight: 600 }}>₹{order.total_amount.toLocaleString('en-IN')}</td>
+                      <td>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('en-IN') : '—'}</td>
+                      <td><span className="badge-amber" style={{ textTransform: 'capitalize' }}>{order.status}</span></td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-orange-50/30">
-                        <td className="px-6 py-4 text-slate-900 font-mono text-sm">{order.id.slice(0, 8)}</td>
-                        <td className="px-6 py-4 text-slate-900 font-medium">{getStoreName(order.store_id)}</td>
-                        <td className="px-6 py-4 text-slate-600">{order.supplier_name}</td>
-                        <td className="px-6 py-4 text-slate-900 font-semibold">₹{order.total_amount.toLocaleString('en-IN')}</td>
-                        <td className="px-6 py-4 text-slate-600">{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('en-IN') : '-'}</td>
-                        <td className="px-6 py-4"><span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 capitalize">{order.status}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       </div>
+
+      {showModal && (
+        <div className="dark-modal-overlay">
+          <div className="dark-modal" style={{ maxWidth: '480px' }}>
+            <div className="dark-modal-header">
+              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }}>Create Purchase Order</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+            </div>
+            <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label className="dark-label">Purchase Request (Approved)</label>
+                <select className="dark-input" value={formData.purchase_request_id}
+                  onChange={e => setFormData({ ...formData, purchase_request_id: e.target.value })}>
+                  <option value="">Select request</option>
+                  {requests.map(r => <option key={r.id} value={r.id}>{r.id.slice(0, 8)} — ₹{r.total_amount?.toLocaleString('en-IN')}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="dark-label">Store *</label>
+                <select required className="dark-input" value={formData.store_id}
+                  onChange={e => setFormData({ ...formData, store_id: e.target.value })}>
+                  <option value="">Select store</option>
+                  {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="dark-label">Supplier Name *</label>
+                <input type="text" required className="dark-input" placeholder="e.g., ABC Suppliers"
+                  value={formData.supplier_name} onChange={e => setFormData({ ...formData, supplier_name: e.target.value })} />
+              </div>
+              <div>
+                <label className="dark-label">Supplier Contact</label>
+                <input type="text" className="dark-input" placeholder="+91 98765 43210"
+                  value={formData.supplier_contact} onChange={e => setFormData({ ...formData, supplier_contact: e.target.value })} />
+              </div>
+              <div>
+                <label className="dark-label">Total Amount (₹) *</label>
+                <input type="number" required min="0" step="0.01" className="dark-input"
+                  value={formData.total_amount} onChange={e => setFormData({ ...formData, total_amount: parseFloat(e.target.value) })} />
+              </div>
+              <div>
+                <label className="dark-label">Expected Delivery Date</label>
+                <input type="date" className="dark-input"
+                  value={formData.delivery_date} onChange={e => setFormData({ ...formData, delivery_date: e.target.value })} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-dark-cancel" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" className="btn-dark-primary" style={{ flex: 1, justifyContent: 'center' }}>Create Order</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
