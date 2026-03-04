@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import OfferLetterModal from '../components/OfferLetterModal';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -11,10 +12,12 @@ const Employees = ({ user, onLogout }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', department: '',
     designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '',
+    photo: '',
   });
 
   useEffect(() => { fetchEmployees(); }, []);
@@ -35,7 +38,7 @@ const Employees = ({ user, onLogout }) => {
       await axios.post(`${API}/employees`, formData, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Employee added successfully');
       setShowModal(false);
-      setFormData({ name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '' });
+      setFormData({ name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '', photo: '' });
       fetchEmployees();
     } catch { toast.error('Failed to add employee'); }
   };
@@ -48,6 +51,17 @@ const Employees = ({ user, onLogout }) => {
       toast.success('Employee deleted successfully');
       fetchEmployees();
     } catch { toast.error('Failed to delete employee'); }
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, photo: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const inp = (field, label, type = 'text', testId, placeholder) => (
@@ -71,9 +85,14 @@ const Employees = ({ user, onLogout }) => {
               <h1 className="page-title" data-testid="employees-title">Employees</h1>
               <p className="page-subtitle">Manage your team members</p>
             </div>
-            <button onClick={() => setShowModal(true)} data-testid="add-employee-btn" className="btn-dark-primary">
-              <Plus size={18} /> Add Employee
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setShowOfferModal(true)} className="btn-dark-outline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Generate Offer Letter
+              </button>
+              <button onClick={() => setShowModal(true)} data-testid="add-employee-btn" className="btn-dark-primary">
+                <Plus size={18} /> Add Employee
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -94,7 +113,18 @@ const Employees = ({ user, onLogout }) => {
                 <tbody>
                   {employees.map(emp => (
                     <tr key={emp.id} data-testid={`employee-row-${emp.id}`}>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>{emp.name}</td>
+                      <td style={{ color: '#fff', fontWeight: 600 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {emp.photo ? (
+                            <img src={emp.photo} alt={emp.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
+                              {emp.name.charAt(0)}
+                            </div>
+                          )}
+                          {emp.name}
+                        </div>
+                      </td>
                       <td>{emp.email}</td>
                       <td>{emp.department}</td>
                       <td>{emp.designation}</td>
@@ -126,6 +156,22 @@ const Employees = ({ user, onLogout }) => {
               </button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {formData.photo ? (
+                    <img src={formData.photo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Plus size={24} style={{ opacity: 0.3 }} />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                  />
+                </div>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>Upload Photo</span>
+              </div>
               {inp('name', 'Name *', 'text', 'employee-name-input')}
               {inp('email', 'Email *', 'email', 'employee-email-input')}
               {inp('phone', 'Phone *', 'tel', 'employee-phone-input')}
@@ -146,6 +192,15 @@ const Employees = ({ user, onLogout }) => {
             </form>
           </div>
         </div>
+      )}
+
+      {showOfferModal && (
+        <OfferLetterModal
+          show={showOfferModal}
+          onClose={() => setShowOfferModal(false)}
+          onSave={(newOffer) => toast.success(`Offer letter generated for ${newOffer.name}`)}
+          employees={employees}
+        />
       )}
     </div>
   );

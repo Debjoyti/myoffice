@@ -95,6 +95,7 @@ class Employee(BaseModel):
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
     address: Optional[str] = None
+    photo: Optional[str] = None
     status: str = "active"
     created_at: str
 
@@ -108,6 +109,7 @@ class EmployeeCreate(BaseModel):
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
     address: Optional[str] = None
+    photo: Optional[str] = None
 
 class Attendance(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -245,6 +247,39 @@ class InventoryItem(BaseModel):
     price_per_unit: float
     location: Optional[str] = None
     created_at: str
+
+class StoreCreate(BaseModel):
+    name: str
+    location: str
+    contact: Optional[str] = None
+    manager: Optional[str] = None
+
+class OfferLetter(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    organization_id: str
+    name: str
+    email: str
+    phone: str
+    designation: str
+    ctc_yearly: float
+    status: str = "Generated"
+    created_at: str
+
+class OfferLetterCreate(BaseModel):
+    name: str
+    email: str
+    phone: str
+    designation: str
+    ctc_yearly: float
+    is_metro: str
+    pf_applied: str
+    pf_cap: str
+    insurance_co: bool
+    insurance_emp: bool
+    food_allowance: bool
+    details: dict # full breakdown and personal details
+    status: str = "Generated"
 
 class InventoryItemCreate(BaseModel):
     name: str
@@ -1091,6 +1126,28 @@ async def update_client_limits(client_id: str, limits: ClientLimitsUpdate, curre
         
     await db.users.update_one({"id": client_id}, {"$set": {"subscription_limits": new_limits}})
     return {"message": "Limits updated", "limits": new_limits}
+
+@api_router.post("/offer-letters", response_model=OfferLetter)
+async def create_offer_letter(offer_data: OfferLetterCreate, current_user: dict = Depends(get_current_user)):
+    offer_doc = offer_data.model_dump()
+    offer_doc["id"] = f"OFFER-{str(uuid.uuid4())[:8].upper()}"
+    offer_doc["organization_id"] = current_user.get("organization_id")
+    offer_doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.offer_letters.insert_one(offer_doc)
+    return offer_doc
+
+@api_router.get("/offer-letters", response_model=List[OfferLetter])
+async def get_offer_letters(current_user: dict = Depends(get_current_user)):
+    query = {"organization_id": current_user.get("organization_id")}
+    offers = await db.offer_letters.find(query, {"_id": 0}).to_list(1000)
+    return offers
+
+@api_router.delete("/offer-letters/{offer_id}")
+async def delete_offer_letter(offer_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.offer_letters.delete_one({"id": offer_id, "organization_id": current_user.get("organization_id")})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Offer letter not found")
+    return {"message": "Offer letter deleted"}
 
 app.include_router(api_router)
 

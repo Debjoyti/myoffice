@@ -16,6 +16,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     { id: 'stores', label: 'Stores', icon: Building2, path: '/stores' },
     { id: 'purchase-requests', label: 'Purchase Requests', icon: FileText, path: '/purchase-requests' },
     { id: 'purchase-orders', label: 'Purchase Orders', icon: ClipboardList, path: '/purchase-orders' },
+    { id: 'offer-letters', label: 'Offer Letters', icon: FileText, path: '/offer-letters' },
     { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team' },
     { id: 'hr-config', label: 'HR Config', icon: Settings, path: '/hr-config' },
   ];
