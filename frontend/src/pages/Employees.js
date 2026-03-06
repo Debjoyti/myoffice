@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Employees = ({ user, onLogout }) => {
+const Employees = ({ user, onLogout, isSubComponent }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -75,77 +75,71 @@ const Employees = ({ user, onLogout }) => {
     </div>
   );
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="employees" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title" data-testid="employees-title">Employees</h1>
-              <p className="page-subtitle">Manage your team members</p>
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowOfferModal(true)} className="btn-dark-outline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Generate Offer Letter
-              </button>
-              <button onClick={() => setShowModal(true)} data-testid="add-employee-btn" className="btn-dark-primary">
-                <Plus size={18} /> Add Employee
-              </button>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading employees…</div>
-          ) : employees.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No employees found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first employee</button>
-            </div>
-          ) : (
-            <div className="dark-table-wrap fade-in">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th><th>Email</th><th>Department</th><th>Designation</th><th>Status</th><th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map(emp => (
-                    <tr key={emp.id} data-testid={`employee-row-${emp.id}`}>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {emp.photo ? (
-                            <img src={emp.photo} alt={emp.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
-                              {emp.name.charAt(0)}
-                            </div>
-                          )}
-                          {emp.name}
-                        </div>
-                      </td>
-                      <td>{emp.email}</td>
-                      <td>{emp.department}</td>
-                      <td>{emp.designation}</td>
-                      <td>
-                        <span className={emp.status === 'active' ? 'badge-green' : 'badge-amber'}>{emp.status}</span>
-                      </td>
-                      <td>
-                        <button onClick={() => handleDelete(emp.id)} data-testid={`delete-employee-${emp.id}`}
-                          style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                          <Trash2 size={17} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" data-testid="employees-title">Employees</h1>
+          <p className="page-subtitle">Manage your team members</p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={() => setShowOfferModal(true)} className="btn-dark-outline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Generate Offer Letter
+          </button>
+          <button onClick={() => setShowModal(true)} data-testid="add-employee-btn" className="btn-dark-primary">
+            <Plus size={18} /> Add Employee
+          </button>
         </div>
       </div>
 
+      {loading ? (
+        <div className="dark-loading">Loading employees…</div>
+      ) : employees.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No employees found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first employee</button>
+        </div>
+      ) : (
+        <div className="dark-table-wrap fade-in">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Department</th><th>Designation</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map(emp => (
+                <tr key={emp.id} data-testid={`employee-row-${emp.id}`}>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {emp.photo ? (
+                        <img src={emp.photo} alt={emp.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>
+                          {emp.name.charAt(0)}
+                        </div>
+                      )}
+                      {emp.name}
+                    </div>
+                  </td>
+                  <td>{emp.email}</td>
+                  <td>{emp.department}</td>
+                  <td>{emp.designation}</td>
+                  <td>
+                    <span className={emp.status === 'active' ? 'badge-green' : 'badge-amber'}>{emp.status}</span>
+                  </td>
+                  <td>
+                    <button onClick={() => handleDelete(emp.id)} data-testid={`delete-employee-${emp.id}`}
+                      style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                      <Trash2 size={17} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '640px' }}>
@@ -202,6 +196,21 @@ const Employees = ({ user, onLogout }) => {
           employees={employees}
         />
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="employees" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

@@ -3,16 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
-import Employees from './pages/Employees';
-import Attendance from './pages/Attendance';
-import LeaveManagement from './pages/LeaveManagement';
+import EmployeeManagement from './pages/EmployeeManagement';
 import Projects from './pages/Projects';
 import CRM from './pages/CRM';
 import Expenses from './pages/Expenses';
-import Inventory from './pages/Inventory';
-import Stores from './pages/Stores';
-import PurchaseRequests from './pages/PurchaseRequests';
-import PurchaseOrders from './pages/PurchaseOrders';
+import BusinessOrders from './pages/BusinessOrders';
 import HRConfig from './pages/HRConfig';
 import TeamMembers from './pages/TeamMembers';
 import OfferLetters from './pages/OfferLetters';
@@ -86,16 +81,11 @@ function App() {
             )
           }
         />
-        <Route path="/employees" element={user && !needsOnboarding ? <Employees user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/attendance" element={user && !needsOnboarding ? <Attendance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/leave" element={user && !needsOnboarding ? <LeaveManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/employee-management" element={user && !needsOnboarding ? <EmployeeManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/projects" element={user && !needsOnboarding ? <Projects user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/crm" element={user && !needsOnboarding ? <CRM user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/expenses" element={user && !needsOnboarding ? <Expenses user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/inventory" element={user && !needsOnboarding ? <Inventory user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/stores" element={user && !needsOnboarding ? <Stores user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/purchase-requests" element={user && !needsOnboarding ? <PurchaseRequests user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/purchase-orders" element={user && !needsOnboarding ? <PurchaseOrders user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/business-orders" element={user && !needsOnboarding ? <BusinessOrders user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/offer-letters" element={user && !needsOnboarding ? <OfferLetters user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/hr-config" element={user && !needsOnboarding ? <HRConfig user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />

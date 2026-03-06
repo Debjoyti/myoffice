@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Inventory = ({ user, onLogout }) => {
+const Inventory = ({ user, onLogout, isSubComponent }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -40,66 +40,60 @@ const Inventory = ({ user, onLogout }) => {
   const totalValue = items.reduce((s, i) => s + i.quantity * i.price_per_unit, 0);
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="inventory" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title" data-testid="inventory-title">Inventory</h1>
-              <p className="page-subtitle">Manage inventory items and stock</p>
-            </div>
-            <button onClick={() => setShowModal(true)} data-testid="add-inventory-btn" className="btn-dark-primary">
-              <Plus size={18} /> Add Item
-            </button>
-          </div>
-
-          {/* Summary cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            {[
-              { label: 'Total Items', value: totalItems, color: '#818cf8', testId: 'total-items-card' },
-              { label: 'Total Value', value: `₹${totalValue.toLocaleString('en-IN')}`, color: '#34d399', testId: 'total-value-card' },
-            ].map(c => (
-              <div key={c.label} className="dark-card fade-in" style={{ padding: '20px' }} data-testid={c.testId}>
-                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', margin: '0 0 6px' }}>{c.label}</p>
-                <p style={{ color: c.color, fontSize: '26px', fontWeight: 800, margin: 0 }}>{c.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading inventory…</div>
-          ) : items.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No inventory items found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first item</button>
-            </div>
-          ) : (
-            <div className="dark-table-wrap fade-in">
-              <table>
-                <thead>
-                  <tr><th>Name</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Price/Unit</th><th>Total Value</th><th>Location</th></tr>
-                </thead>
-                <tbody>
-                  {items.map(item => (
-                    <tr key={item.id} data-testid={`inventory-row-${item.id}`}>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>{item.name}</td>
-                      <td style={{ textTransform: 'capitalize' }}>{item.category}</td>
-                      <td style={{ color: '#fff' }}>{item.quantity}</td>
-                      <td>{item.unit}</td>
-                      <td style={{ color: '#fff' }}>₹{item.price_per_unit.toLocaleString('en-IN')}</td>
-                      <td style={{ color: '#34d399', fontWeight: 600 }}>₹{(item.quantity * item.price_per_unit).toLocaleString('en-IN')}</td>
-                      <td>{item.location || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" data-testid="inventory-title">Inventory</h1>
+          <p className="page-subtitle">Manage inventory items and stock</p>
         </div>
+        <button onClick={() => setShowModal(true)} data-testid="add-inventory-btn" className="btn-dark-primary">
+          <Plus size={18} /> Add Item
+        </button>
       </div>
 
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        {[
+          { label: 'Total Items', value: totalItems, color: '#818cf8', testId: 'total-items-card' },
+          { label: 'Total Value', value: `₹${totalValue.toLocaleString('en-IN')}`, color: '#34d399', testId: 'total-value-card' },
+        ].map(c => (
+          <div key={c.label} className="dark-card fade-in" style={{ padding: '20px' }} data-testid={c.testId}>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', margin: '0 0 6px' }}>{c.label}</p>
+            <p style={{ color: c.color, fontSize: '26px', fontWeight: 800, margin: 0 }}>{c.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="dark-loading">Loading inventory…</div>
+      ) : items.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No inventory items found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first item</button>
+        </div>
+      ) : (
+        <div className="dark-table-wrap fade-in">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Price/Unit</th><th>Total Value</th><th>Location</th></tr>
+            </thead>
+            <tbody>
+              {items.map(item => (
+                <tr key={item.id} data-testid={`inventory-row-${item.id}`}>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>{item.name}</td>
+                  <td style={{ textTransform: 'capitalize' }}>{item.category}</td>
+                  <td style={{ color: '#fff' }}>{item.quantity}</td>
+                  <td>{item.unit}</td>
+                  <td style={{ color: '#fff' }}>₹{item.price_per_unit.toLocaleString('en-IN')}</td>
+                  <td style={{ color: '#34d399', fontWeight: 600 }}>₹{(item.quantity * item.price_per_unit).toLocaleString('en-IN')}</td>
+                  <td>{item.location || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
@@ -155,6 +149,21 @@ const Inventory = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="inventory" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

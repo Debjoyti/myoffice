@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Attendance = ({ user, onLogout }) => {
+const Attendance = ({ user, onLogout, isSubComponent }) => {
   const [attendance, setAttendance] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,51 +52,45 @@ const Attendance = ({ user, onLogout }) => {
     return <span className="badge-amber">{s}</span>;
   };
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="attendance" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title" data-testid="attendance-title">Attendance</h1>
-              <p className="page-subtitle">Track employee attendance records</p>
-            </div>
-            <button onClick={() => setShowModal(true)} data-testid="mark-attendance-btn" className="btn-dark-primary">
-              <Plus size={18} /> Mark Attendance
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading attendance…</div>
-          ) : attendance.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No attendance records found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Mark attendance</button>
-            </div>
-          ) : (
-            <div className="dark-table-wrap fade-in">
-              <table>
-                <thead>
-                  <tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                  {attendance.map(att => (
-                    <tr key={att.id} data-testid={`attendance-row-${att.id}`}>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>{getEmployeeName(att.employee_id)}</td>
-                      <td>{new Date(att.date).toLocaleDateString('en-IN')}</td>
-                      <td>{att.check_in || '—'}</td>
-                      <td>{att.check_out || '—'}</td>
-                      <td>{statusBadge(att.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" data-testid="attendance-title">Attendance</h1>
+          <p className="page-subtitle">Track employee attendance records</p>
         </div>
+        <button onClick={() => setShowModal(true)} data-testid="mark-attendance-btn" className="btn-dark-primary">
+          <Plus size={18} /> Mark Attendance
+        </button>
       </div>
 
+      {loading ? (
+        <div className="dark-loading">Loading attendance…</div>
+      ) : attendance.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No attendance records found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Mark attendance</button>
+        </div>
+      ) : (
+        <div className="dark-table-wrap fade-in">
+          <table>
+            <thead>
+              <tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {attendance.map(att => (
+                <tr key={att.id} data-testid={`attendance-row-${att.id}`}>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>{getEmployeeName(att.employee_id)}</td>
+                  <td>{new Date(att.date).toLocaleDateString('en-IN')}</td>
+                  <td>{att.check_in || '—'}</td>
+                  <td>{att.check_out || '—'}</td>
+                  <td>{statusBadge(att.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
@@ -145,6 +139,21 @@ const Attendance = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="attendance" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

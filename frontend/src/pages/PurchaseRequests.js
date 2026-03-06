@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const PurchaseRequests = ({ user, onLogout }) => {
+const PurchaseRequests = ({ user, onLogout, isSubComponent }) => {
   const [requests, setRequests] = useState([]);
   const [stores, setStores] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -87,65 +87,59 @@ const PurchaseRequests = ({ user, onLogout }) => {
     return <span className="badge-amber">{s}</span>;
   };
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="purchase-requests" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title" data-testid="purchase-requests-title">Purchase Requests</h1>
-              <p className="page-subtitle">Submit and manage purchase requests with admin approval</p>
-            </div>
-            <button onClick={() => setShowModal(true)} data-testid="add-purchase-request-btn" className="btn-dark-primary">
-              <Plus size={18} /> New Request
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading requests…</div>
-          ) : requests.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No purchase requests found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase request</button>
-            </div>
-          ) : (
-            <div className="dark-table-wrap fade-in">
-              <table>
-                <thead>
-                  <tr><th>Store</th><th>Requested By</th><th>Items</th><th>Total Amount</th><th>Status</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {requests.map(req => (
-                    <tr key={req.id} data-testid={`purchase-request-row-${req.id}`}>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(req.store_id)}</td>
-                      <td>{getEmployeeName(req.requested_by)}</td>
-                      <td>{req.items.length} items</td>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>₹{req.total_amount.toLocaleString('en-IN')}</td>
-                      <td>{statusBadge(req.status)}</td>
-                      <td>
-                        {req.status === 'pending' && user.role === 'admin' && (
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button onClick={() => handleApprove(req.id)} data-testid={`approve-request-${req.id}`}
-                              style={{ color: '#34d399', background: 'rgba(16,185,129,0.1)', border: 'none', borderRadius: '6px', padding: '5px', cursor: 'pointer' }} title="Approve">
-                              <Check size={16} />
-                            </button>
-                            <button onClick={() => handleReject(req.id)} data-testid={`reject-request-${req.id}`}
-                              style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '6px', padding: '5px', cursor: 'pointer' }} title="Reject">
-                              <XCircle size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" data-testid="purchase-requests-title">Purchase Requests</h1>
+          <p className="page-subtitle">Submit and manage purchase requests with admin approval</p>
         </div>
+        <button onClick={() => setShowModal(true)} data-testid="add-purchase-request-btn" className="btn-dark-primary">
+          <Plus size={18} /> New Request
+        </button>
       </div>
 
+      {loading ? (
+        <div className="dark-loading">Loading requests…</div>
+      ) : requests.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No purchase requests found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase request</button>
+        </div>
+      ) : (
+        <div className="dark-table-wrap fade-in">
+          <table>
+            <thead>
+              <tr><th>Store</th><th>Requested By</th><th>Items</th><th>Total Amount</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {requests.map(req => (
+                <tr key={req.id} data-testid={`purchase-request-row-${req.id}`}>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(req.store_id)}</td>
+                  <td>{getEmployeeName(req.requested_by)}</td>
+                  <td>{req.items.length} items</td>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>₹{req.total_amount.toLocaleString('en-IN')}</td>
+                  <td>{statusBadge(req.status)}</td>
+                  <td>
+                    {req.status === 'pending' && user.role === 'admin' && (
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={() => handleApprove(req.id)} data-testid={`approve-request-${req.id}`}
+                          style={{ color: '#34d399', background: 'rgba(16,185,129,0.1)', border: 'none', borderRadius: '6px', padding: '5px', cursor: 'pointer' }} title="Approve">
+                          <Check size={16} />
+                        </button>
+                        <button onClick={() => handleReject(req.id)} data-testid={`reject-request-${req.id}`}
+                          style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '6px', padding: '5px', cursor: 'pointer' }} title="Reject">
+                          <XCircle size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '680px' }}>
@@ -213,6 +207,21 @@ const PurchaseRequests = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="purchase-requests" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

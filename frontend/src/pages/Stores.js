@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Stores = ({ user, onLogout }) => {
+const Stores = ({ user, onLogout, isSubComponent }) => {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -47,71 +47,65 @@ const Stores = ({ user, onLogout }) => {
     } catch { toast.error('Failed to delete store'); }
   };
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="stores" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title" data-testid="stores-title">Store Management</h1>
-              <p className="page-subtitle">Manage your organization's stores and warehouses</p>
-            </div>
-            <button onClick={() => setShowModal(true)} data-testid="add-store-btn" className="btn-dark-primary">
-              <Plus size={18} /> Add Store
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading stores…</div>
-          ) : stores.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No stores found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first store</button>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-              {stores.map(store => (
-                <div key={store.id} data-testid={`store-card-${store.id}`}
-                  className="dark-card fade-in"
-                  style={{ padding: '20px', transition: 'all 0.25s ease', cursor: 'default' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>{store.name}</h3>
-                      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: 0 }}>{store.location}</p>
-                    </div>
-                    <button onClick={() => handleDelete(store.id)} data-testid={`delete-store-${store.id}`}
-                      style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {store.manager && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Manager:</span>
-                        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>{store.manager}</span>
-                      </div>
-                    )}
-                    {store.contact && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Contact:</span>
-                        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>{store.contact}</span>
-                      </div>
-                    )}
-                    <div style={{ marginTop: '8px' }}>
-                      <span className={store.status === 'active' ? 'badge-green' : 'badge-amber'}>{store.status}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" data-testid="stores-title">Store Management</h1>
+          <p className="page-subtitle">Manage your organization's stores and warehouses</p>
         </div>
+        <button onClick={() => setShowModal(true)} data-testid="add-store-btn" className="btn-dark-primary">
+          <Plus size={18} /> Add Store
+        </button>
       </div>
 
+      {loading ? (
+        <div className="dark-loading">Loading stores…</div>
+      ) : stores.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No stores found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first store</button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+          {stores.map(store => (
+            <div key={store.id} data-testid={`store-card-${store.id}`}
+              className="dark-card fade-in"
+              style={{ padding: '20px', transition: 'all 0.25s ease', cursor: 'default' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>{store.name}</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: 0 }}>{store.location}</p>
+                </div>
+                <button onClick={() => handleDelete(store.id)} data-testid={`delete-store-${store.id}`}
+                  style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {store.manager && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Manager:</span>
+                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>{store.manager}</span>
+                  </div>
+                )}
+                {store.contact && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Contact:</span>
+                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>{store.contact}</span>
+                  </div>
+                )}
+                <div style={{ marginTop: '8px' }}>
+                  <span className={store.status === 'active' ? 'badge-green' : 'badge-amber'}>{store.status}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay" style={{ zIndex: 9999 }}>
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
@@ -148,6 +142,21 @@ const Stores = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="stores" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

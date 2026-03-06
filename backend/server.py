@@ -275,6 +275,8 @@ class OfferLetterCreate(BaseModel):
     is_metro: str
     pf_applied: str
     pf_cap: str
+    esi_applied: str
+    esi_state: str
     insurance_co: bool
     insurance_emp: bool
     food_allowance: bool

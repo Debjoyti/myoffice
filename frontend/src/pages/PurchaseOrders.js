@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const PurchaseOrders = ({ user, onLogout }) => {
+const PurchaseOrders = ({ user, onLogout, isSubComponent }) => {
   const [orders, setOrders] = useState([]);
   const [stores, setStores] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -50,52 +50,46 @@ const PurchaseOrders = ({ user, onLogout }) => {
 
   const getStoreName = (id) => stores.find(s => s.id === id)?.name || 'Unknown';
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="purchase-orders" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title">Purchase Orders</h1>
-              <p className="page-subtitle">Create and manage purchase orders from approved requests</p>
-            </div>
-            <button onClick={() => setShowModal(true)} className="btn-dark-primary">
-              <Plus size={18} /> Create PO
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading purchase orders…</div>
-          ) : orders.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No purchase orders found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase order</button>
-            </div>
-          ) : (
-            <div className="dark-table-wrap fade-in">
-              <table>
-                <thead>
-                  <tr><th>PO ID</th><th>Store</th><th>Supplier</th><th>Amount</th><th>Delivery Date</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                  {orders.map(order => (
-                    <tr key={order.id}>
-                      <td style={{ fontFamily: 'monospace', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{order.id.slice(0, 8)}</td>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(order.store_id)}</td>
-                      <td>{order.supplier_name}</td>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>₹{order.total_amount.toLocaleString('en-IN')}</td>
-                      <td>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('en-IN') : '—'}</td>
-                      <td><span className="badge-amber" style={{ textTransform: 'capitalize' }}>{order.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Purchase Orders</h1>
+          <p className="page-subtitle">Create and manage purchase orders from approved requests</p>
         </div>
+        <button onClick={() => setShowModal(true)} className="btn-dark-primary">
+          <Plus size={18} /> Create PO
+        </button>
       </div>
 
+      {loading ? (
+        <div className="dark-loading">Loading purchase orders…</div>
+      ) : orders.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No purchase orders found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase order</button>
+        </div>
+      ) : (
+        <div className="dark-table-wrap fade-in">
+          <table>
+            <thead>
+              <tr><th>PO ID</th><th>Store</th><th>Supplier</th><th>Amount</th><th>Delivery Date</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {orders.map(order => (
+                <tr key={order.id}>
+                  <td style={{ fontFamily: 'monospace', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{order.id.slice(0, 8)}</td>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(order.store_id)}</td>
+                  <td>{order.supplier_name}</td>
+                  <td style={{ color: '#fff', fontWeight: 600 }}>₹{order.total_amount.toLocaleString('en-IN')}</td>
+                  <td>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('en-IN') : '—'}</td>
+                  <td><span className="badge-amber" style={{ textTransform: 'capitalize' }}>{order.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
@@ -148,6 +142,21 @@ const PurchaseOrders = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="purchase-orders" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

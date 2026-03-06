@@ -22,6 +22,8 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
         workState: 'Maharashtra',
         incomeTax: 'No',
         gratuity: 'Yes',
+        esi: 'Yes',
+        esiState: 'Maharashtra',
 
         // Step 3: Personal
         companyName: 'BizOps Technologies Private Limited',
@@ -77,7 +79,11 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
 
         // Estimated Gross for ESI
         const estimatedGrossYearly = basic + da + hra + foodAll;
-        const isEsiApplicable = (estimatedGrossYearly / 12) <= 21000;
+        let isEsiApplicable = formData.esi === 'Yes' && ((estimatedGrossYearly / 12) <= 21000);
+
+        if (formData.esiState === 'Non-Implemented Area') {
+            isEsiApplicable = false;
+        }
 
         const esiEmployer = isEsiApplicable ? estimatedGrossYearly * 0.0325 : 0;
         const esiEmployee = isEsiApplicable ? estimatedGrossYearly * 0.0075 : 0;
@@ -158,6 +164,8 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                 is_metro: formData.isMetro,
                 pf_applied: formData.pf,
                 pf_cap: formData.pfCap,
+                esi_applied: formData.esi,
+                esi_state: formData.esiState,
                 insurance_co: formData.coInsurance,
                 insurance_emp: formData.empInsurance,
                 food_allowance: formData.foodAllowance,
@@ -244,6 +252,26 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                             <option value="No">No (Full Basic)</option>
                                         </select>
                                     </div>
+                                    <div>
+                                        <label className="dark-label">Employee State Insurance (ESI)</label>
+                                        <select className="dark-input" value={formData.esi} onChange={e => setFormData({ ...formData, esi: e.target.value })}>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+                                    {formData.esi === 'Yes' && (
+                                        <div>
+                                            <label className="dark-label">ESI State/Region</label>
+                                            <select className="dark-input" value={formData.esiState} onChange={e => setFormData({ ...formData, esiState: e.target.value })}>
+                                                <option value="Maharashtra">Maharashtra (Fully Implemented)</option>
+                                                <option value="Delhi">Delhi (Fully Implemented)</option>
+                                                <option value="Karnataka">Karnataka (Fully Implemented)</option>
+                                                <option value="Tamil Nadu">Tamil Nadu (Fully Implemented)</option>
+                                                <option value="Telangana">Telangana (Fully Implemented)</option>
+                                                <option value="Non-Implemented Area">Non-Implemented Area (0%)</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
