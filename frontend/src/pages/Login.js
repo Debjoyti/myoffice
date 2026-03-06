@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
+const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -19,7 +19,11 @@ const Login = ({ onLogin }) => {
       toast.success(isRegister ? 'Account created successfully!' : 'Welcome back!');
       onLogin(response.data.user, response.data.access_token);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Authentication failed. Please try again.');
+      if (!BACKEND_URL) {
+        toast.error('Backend URL is not configured. Set REACT_APP_BACKEND_URL in Vercel project environment variables.');
+      } else {
+        toast.error(error.response?.data?.detail || 'Authentication failed. Please try again.');
+      }
     }
     setLoading(false);
   };
