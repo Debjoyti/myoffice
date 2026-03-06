@@ -11,9 +11,8 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm' },
     { id: 'expenses', label: 'Expenses', icon: TrendingUp, path: '/expenses' },
     { id: 'business-orders', label: 'Business Orders', icon: Package, path: '/business-orders' },
-    { id: 'offer-letters', label: 'Offer Letters', icon: FileText, path: '/offer-letters' },
+    { id: 'hrms', label: 'HRMS', icon: FileText, path: '/hrms' },
     { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team' },
-    { id: 'hr-config', label: 'HR Config', icon: Settings, path: '/hr-config' },
   ];
 
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : 'U';

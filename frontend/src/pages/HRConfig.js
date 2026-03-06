@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const HRConfig = ({ user, onLogout }) => {
+const HRConfig = ({ user, onLogout, isSubComponent }) => {
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -50,62 +50,56 @@ const HRConfig = ({ user, onLogout }) => {
     } catch { toast.error('Failed to delete HR field'); }
   };
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="hr-config" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
-          <div className="page-header">
-            <div>
-              <h1 className="page-title">HR Configuration</h1>
-              <p className="page-subtitle">Customize HR fields for employees, leaves, and more</p>
-            </div>
-            <button onClick={() => setShowModal(true)} className="btn-dark-primary">
-              <Plus size={18} /> Add Field
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="dark-loading">Loading HR fields…</div>
-          ) : fields.length === 0 ? (
-            <div className="dark-empty">
-              <p style={{ marginBottom: '12px' }}>No custom HR fields found</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first custom field</button>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
-              {fields.map(field => (
-                <div key={field.id} className="dark-card fade-in" style={{ padding: '20px', transition: 'all 0.25s ease' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.25)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>{field.field_name}</h3>
-                      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: 0, textTransform: 'capitalize' }}>{field.field_type}</p>
-                    </div>
-                    <button onClick={() => handleDelete(field.id)}
-                      style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Applies to:</span>
-                      <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', textTransform: 'capitalize' }}>{field.applies_to}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Required:</span>
-                      <span className={field.is_required ? 'badge-green' : 'badge-amber'} style={{ fontSize: '11px' }}>{field.is_required ? 'Yes' : 'No'}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+  const content = (
+    <>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">HR Configuration</h1>
+          <p className="page-subtitle">Customize HR fields for employees, leaves, and more</p>
         </div>
+        <button onClick={() => setShowModal(true)} className="btn-dark-primary">
+          <Plus size={18} /> Add Field
+        </button>
       </div>
 
+      {loading ? (
+        <div className="dark-loading">Loading HR fields…</div>
+      ) : fields.length === 0 ? (
+        <div className="dark-empty">
+          <p style={{ marginBottom: '12px' }}>No custom HR fields found</p>
+          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first custom field</button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+          {fields.map(field => (
+            <div key={field.id} className="dark-card fade-in" style={{ padding: '20px', transition: 'all 0.25s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 4px' }}>{field.field_name}</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: 0, textTransform: 'capitalize' }}>{field.field_type}</p>
+                </div>
+                <button onClick={() => handleDelete(field.id)}
+                  style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Applies to:</span>
+                  <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', textTransform: 'capitalize' }}>{field.applies_to}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 600 }}>Required:</span>
+                  <span className={field.is_required ? 'badge-green' : 'badge-amber'} style={{ fontSize: '11px' }}>{field.is_required ? 'Yes' : 'No'}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {showModal && (
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
@@ -158,6 +152,21 @@ const HRConfig = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) {
+    return content;
+  }
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="hr-config" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };

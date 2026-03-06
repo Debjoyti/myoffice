@@ -8,9 +8,8 @@ import Projects from './pages/Projects';
 import CRM from './pages/CRM';
 import Expenses from './pages/Expenses';
 import BusinessOrders from './pages/BusinessOrders';
-import HRConfig from './pages/HRConfig';
+import HRMS from './pages/HRMS';
 import TeamMembers from './pages/TeamMembers';
-import OfferLetters from './pages/OfferLetters';
 import SaasAdmin from './pages/SaasAdmin';
 import '@/App.css';
 
@@ -86,9 +85,8 @@ function App() {
         <Route path="/crm" element={user && !needsOnboarding ? <CRM user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/expenses" element={user && !needsOnboarding ? <Expenses user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/business-orders" element={user && !needsOnboarding ? <BusinessOrders user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/hrms" element={user && !needsOnboarding ? <HRMS user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/offer-letters" element={user && !needsOnboarding ? <OfferLetters user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/hr-config" element={user && !needsOnboarding ? <HRConfig user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/saas-admin" element={user && user.role === 'superadmin' ? <SaasAdmin user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
