@@ -21,7 +21,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-let db;
+app.get('/', (_, res) => res.json({ message: 'MyOffice API', health: '/api/health' }));
 
 const authMiddleware = async (req, res, next) => {
   const auth = req.headers.authorization;
