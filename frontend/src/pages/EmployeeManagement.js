@@ -26,7 +26,10 @@ const EmployeeManagement = ({ user, onLogout }) => {
             <div className="page-content">
                 <div style={{ padding: '0 32px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
                     <div style={{ padding: '24px 0 16px', display: 'flex', flexDirection: 'column' }}>
-                        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 6px', color: '#fff' }}>Employee Management</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff' }}>Employee Management</h1>
+                          <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>PA30</span>
+                        </div>
                         <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>Manage employees, attendance, and leave records in one place</p>
                     </div>
                     <div style={{ display: 'flex', gap: '20px' }}>

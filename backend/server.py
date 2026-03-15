@@ -300,6 +300,11 @@ class DashboardStats(BaseModel):
     total_expenses: float
     pending_purchase_requests: int
     total_stores: int
+    total_customers: int
+    total_invoices: int
+    total_tickets: int
+    total_vendors: int
+    total_timesheet_hours: float
 
 class Store(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -378,6 +383,201 @@ class HRFieldCreate(BaseModel):
     options: Optional[List[str]] = None
     applies_to: str
 
+class Customer(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    contact_person: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    organization_id: str
+    created_at: str
+
+class CustomerCreate(BaseModel):
+    name: str
+    contact_person: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+class Invoice(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    invoice_number: str
+    customer_id: str
+    deal_id: Optional[str] = None
+    items: List[dict]
+    total_amount: float
+    status: str = "draft"
+    due_date: str
+    organization_id: str
+    created_at: str
+
+class InvoiceCreate(BaseModel):
+    customer_id: str
+    deal_id: Optional[str] = None
+    items: List[dict]
+    total_amount: float
+    due_date: str
+
+class Timesheet(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    project_id: str
+    task_id: str
+    hours: float
+    date: str
+    description: Optional[str] = None
+    status: str = "submitted"
+    organization_id: str
+    created_at: str
+
+class TimesheetCreate(BaseModel):
+    project_id: str
+    task_id: str
+    hours: float
+    date: str
+    description: Optional[str] = None
+
+class Ticket(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    subject: str
+    description: str
+    priority: str = "medium"
+    status: str = "open"
+    assigned_to: Optional[str] = None
+    contact_email: EmailStr
+    organization_id: str
+    created_at: str
+
+class TicketCreate(BaseModel):
+    subject: str
+    description: str
+    priority: str = "medium"
+    contact_email: EmailStr
+
+class Vendor(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    category: Optional[str] = None
+    organization_id: str
+    created_at: str
+
+class VendorCreate(BaseModel):
+    name: str
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    category: Optional[str] = None
+
+class Asset(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    type: str # Laptop, Furniture, etc.
+    serial_number: Optional[str] = None
+    assigned_to: Optional[str] = None
+    status: str = "available"
+    purchase_date: Optional[str] = None
+    value: float = 0.0
+    organization_id: str
+    created_at: str
+
+class AssetCreate(BaseModel):
+    name: str
+    type: str
+    serial_number: Optional[str] = None
+    assigned_to: Optional[str] = None
+    purchase_date: Optional[str] = None
+    value: float = 0.0
+
+class Announcement(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    content: str
+    author_id: str
+    author_name: str
+    priority: str = "normal" # normal, high, urgent
+    organization_id: str
+    created_at: str
+
+class AnnouncementCreate(BaseModel):
+    title: str
+    content: str
+    priority: str = "normal"
+
+class JobPosting(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    department: str
+    location: str
+    type: str # Full-time, Remote, etc.
+    description: str
+    status: str = "open"
+    organization_id: str
+    created_at: str
+
+class JobPostingCreate(BaseModel):
+    title: str
+    department: str
+    location: str
+    type: str
+    description: str
+
+class Candidate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    job_id: str
+    name: str
+    email: EmailStr
+    resume_url: Optional[str] = None
+    status: str = "applied" # applied, screening, interview, offered, rejected
+    organization_id: str
+    created_at: str
+
+class CandidateCreate(BaseModel):
+    job_id: str
+    name: str
+    email: EmailStr
+    resume_url: Optional[str] = None
+
+class KnowledgeBaseArticle(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    title: str
+    content: str
+    category: str
+    author_name: str
+    organization_id: str
+    created_at: str
+
+class AuditLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    user_email: str
+    action: str
+    module: str
+    details: str
+    organization_id: str
+    created_at: str
+
+class BusinessInsight(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    type: str # 'warning', 'opportunity', 'kpi'
+    title: str
+    message: str
+    impact: str # 'high', 'medium', 'low'
+    organization_id: str
+    created_at: str
+
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserRegister):
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
@@ -445,6 +645,14 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     expenses = await db.expenses.find({}, {"_id": 0, "amount": 1}).to_list(1000)
     total_expenses = sum(exp.get("amount", 0) for exp in expenses)
     
+    total_customers = await db.customers.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+    total_tickets = await db.tickets.count_documents({})
+    total_vendors = await db.vendors.count_documents({})
+    
+    timesheets = await db.timesheets.find({}, {"_id": 0, "hours": 1}).to_list(1000)
+    total_timesheet_hours = sum(ts.get("hours", 0) for ts in timesheets)
+
     return {
         "total_employees": total_employees,
         "active_employees": active_employees,
@@ -453,7 +661,12 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "total_leads": total_leads,
         "total_expenses": total_expenses,
         "pending_purchase_requests": pending_purchase_requests,
-        "total_stores": total_stores
+        "total_stores": total_stores,
+        "total_customers": total_customers,
+        "total_invoices": total_invoices,
+        "total_tickets": total_tickets,
+        "total_vendors": total_vendors,
+        "total_timesheet_hours": total_timesheet_hours
     }
 
 @api_router.post("/employees", response_model=Employee)
@@ -1150,6 +1363,207 @@ async def delete_offer_letter(offer_id: str, current_user: dict = Depends(get_cu
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Offer letter not found")
     return {"message": "Offer letter deleted"}
+
+# --- Zoho Inspired Routes ---
+
+# Customers (Zoho CRM/Books)
+@api_router.post("/customers", response_model=Customer)
+async def create_customer(data: CustomerCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"CUST-{str(uuid.uuid4())[:8].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.customers.insert_one(doc)
+    return doc
+
+@api_router.get("/customers", response_model=List[Customer])
+async def get_customers(current_user: dict = Depends(get_current_user)):
+    return await db.customers.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+
+# Invoices (Zoho Books)
+@api_router.post("/invoices", response_model=Invoice)
+async def create_invoice(data: InvoiceCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["invoice_number"] = f"INV-{datetime.now().year}-{str(uuid.uuid4())[:4].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["status"] = "draft"
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.invoices.insert_one(doc)
+    return doc
+
+@api_router.get("/invoices", response_model=List[Invoice])
+async def get_invoices(current_user: dict = Depends(get_current_user)):
+    return await db.invoices.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+
+# Timesheets (Zoho Projects/People)
+@api_router.post("/timesheets", response_model=Timesheet)
+async def create_timesheet(data: TimesheetCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["employee_id"] = current_user.get("id") # current logged in user as the submitter
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["status"] = "submitted"
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.timesheets.insert_one(doc)
+    return doc
+
+@api_router.get("/timesheets", response_model=List[Timesheet])
+async def get_timesheets(current_user: dict = Depends(get_current_user)):
+    query = {"organization_id": current_user.get("organization_id")}
+    # Employees see their own, admins see all
+    if current_user.get("role") != "admin":
+        query["employee_id"] = current_user.get("id")
+    return await db.timesheets.find(query, {"_id": 0}).to_list(1000)
+
+# Tickets (Zoho Desk)
+@api_router.post("/tickets", response_model=Ticket)
+async def create_ticket(data: TicketCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"TKT-{str(uuid.uuid4())[:6].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["status"] = "open"
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.tickets.insert_one(doc)
+    return doc
+
+@api_router.get("/tickets", response_model=List[Ticket])
+async def get_tickets(current_user: dict = Depends(get_current_user)):
+    return await db.tickets.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+
+# Vendors (Zoho Books/Inventory)
+@api_router.post("/vendors", response_model=Vendor)
+async def create_vendor(data: VendorCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"VND-{str(uuid.uuid4())[:8].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.vendors.insert_one(doc)
+    return doc
+
+@api_router.get("/vendors", response_model=List[Vendor])
+async def get_vendors(current_user: dict = Depends(get_current_user)):
+    return await db.vendors.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+
+# Assets (Office Management)
+@api_router.post("/assets", response_model=Asset)
+async def create_asset(data: AssetCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"AST-{str(uuid.uuid4())[:8].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.assets.insert_one(doc)
+    return doc
+
+@api_router.get("/assets", response_model=List[Asset])
+async def get_assets(current_user: dict = Depends(get_current_user)):
+    return await db.assets.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+
+# Announcements (Internal Feed)
+@api_router.post("/announcements", response_model=Announcement)
+async def create_announcement(data: AnnouncementCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["author_id"] = current_user["id"]
+    doc["author_name"] = current_user["name"]
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.announcements.insert_one(doc)
+    return doc
+
+@api_router.get("/announcements", response_model=List[Announcement])
+async def get_announcements(current_user: dict = Depends(get_current_user)):
+    return await db.announcements.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+# Recruitment (ATS)
+@api_router.post("/jobs", response_model=JobPosting)
+async def create_job(data: JobPostingCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"JOB-{str(uuid.uuid4())[:6].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["status"] = "open"
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.jobs.insert_one(doc)
+    return doc
+
+@api_router.get("/jobs", response_model=List[JobPosting])
+async def get_jobs(current_user: dict = Depends(get_current_user)):
+    return await db.jobs.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(500)
+
+@api_router.post("/candidates", response_model=Candidate)
+async def create_candidate(data: CandidateCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.candidates.insert_one(doc)
+    return doc
+
+@api_router.get("/candidates", response_model=List[Candidate])
+async def get_candidates(job_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query = {"organization_id": current_user.get("organization_id")}
+    if job_id:
+        query["job_id"] = job_id
+    return await db.candidates.find(query, {"_id": 0}).to_list(1000)
+
+# Knowledge Base (PM Strategy: Onboarding & Standardization)
+@api_router.post("/kb", response_model=KnowledgeBaseArticle)
+async def create_kb_article(data: dict, current_user: dict = Depends(get_current_user)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "title": data.get("title"),
+        "content": data.get("content"),
+        "category": data.get("category", "General"),
+        "author_name": current_user["name"],
+        "organization_id": current_user["organization_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.kb.insert_one(doc)
+    return doc
+
+@api_router.get("/kb", response_model=List[KnowledgeBaseArticle])
+async def get_kb_articles(category: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query = {"organization_id": current_user["organization_id"]}
+    if category:
+        query["category"] = category
+    return await db.kb.find(query, {"_id": 0}).to_list(1000)
+
+# Audit logs (Enterprise Transparency)
+@api_router.get("/audit", response_model=List[AuditLog])
+async def get_audit_logs(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return await db.audit_logs.find({"organization_id": current_user["organization_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+# Dashboard AI Insights (The 'Killer Feature' for a Top ERP)
+@api_router.get("/insights", response_model=List[BusinessInsight])
+async def get_insights(current_user: dict = Depends(get_current_user)):
+    # In a real app, this would be computed by a background AI worker
+    # Here we mock insights based on current organization state
+    stats = await db.dashboard_stats.find_one({"id": "latest_mock"}) # placeholder
+    
+    # Static but highly contextual 'AI-Mock' insights
+    mock_insights = [
+        {
+            "id": "1",
+            "type": "opportunity",
+            "title": "Unrealized Revenue",
+            "message": "You have ₹2.4M in pending invoices over 30 days. Recommend automated follow-ups.",
+            "impact": "high",
+            "organization_id": current_user["organization_id"],
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": "2",
+            "type": "warning",
+            "title": "Resource Strain",
+            "message": "Project X has consumed 85% of its allocated billable hours. Re-estimation required.",
+            "impact": "medium",
+            "organization_id": current_user["organization_id"],
+            "created_at": datetime.now().isoformat()
+        }
+    ]
+    return mock_insights
 
 app.include_router(api_router)
 

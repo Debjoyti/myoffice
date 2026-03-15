@@ -11,6 +11,15 @@ import BusinessOrders from './pages/BusinessOrders';
 import HRMS from './pages/HRMS';
 import TeamMembers from './pages/TeamMembers';
 import SaasAdmin from './pages/SaasAdmin';
+import Finance from './pages/Finance';
+import Timesheets from './pages/Timesheets';
+import SupportDesk from './pages/SupportDesk';
+import OfficeFeed from './pages/OfficeFeed';
+import AssetManagement from './pages/AssetManagement';
+import Recruitment from './pages/Recruitment';
+import Settings from './pages/Settings';
+import KnowledgeBase from './pages/KnowledgeBase';
+import AuditLogs from './pages/AuditLogs';
 import '@/App.css';
 
 function App() {
@@ -88,6 +97,15 @@ function App() {
         <Route path="/hrms" element={user && !needsOnboarding ? <HRMS user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/saas-admin" element={user && user.role === 'superadmin' ? <SaasAdmin user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
+        <Route path="/finance" element={user && !needsOnboarding ? <Finance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/timesheets" element={user && !needsOnboarding ? <Timesheets user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/support-desk" element={user && !needsOnboarding ? <SupportDesk user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/feed" element={user && !needsOnboarding ? <OfficeFeed user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/assets" element={user && !needsOnboarding ? <AssetManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/recruitment" element={user && !needsOnboarding ? <Recruitment user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/kb" element={user && !needsOnboarding ? <KnowledgeBase user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );

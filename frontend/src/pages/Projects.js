@@ -84,7 +84,10 @@ const Projects = ({ user, onLogout }) => {
         <div className="page-inner">
           <div className="page-header">
             <div>
-              <h1 className="page-title" data-testid="projects-title">Projects &amp; Tasks</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <h1 className="page-title" data-testid="projects-title">Projects &amp; Tasks</h1>
+                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>CJ20N</span>
+              </div>
               <p className="page-subtitle">Manage projects and track tasks</p>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
