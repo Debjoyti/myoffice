@@ -21,8 +21,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-let db;
-
 const authMiddleware = async (req, res, next) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {
@@ -117,9 +115,21 @@ app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
     ]);
     const expenses = await db.collection('expenses').find(org, { projection: { amount: 1 } }).toArray();
     const total_expenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+
+    const [total_customers, total_invoices, total_tickets, total_vendors] = await Promise.all([
+      db.collection('customers').countDocuments(org),
+      db.collection('invoices').countDocuments(org),
+      db.collection('tickets').countDocuments(org),
+      db.collection('vendors').countDocuments(org),
+    ]);
+
+    const timesheets = await db.collection('timesheets').find(org, { projection: { hours: 1 } }).toArray();
+    const total_timesheet_hours = timesheets.reduce((s, t) => s + (t.hours || 0), 0);
+
     res.json({
       total_employees, active_employees, total_projects, pending_leaves,
       total_leads, total_expenses, pending_purchase_requests, total_stores,
+      total_customers, total_invoices, total_tickets, total_vendors, total_timesheet_hours
     });
   } catch (e) {
     res.status(500).json({ detail: e.message });
@@ -524,6 +534,173 @@ app.put('/api/saas/clients/:id/limits', authMiddleware, async (req, res) => {
   if (max_projects != null) limits.max_projects = max_projects;
   await db.collection('users').updateOne({ id: req.params.id }, { $set: { subscription_limits: limits } });
   res.json({ message: 'Limits updated', limits });
+});
+
+// Finance (Customers & Invoices)
+app.post('/api/customers', authMiddleware, async (req, res) => {
+  const doc = { ...req.body, id: uuidv4(), organization_id: req.user.organization_id, created_at: new Date().toISOString() };
+  await db.collection('customers').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/customers', authMiddleware, async (req, res) => {
+  const list = await db.collection('customers').find(orgFilter(req.user)).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+app.post('/api/invoices', authMiddleware, async (req, res) => {
+  const doc = { 
+    ...req.body, 
+    id: uuidv4(), 
+    invoice_number: `INV-${new Date().getFullYear()}-${uuidv4().slice(0, 4).toUpperCase()}`,
+    organization_id: req.user.organization_id, 
+    status: 'draft',
+    created_at: new Date().toISOString() 
+  };
+  await db.collection('invoices').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/invoices', authMiddleware, async (req, res) => {
+  const list = await db.collection('invoices').find(orgFilter(req.user)).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+
+// Timesheets
+app.post('/api/timesheets', authMiddleware, async (req, res) => {
+  const doc = { 
+    ...req.body, 
+    id: uuidv4(), 
+    employee_id: req.user.id,
+    organization_id: req.user.organization_id, 
+    status: 'submitted',
+    created_at: new Date().toISOString() 
+  };
+  await db.collection('timesheets').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/timesheets', authMiddleware, async (req, res) => {
+  const query = orgFilter(req.user);
+  if (req.user.role !== 'admin') query.employee_id = req.user.id;
+  const list = await db.collection('timesheets').find(query).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+
+// Support Desk (Tickets)
+app.post('/api/tickets', authMiddleware, async (req, res) => {
+  const doc = { 
+    ...req.body, 
+    id: `TKT-${uuidv4().slice(0, 6).toUpperCase()}`,
+    organization_id: req.user.organization_id, 
+    status: 'open',
+    created_at: new Date().toISOString() 
+  };
+  await db.collection('tickets').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/tickets', authMiddleware, async (req, res) => {
+  const list = await db.collection('tickets').find(orgFilter(req.user)).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+
+// Office Feed (Announcements)
+app.post('/api/announcements', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ detail: 'Only admins can post announcements' });
+  const doc = { ...req.body, id: uuidv4(), organization_id: req.user.organization_id, created_at: new Date().toISOString() };
+  await db.collection('announcements').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/announcements', authMiddleware, async (req, res) => {
+  const list = await db.collection('announcements').find(orgFilter(req.user)).project({ _id: 0 }).sort({ created_at: -1 }).toArray();
+  res.json(list);
+});
+
+// Assets
+app.post('/api/assets', authMiddleware, async (req, res) => {
+  const doc = { ...req.body, id: `AST-${uuidv4().slice(0, 8).toUpperCase()}`, organization_id: req.user.organization_id, created_at: new Date().toISOString() };
+  await db.collection('assets').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/assets', authMiddleware, async (req, res) => {
+  const list = await db.collection('assets').find(orgFilter(req.user)).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+
+// Recruitment
+app.post('/api/job-postings', authMiddleware, async (req, res) => {
+  const doc = { ...req.body, id: uuidv4(), organization_id: req.user.organization_id, status: 'open', created_at: new Date().toISOString() };
+  await db.collection('job_postings').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/job-postings', authMiddleware, async (req, res) => {
+  const list = await db.collection('job_postings').find(orgFilter(req.user)).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+app.post('/api/candidates', authMiddleware, async (req, res) => {
+  const doc = { ...req.body, id: uuidv4(), organization_id: req.user.organization_id, status: 'applied', created_at: new Date().toISOString() };
+  await db.collection('candidates').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/candidates', authMiddleware, async (req, res) => {
+  const query = orgFilter(req.user);
+  if (req.query.job_id) query.job_id = req.query.job_id;
+  const list = await db.collection('candidates').find(query).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+
+// Knowledge Base
+app.post('/api/kb', authMiddleware, async (req, res) => {
+  const doc = { 
+    ...req.body, 
+    id: uuidv4(), 
+    author_name: req.user.name,
+    organization_id: req.user.organization_id, 
+    created_at: new Date().toISOString() 
+  };
+  await db.collection('kb').insertOne(doc);
+  res.json(doc);
+});
+app.get('/api/kb', authMiddleware, async (req, res) => {
+  const query = orgFilter(req.user);
+  if (req.query.category) query.category = req.query.category;
+  const list = await db.collection('kb').find(query).project({ _id: 0 }).toArray();
+  res.json(list);
+});
+
+// Audit Logs
+app.get('/api/audit', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+    return res.status(403).json({ detail: 'Not authorized' });
+  }
+  const list = await db.collection('audit_logs')
+    .find(orgFilter(req.user))
+    .project({ _id: 0 })
+    .sort({ created_at: -1 })
+    .limit(100)
+    .toArray();
+  res.json(list);
+});
+
+// AI Insights
+app.get('/api/insights', authMiddleware, async (req, res) => {
+  const mock_insights = [
+    {
+      id: "1",
+      type: "opportunity",
+      title: "Unrealized Revenue",
+      message: "You have ₹2.4M in pending invoices over 30 days. Recommend automated follow-ups.",
+      impact: "high",
+      organization_id: req.user.organization_id,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "2",
+      type: "warning",
+      title: "Resource Strain",
+      message: "Project X has consumed 85% of its allocated billable hours. Re-estimation required.",
+      impact: "medium",
+      organization_id: req.user.organization_id,
+      created_at: new Date().toISOString()
+    }
+  ];
+  res.json(mock_insights);
 });
 
 async function start() {
