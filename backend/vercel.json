@@ -1,5 +1,4 @@
 {
-  "installCommand": "pip install -r requirements.txt",
   "builds": [
     {
       "src": "server.py",
@@ -9,7 +8,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "server.py"
+      "dest": "/server.py"
     }
   ]
 }
