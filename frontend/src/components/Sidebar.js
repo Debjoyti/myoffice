@@ -41,7 +41,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     { id: 'recruitment', label: 'Recruitment (ATS)', icon: Briefcase, path: '/recruitment', tcode: 'PB10' },
     { id: 'kb', label: 'Knowledge Base', icon: Book, path: '/kb', tcode: 'DB02' },
     { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20' },
-    { id: 'travel-tracker', label: 'Travel Tracker', icon: MapPin, path: '/travel-tracker', tcode: 'TRV1' },
+    // { id: 'travel-tracker', label: 'Travel Tracker', icon: MapPin, path: '/travel-tracker', tcode: 'TRV1' },
     { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO' },
   ].filter(item => {
     // Superadmin sees everything

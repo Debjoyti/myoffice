@@ -21,7 +21,7 @@ import Settings from './pages/Settings';
 import KnowledgeBase from './pages/KnowledgeBase';
 import AuditLogs from './pages/AuditLogs';
 import Subscription from './pages/Subscription';
-import TravelTracker from './pages/TravelTracker';
+// import TravelTracker from './pages/TravelTracker';
 import '@/App.css';
 
 function App() {
@@ -109,7 +109,7 @@ function App() {
         <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
-        <Route path="/travel-tracker" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        {/* <Route path="/travel-tracker" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} /> */}
       </Routes>
     </BrowserRouter>
   );
