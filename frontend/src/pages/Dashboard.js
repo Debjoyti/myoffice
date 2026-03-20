@@ -47,25 +47,45 @@ const Dashboard = ({ user, onLogout }) => {
     return 'Good evening';
   };
 
+  const getDaysRemaining = (dateString) => {
+    if (!dateString) return null;
+    const end = new Date(dateString);
+    const today = new Date();
+    const diff = end - today;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const daysRemaining = user?.subscription_end_date ? getDaysRemaining(user.subscription_end_date) : null;
+  const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0;
+  const isExpired = daysRemaining !== null && daysRemaining <= 0;
+
   const statCards = [
-    { title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', trend: '+12%' },
-    { title: 'Active Projects', value: stats?.total_projects ?? '—', icon: Briefcase, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', trend: '+3' },
-    { title: 'Pending Leaves', value: stats?.pending_leaves ?? '—', icon: Calendar, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    { title: 'CRM Leads', value: stats?.total_leads ?? '—', icon: TrendingUp, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', trend: '+18%' },
-    { title: 'Invoices', value: stats?.total_invoices ?? '—', icon: Receipt, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    { title: 'Support Tickets', value: stats?.total_tickets ?? '—', icon: MessageSquare, color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-    { title: 'Total Expenses', value: `₹${((stats?.total_expenses || 0) / 100000).toFixed(1)}L`, icon: DollarSign, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-    { title: 'Billable Hours', value: `${stats?.total_timesheet_hours ?? 0}h`, icon: Clock, color: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
-  ];
+    { id: 'employees', title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', trend: '+12%' },
+    { id: 'projects', title: 'Active Projects', value: stats?.total_projects ?? '—', icon: Briefcase, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', trend: '+3' },
+    { id: 'leaves', title: 'Pending Leaves', value: stats?.pending_leaves ?? '—', icon: Calendar, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    { id: 'crm', title: 'CRM Leads', value: stats?.total_leads ?? '—', icon: TrendingUp, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', trend: '+18%' },
+    { id: 'finance', title: 'Invoices', value: stats?.total_invoices ?? '—', icon: Receipt, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    { id: 'support', title: 'Support Tickets', value: stats?.total_tickets ?? '—', icon: MessageSquare, color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+    { id: 'finance', title: 'Total Expenses', value: `₹${((stats?.total_expenses || 0) / 100000).toFixed(1)}L`, icon: DollarSign, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+    { id: 'projects', title: 'Billable Hours', value: `${stats?.total_timesheet_hours ?? 0}h`, icon: Clock, color: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
+  ].filter(card => {
+    if (user?.role === 'superadmin') return true;
+    if (!user?.enabled_services) return true;
+    return user.enabled_services.includes(card.id);
+  });
 
   const quickActions = [
-    { label: 'Create Invoice', sublabel: 'VF01 • Finance', href: '/finance', emoji: '🧾', color: '#ec4899' },
-    { label: 'Log Time', sublabel: 'CAT2 • Timesheets', href: '/timesheets', emoji: '⏱️', color: '#38bdf8' },
-    { label: 'Raise Ticket', sublabel: 'SO11 • Support', href: '/support-desk', emoji: '🆘', color: '#f87171' },
-    { label: 'Add Employee', sublabel: 'PA40 • HRMS', href: '/employees', emoji: '👤', color: '#6366f1' },
-    { label: 'Create Project', sublabel: 'CJ20N • Projects', href: '/projects', emoji: '📋', color: '#8b5cf6' },
-    { label: 'New Asset', sublabel: 'AA01 • Fixed Assets', href: '/assets', emoji: '📦', color: '#10b981' },
-  ];
+    { id: 'finance', label: 'Create Invoice', sublabel: 'VF01 • Finance', href: '/finance', emoji: '🧾', color: '#ec4899' },
+    { id: 'projects', label: 'Log Time', sublabel: 'CAT2 • Timesheets', href: '/timesheets', emoji: '⏱️', color: '#38bdf8' },
+    { id: 'support', label: 'Raise Ticket', sublabel: 'SO11 • Support', href: '/support-desk', emoji: '🆘', color: '#f87171' },
+    { id: 'employees', label: 'Add Employee', sublabel: 'PA40 • HRMS', href: '/employees', emoji: '👤', color: '#6366f1' },
+    { id: 'projects', label: 'Create Project', sublabel: 'CJ20N • Projects', href: '/projects', emoji: '📋', color: '#8b5cf6' },
+    { id: 'assets', label: 'New Asset', sublabel: 'AA01 • Fixed Assets', href: '/assets', emoji: '📦', color: '#10b981' },
+  ].filter(action => {
+    if (user?.role === 'superadmin') return true;
+    if (!user?.enabled_services) return true;
+    return user.enabled_services.includes(action.id);
+  });
 
   return (
     <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a' }}>
@@ -73,6 +93,46 @@ const Dashboard = ({ user, onLogout }) => {
       
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+
+          {/* Subscription Alert */}
+          {(isExpiringSoon || isExpired) && (
+            <div style={{ 
+              background: isExpired ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+              border: `1px solid ${isExpired ? '#ef4444' : '#f59e0b'}`,
+              borderRadius: '12px',
+              padding: '16px 24px',
+              marginBottom: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px' }}>{isExpired ? '⚠️' : '⏳'}</span>
+                <div>
+                  <p style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                    {isExpired ? 'Subscription Expired' : 'Subscription Ending Soon'}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: 0 }}>
+                    {isExpired 
+                      ? 'Your access to premium services has ended. Please renew to continue using the platform.' 
+                      : `Your subscription expires in ${daysRemaining} days. Renew now to avoid service interruption.`}
+                  </p>
+                </div>
+              </div>
+              <a href="/subscription" style={{ 
+                background: isExpired ? '#ef4444' : '#f59e0b', 
+                color: '#fff', 
+                textDecoration: 'none', 
+                padding: '8px 20px', 
+                borderRadius: '8px', 
+                fontWeight: 700, 
+                fontSize: '13px' 
+              }}>
+                {isExpired ? 'Renew Plan' : 'Extend Now'}
+              </a>
+            </div>
+          )}
           
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>

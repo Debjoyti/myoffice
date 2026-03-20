@@ -75,6 +75,8 @@ class User(BaseModel):
     email_verified: bool = False
     subscription_status: str = "trial"
     subscription_limits: Optional[dict] = None
+    enabled_services: Optional[List[str]] = None
+    subscription_end_date: Optional[str] = None
     created_at: str
 
 class Token(BaseModel):
@@ -626,11 +628,25 @@ async def login(user_data: UserLogin):
     
     access_token = create_access_token(data={"sub": user["id"]})
     user.pop("password")
+    
+    # If employee, fetch org admin's services
+    if user.get("role") == "employee" and user.get("organization_id"):
+        admin = await db.users.find_one({"organization_id": user["organization_id"], "role": "admin"}, {"_id": 0, "enabled_services": 1, "subscription_end_date": 1})
+        if admin:
+            user["enabled_services"] = admin.get("enabled_services")
+            user["subscription_end_date"] = admin.get("subscription_end_date")
+            
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: dict = Depends(get_current_user)):
-    return current_user
+    user = current_user.copy()
+    if user.get("role") == "employee" and user.get("organization_id"):
+        admin = await db.users.find_one({"organization_id": user["organization_id"], "role": "admin"}, {"_id": 0, "enabled_services": 1, "subscription_end_date": 1})
+        if admin:
+            user["enabled_services"] = admin.get("enabled_services")
+            user["subscription_end_date"] = admin.get("subscription_end_date")
+    return user
 
 @api_router.get("/dashboard/stats", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
@@ -1220,12 +1236,25 @@ async def get_subscription_plans():
 
 @api_router.get("/subscriptions/current")
 async def get_current_subscription(current_user: dict = Depends(get_current_user)):
-    subscription = await db.subscriptions.find_one(
-        {"user_id": current_user["id"], "status": "active"},
-        {"_id": 0},
-        sort=[("created_at", -1)]
-    )
-    return subscription if subscription else None
+    # For company admin, they are the source of truth
+    if current_user.get("role") == "admin":
+        return {
+            "status": current_user.get("subscription_status"),
+            "end_date": current_user.get("subscription_end_date"),
+            "limits": current_user.get("subscription_limits"),
+            "enabled_services": current_user.get("enabled_services")
+        }
+    # For employee, take from admin
+    if current_user.get("role") == "employee" and current_user.get("organization_id"):
+        admin = await db.users.find_one({"organization_id": current_user["organization_id"], "role": "admin"})
+        if admin:
+            return {
+                "status": admin.get("subscription_status"),
+                "end_date": admin.get("subscription_end_date"),
+                "limits": admin.get("subscription_limits"),
+                "enabled_services": admin.get("enabled_services")
+            }
+    return None
 
 @api_router.post("/analytics/track")
 async def track_analytics(analytics_data: AnalyticsCreate, current_user: dict = Depends(get_current_user)):
@@ -1265,6 +1294,8 @@ async def get_onboarding_funnel(current_user: dict = Depends(get_current_user)):
 class ClientLimitsUpdate(BaseModel):
     max_employees: Optional[int] = None
     max_projects: Optional[int] = None
+    enabled_services: Optional[List[str]] = None
+    subscription_end_date: Optional[str] = None
 
 class ClientCreate(BaseModel):
     name: str
@@ -1272,6 +1303,8 @@ class ClientCreate(BaseModel):
     password: str
     max_employees: Optional[int] = None
     max_projects: Optional[int] = None
+    enabled_services: Optional[List[str]] = None
+    subscription_end_date: Optional[str] = None
 
 @api_router.post("/saas/clients")
 async def create_saas_client(client_data: ClientCreate, current_user: dict = Depends(get_current_user)):
@@ -1301,6 +1334,8 @@ async def create_saas_client(client_data: ClientCreate, current_user: dict = Dep
         "email_verified": True,
         "subscription_status": "active",
         "subscription_limits": limits,
+        "enabled_services": client_data.enabled_services or [],
+        "subscription_end_date": client_data.subscription_end_date,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
@@ -1339,8 +1374,14 @@ async def update_client_limits(client_id: str, limits: ClientLimitsUpdate, curre
     if limits.max_projects is not None:
         new_limits["max_projects"] = limits.max_projects
         
-    await db.users.update_one({"id": client_id}, {"$set": {"subscription_limits": new_limits}})
-    return {"message": "Limits updated", "limits": new_limits}
+    update_data = {"subscription_limits": new_limits}
+    if limits.enabled_services is not None:
+        update_data["enabled_services"] = limits.enabled_services
+    if limits.subscription_end_date is not None:
+        update_data["subscription_end_date"] = limits.subscription_end_date
+
+    await db.users.update_one({"id": client_id}, {"$set": update_data})
+    return {"message": "Client settings updated", "limits": new_limits, "enabled_services": limits.enabled_services}
 
 @api_router.post("/offer-letters", response_model=OfferLetter)
 async def create_offer_letter(offer_data: OfferLetterCreate, current_user: dict = Depends(get_current_user)):
@@ -1564,6 +1605,101 @@ async def get_insights(current_user: dict = Depends(get_current_user)):
         }
     ]
     return mock_insights
+
+# ============================================================
+#  TRAVEL TRACKER MODULE
+# ============================================================
+
+class TripCreate(BaseModel):
+    title: Optional[str] = "My Trip"
+
+class LocationPost(BaseModel):
+    trip_id: str
+    lat: float
+    lng: float
+
+# Start a new trip
+@api_router.post("/trips")
+async def start_trip(data: TripCreate, current_user: dict = Depends(get_current_user)):
+    trip_id = str(uuid.uuid4())
+    trip = {
+        "id": trip_id,
+        "user_id": current_user["id"],
+        "organization_id": current_user.get("organization_id"),
+        "title": data.title,
+        "status": "active",
+        "start_time": datetime.now(timezone.utc).isoformat(),
+        "end_time": None,
+        "locations": []
+    }
+    await db.trips.insert_one(trip)
+    trip.pop("_id", None)
+    return trip
+
+# Post a location update
+@api_router.post("/location")
+async def post_location(data: LocationPost, current_user: dict = Depends(get_current_user)):
+    loc = {
+        "id": str(uuid.uuid4()),
+        "trip_id": data.trip_id,
+        "lat": data.lat,
+        "lng": data.lng,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.locations.insert_one(loc)
+    # Update last known position on trip document
+    await db.trips.update_one(
+        {"id": data.trip_id, "user_id": current_user["id"]},
+        {"$set": {"last_lat": data.lat, "last_lng": data.lng, "last_update": loc["timestamp"]}}
+    )
+    loc.pop("_id", None)
+    return loc
+
+# Get full trip with all locations (polyline data)
+@api_router.get("/trip/{trip_id}")
+async def get_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
+    trip = await db.trips.find_one({"id": trip_id}, {"_id": 0})
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    locations = await db.locations.find(
+        {"trip_id": trip_id}, {"_id": 0}
+    ).sort("timestamp", 1).to_list(10000)
+    trip["locations"] = locations
+    return trip
+
+# Get live (latest) location for a trip
+@api_router.get("/live/{trip_id}")
+async def get_live(trip_id: str):
+    loc = await db.locations.find_one(
+        {"trip_id": trip_id}, {"_id": 0}, sort=[("timestamp", -1)]
+    )
+    if not loc:
+        raise HTTPException(status_code=404, detail="No live data")
+    return loc
+
+# End a trip
+@api_router.post("/trip/{trip_id}/end")
+async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
+    await db.trips.update_one(
+        {"id": trip_id, "user_id": current_user["id"]},
+        {"$set": {"status": "completed", "end_time": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Trip completed"}
+
+# List all trips for current user
+@api_router.get("/trips")
+async def list_trips(current_user: dict = Depends(get_current_user)):
+    trips = await db.trips.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("start_time", -1).to_list(100)
+    return trips
+
+# Delete a trip
+@api_router.delete("/trip/{trip_id}")
+async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
+    await db.trips.delete_one({"id": trip_id, "user_id": current_user["id"]})
+    await db.locations.delete_many({"trip_id": trip_id})
+    return {"message": "Trip deleted"}
 
 app.include_router(api_router)
 

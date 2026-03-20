@@ -1,11 +1,31 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Users, Calendar, Umbrella, FolderKanban, Briefcase, TrendingUp, Package, Building2, FileText, ClipboardList, Settings, UserPlus, Shield, Receipt, Clock, MessageSquare, Rss, Box, Search, Bell, Book, ShieldCheck } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Users, Calendar, Umbrella, FolderKanban, Briefcase, TrendingUp, Package, Building2, FileText, ClipboardList, Settings, UserPlus, Shield, Receipt, Clock, MessageSquare, Rss, Box, Search, Bell, Book, ShieldCheck, MapPin } from 'lucide-react';
 
 const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, setIsSidebarOpen }) => {
+  const serviceMapping = {
+    'employee-management': 'employees',
+    'projects': 'projects',
+    'crm': 'crm',
+    'expenses': 'finance', // Mapping expenses to finance for now
+    'business-orders': 'inventory',
+    'hrms': 'leaves',
+    'team': 'employees',
+    'finance': 'finance',
+    'timesheets': 'projects',
+    'support-desk': 'support',
+    'feed': 'announcements',
+    'assets': 'assets',
+    'recruitment': 'recruitment',
+    'kb': 'kb',
+    'audit': 'audit',
+    'settings': 'dashboard', // Settings usually always available
+  };
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/', tcode: 'S000' },
     ...(user && user.role === 'superadmin' ? [{ id: 'saas-admin', label: 'SAAS Admin', icon: Shield, path: '/saas-admin', tcode: 'SU01' }] : []),
+    ...(user && user.role === 'admin' ? [{ id: 'subscription', label: 'Subscription', icon: Receipt, path: '/subscription', tcode: 'SUB1' }] : []),
     { id: 'employee-management', label: 'Employee Management', icon: Users, path: '/employee-management', tcode: 'PA30' },
     { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects', tcode: 'CJ20N' },
     { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm', tcode: 'VA01' },
@@ -21,8 +41,24 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     { id: 'recruitment', label: 'Recruitment (ATS)', icon: Briefcase, path: '/recruitment', tcode: 'PB10' },
     { id: 'kb', label: 'Knowledge Base', icon: Book, path: '/kb', tcode: 'DB02' },
     { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20' },
+    { id: 'travel-tracker', label: 'Travel Tracker', icon: MapPin, path: '/travel-tracker', tcode: 'TRV1' },
     { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO' },
-  ];
+  ].filter(item => {
+    // Superadmin sees everything
+    if (user?.role === 'superadmin') return true;
+    
+    // Always visible items
+    if (['dashboard', 'subscription', 'settings'].includes(item.id)) return true;
+    
+    // Check if service is enabled for this organization
+    const serviceId = serviceMapping[item.id];
+    if (!serviceId) return true; // Default to visible if no mapping
+    
+    // If enabled_services is not set yet (old data), show all
+    if (!user?.enabled_services) return true;
+    
+    return user.enabled_services.includes(serviceId);
+  });
 
   const [tcodeSearch, setTcodeSearch] = useState('');
   const navigate = useNavigate();
