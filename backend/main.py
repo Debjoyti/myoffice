@@ -1701,8 +1701,35 @@ async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_use
     await db.locations.delete_many({"trip_id": trip_id})
     return {"message": "Trip deleted"}
 
-app.include_router(api_router)
+# ============================================================
+#  ASSET MANAGEMENT MODULE
+# ============================================================
 
+@api_router.post("/assets", response_model=Asset)
+async def create_asset(data: AssetCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["organization_id"] = current_user.get("organization_id", "default")
+    doc["status"] = "in-use" if doc.get("assigned_to") else "available"
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.assets.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.get("/assets", response_model=List[Asset])
+async def list_assets(current_user: dict = Depends(get_current_user)):
+    # Standard employees only see their own assigned assets, admins see all
+    if current_user.get("role") == "admin":
+        query = {"organization_id": current_user.get("organization_id")}
+    else:
+        query = {
+            "organization_id": current_user.get("organization_id"),
+            "assigned_to": current_user.get("email")
+        }
+    assets = await db.assets.find(query, {"_id": 0}).to_list(1000)
+    return assets
+
+app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
