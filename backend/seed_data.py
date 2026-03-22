@@ -6,227 +6,176 @@ from datetime import datetime, timedelta, timezone
 import uuid
 
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-db_name = os.environ.get('DB_NAME', 'test_database')
+db_name = os.environ.get('DB_NAME', 'myoffice')
 
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
-# Indian names
-first_names = [
-    'Rahul', 'Priya', 'Amit', 'Sneha', 'Vijay', 'Anjali', 'Rajesh', 'Pooja', 'Sanjay', 'Neha',
-    'Arun', 'Kavita', 'Suresh', 'Deepika', 'Manoj', 'Ria', 'Karan', 'Simran', 'Ravi', 'Meera',
-    'Vishal', 'Divya', 'Arjun', 'Shreya', 'Nikhil', 'Ananya', 'Rohan', 'Sakshi', 'Akash', 'Nisha',
-    'Gaurav', 'Isha', 'Ashok', 'Ritu', 'Prakash', 'Swati', 'Naveen', 'Tanvi', 'Harsh', 'Kirti',
-    'Varun', 'Megha', 'Sandeep', 'Aditi', 'Mohit', 'Preeti', 'Anil', 'Nikita', 'Pankaj', 'Sonia'
+# Configuration
+ORGANIZATION_ID = "default"
+COUNT_EMPLOYEES = 50
+COUNT_PROJECTS = 8
+COUNT_LEADS = 15
+
+# Mock Data Sets
+FIRST_NAMES = ['Rahul', 'Priya', 'Amit', 'Sneha', 'Vijay', 'Anjali', 'Rajesh', 'Pooja', 'Sanjay', 'Neha']
+LAST_NAMES = ['Sharma', 'Patel', 'Kumar', 'Singh', 'Gupta', 'Verma', 'Reddy', 'Shah', 'Joshi', 'Mehta']
+DEPTS = ['Engineering', 'Product', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations']
+CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Pune']
+PROJECT_NAMES = ['Cloud Migration', 'AI Analytics', 'Mobile App V2', 'Security Audit', 'Market Expansion']
+LEAD_COMPANIES = ['Global Tech', 'NextGen Solutions', 'Prime Dynamics', 'Future Soft', 'Vertex Labs']
+STORE_NAMES = ['Main Central Warehouse', 'Northern Hub', 'Bangalore Storage', 'Mumbai Distribution']
+
+ITEM_CATALOG = [
+    {"name": "HP LaserJet Printer", "unit": "piece", "unit_price": 18500},
+    {"name": "Office Chair (Ergonomic)", "unit": "piece", "unit_price": 7200},
+    {"name": "A4 Paper Ream (500 sheets)", "unit": "ream", "unit_price": 320},
+    {"name": "Laptop Dell Inspiron 15", "unit": "piece", "unit_price": 62000},
+    {"name": "Whiteboard Marker Set", "unit": "set", "unit_price": 180},
+    {"name": "USB Hub 7-Port", "unit": "piece", "unit_price": 950},
+    {"name": "Wireless Mouse + Keyboard Combo", "unit": "set", "unit_price": 1850},
 ]
 
-last_names = [
-    'Sharma', 'Patel', 'Kumar', 'Singh', 'Gupta', 'Verma', 'Reddy', 'Shah', 'Joshi', 'Mehta',
-    'Desai', 'Iyer', 'Nair', 'Pillai', 'Rao', 'Agarwal', 'Bansal', 'Chopra', 'Malhotra', 'Sethi',
-    'Kapoor', 'Bhatia', 'Sinha', 'Mishra', 'Pandey', 'Dubey', 'Saxena', 'Tiwari', 'Chawla', 'Arora',
-    'Khanna', 'Gill', 'Dhawan', 'Bhatt', 'Jain', 'Ahluwalia', 'Kaur', 'Menon', 'Krishnan', 'Das'
-]
-
-departments = [
-    'Engineering', 'Product', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations', 
-    'Customer Support', 'Quality Assurance', 'Business Development'
-]
-
-designations = [
-    'Software Engineer', 'Senior Software Engineer', 'Team Lead', 'Manager', 'Senior Manager',
-    'Product Manager', 'Sales Executive', 'Marketing Specialist', 'HR Executive', 'Accountant',
-    'Operations Executive', 'Support Engineer', 'QA Engineer', 'Business Analyst', 'Data Analyst'
-]
-
-cities = [
-    'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad',
-    'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam',
-    'Pimpri-Chinchwad', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana', 'Agra', 'Nashik', 'Faridabad'
-]
-
-async def generate_employees(count=200):
-    employees = []
-    for i in range(count):
-        first_name = random.choice(first_names)
-        last_name = random.choice(last_names)
-        name = f"{first_name} {last_name}"
-        email = f"{first_name.lower()}.{last_name.lower()}{i}@company.com"
-        
-        # Generate realistic joining dates (past 5 years)
-        days_ago = random.randint(0, 1825)
-        joining_date = (datetime.now(timezone.utc) - timedelta(days=days_ago)).strftime('%Y-%m-%d')
-        
-        employee = {
-            'id': str(uuid.uuid4()),
-            'name': name,
-            'email': email,
-            'phone': f"+91 {random.randint(70000, 99999)} {random.randint(10000, 99999)}",
-            'department': random.choice(departments),
-            'designation': random.choice(designations),
-            'date_of_joining': joining_date,
-            'pan_number': f"{chr(random.randint(65,90))}{chr(random.randint(65,90))}{chr(random.randint(65,90))}{chr(random.randint(65,90))}{chr(random.randint(65,90))}{random.randint(1000,9999)}{chr(random.randint(65,90))}",
-            'aadhaar_number': f"{random.randint(1000,9999)} {random.randint(1000,9999)} {random.randint(1000,9999)}",
-            'address': f"{random.randint(1,999)}, Sector {random.randint(1,50)}, {random.choice(cities)}, {random.choice(['Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'Gujarat'])}",
-            'status': 'active',
-            'created_at': datetime.now(timezone.utc).isoformat()
-        }
-        employees.append(employee)
+async def seed():
+    print("🚀 Starting PERFECT Data Seeding...")
+    # Purge EVERYTHING
+    collections = await db.list_collection_names()
+    for c in collections:
+        if c != "users": # Keep demo users if they exist
+            await db[c].delete_many({})
     
-    await db.employees.insert_many(employees)
-    print(f"✅ Created {count} employees")
-
-async def generate_stores(count=10):
+    # 1. Stores (Crucial for PR/PO etc)
     stores = []
-    store_names = ['Main Warehouse', 'Branch Office', 'Regional Hub', 'Distribution Center', 'Corporate Office']
-    for i in range(count):
-        store = {
-            'id': str(uuid.uuid4()),
-            'name': f"{random.choice(store_names)} {i+1}",
-            'location': f"{random.choice(cities)}, {random.choice(['Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu'])}",
-            'manager': f"{random.choice(first_names)} {random.choice(last_names)}",
-            'contact': f"+91 {random.randint(70000, 99999)} {random.randint(10000, 99999)}",
+    for i, name in enumerate(STORE_NAMES):
+        sid = str(uuid.uuid4())
+        stores.append({
+            'id': sid,
+            'name': name,
+            'location': random.choice(CITIES),
             'status': 'active',
+            'organization_id': ORGANIZATION_ID,
             'created_at': datetime.now(timezone.utc).isoformat()
-        }
-        stores.append(store)
-    
+        })
     await db.stores.insert_many(stores)
-    print(f"✅ Created {count} stores")
+    store_ids = [s['id'] for s in stores]
 
-async def generate_attendance_logs(employee_ids, days=30):
-    attendance_logs = []
-    for emp_id in employee_ids[:50]:  # Create logs for first 50 employees
-        for day in range(days):
-            date = (datetime.now(timezone.utc) - timedelta(days=day)).strftime('%Y-%m-%d')
-            status = random.choices(['present', 'absent', 'half-day'], weights=[85, 10, 5])[0]
-            
-            if status != 'absent':
-                check_in = f"{random.randint(8,10)}:{random.randint(0,59):02d}"
-                check_out = f"{random.randint(17,19)}:{random.randint(0,59):02d}"
-            else:
-                check_in = None
-                check_out = None
-            
-            log = {
+    # 2. Employees
+    employees = []
+    for i in range(COUNT_EMPLOYEES):
+        fn = random.choice(FIRST_NAMES)
+        ln = random.choice(LAST_NAMES)
+        emp = {
+            'id': str(uuid.uuid4()),
+            'name': f"{fn} {ln}",
+            'email': f"{fn.lower()}.{ln.lower()}{i}@company.com",
+            'phone': f"+91 9{random.randint(100000000, 999999999)}",
+            'department': random.choice(DEPTS),
+            'designation': random.choice(['Engineer', 'Manager', 'Lead', 'Executive']),
+            'status': 'active',
+            'organization_id': ORGANIZATION_ID,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+        employees.append(emp)
+    await db.employees.insert_many(employees)
+    emp_ids = [e['id'] for e in employees]
+
+    # 3. Attendance & Leaves
+    attendance = []
+    leaves = []
+    for eid in emp_ids:
+        for d in range(10): # 10 days of history
+            date = (datetime.now(timezone.utc) - timedelta(days=d)).strftime('%Y-%m-%d')
+            attendance.append({
                 'id': str(uuid.uuid4()),
-                'employee_id': emp_id,
-                'date': date,
-                'check_in': check_in,
-                'check_out': check_out,
-                'status': status,
-                'created_at': datetime.now(timezone.utc).isoformat()
-            }
-            attendance_logs.append(log)
-    
-    await db.attendance.insert_many(attendance_logs)
-    print(f"✅ Created {len(attendance_logs)} attendance logs")
+                'employee_id': eid,
+                'date': date, 'status': 'present', 'check_in': '09:00', 'check_out': '18:00',
+                'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            })
+        if random.random() > 0.8:
+            leaves.append({
+                'id': str(uuid.uuid4()), 'employee_id': eid,
+                'employee_name': next(e['name'] for e in employees if e['id'] == eid),
+                'type': 'vacation', 'start_date': '2024-05-01', 'end_date': '2024-05-05',
+                'reason': 'Vacation', 'status': 'pending',
+                'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            })
+    await db.attendance.insert_many(attendance)
+    if leaves: await db.leave_requests.insert_many(leaves)
 
-async def generate_projects(count=20):
-    projects = []
-    project_names = ['Website Redesign', 'Mobile App', 'CRM Implementation', 'Data Migration', 'Cloud Infrastructure', 
-                     'AI Chatbot', 'Analytics Dashboard', 'Payment Gateway', 'Inventory System', 'Customer Portal']
-    
-    for i in range(count):
-        days_ago = random.randint(0, 180)
-        start_date = (datetime.now(timezone.utc) - timedelta(days=days_ago)).strftime('%Y-%m-%d')
-        end_date = (datetime.now(timezone.utc) + timedelta(days=random.randint(30, 180))).strftime('%Y-%m-%d')
-        
-        project = {
-            'id': str(uuid.uuid4()),
-            'name': f"{random.choice(project_names)} {i+1}",
-            'description': f"Strategic project for business growth and digital transformation",
-            'status': random.choice(['active', 'completed']),
-            'start_date': start_date,
-            'end_date': end_date,
+    # 4. Projects, Tasks, Timesheets
+    for i in range(COUNT_PROJECTS):
+        pid = str(uuid.uuid4())
+        await db.projects.insert_one({
+            'id': pid, 'name': f"{random.choice(PROJECT_NAMES)} {i+1}",
+            'status': 'active', 'organization_id': ORGANIZATION_ID,
             'created_at': datetime.now(timezone.utc).isoformat()
-        }
-        projects.append(project)
-    
-    await db.projects.insert_many(projects)
-    print(f"✅ Created {count} projects")
+        })
+        for j in range(5):
+            tid = str(uuid.uuid4())
+            await db.tasks.insert_one({
+                'id': tid, 'project_id': pid, 'title': f"Task {j+1}",
+                'status': random.choice(['todo', 'in-progress', 'done']),
+                'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            })
+            await db.timesheets.insert_one({
+                'id': str(uuid.uuid4()), 'project_id': pid, 'task_id': tid,
+                'employee_id': random.choice(emp_ids), 'hours': float(random.randint(2, 8)),
+                'date': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            })
 
-async def generate_leads(count=50):
-    leads = []
-    companies = ['Tech Corp', 'Global Industries', 'Future Solutions', 'Prime Enterprises', 'Smart Systems']
-    sources = ['Website', 'Referral', 'Cold Call', 'LinkedIn', 'Email Campaign']
-    
-    for i in range(count):
-        lead = {
-            'id': str(uuid.uuid4()),
-            'name': f"{random.choice(companies)} Ltd",
-            'email': f"contact{i}@{random.choice(['tech', 'business', 'sales'])}.com",
-            'phone': f"+91 {random.randint(70000, 99999)} {random.randint(10000, 99999)}",
-            'company': f"{random.choice(companies)} {i+1}",
-            'source': random.choice(sources),
-            'status': random.choice(['new', 'contacted', 'qualified']),
+    # 5. CRM, Finance (Invoices, Expenses)
+    for i in range(COUNT_LEADS):
+        lid = str(uuid.uuid4())
+        await db.leads.insert_one({
+            'id': lid, 'name': f"Lead {i+1}", 'company': random.choice(LEAD_COMPANIES),
+            'status': 'new', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+        })
+    for i in range(15):
+        await db.invoices.insert_one({
+            'id': str(uuid.uuid4()), 'invoice_number': f"INV-24-{i+100}",
+            'total_amount': float(random.randint(10000, 200000)),
+            'status': random.choice(['paid', 'sent', 'overdue']),
+            'due_date': '2024-06-01', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+        })
+    for i in range(20):
+        await db.expenses.insert_one({
+            'id': str(uuid.uuid4()), 'category': 'Travel', 'amount': float(random.randint(500, 5000)),
+            'date': '2024-04-10', 'status': 'approved', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+        })
+
+    # 6. Procurement (PRs, POs)
+    for i in range(5):
+        pr_id = str(uuid.uuid4())
+        await db.purchase_requests.insert_one({
+            'id': pr_id, 'store_id': random.choice(store_ids),
+            'items': [random.choice(ITEM_CATALOG)], 'total_amount': 50000.0,
+            'status': 'approved', 'organization_id': ORGANIZATION_ID,
             'created_at': datetime.now(timezone.utc).isoformat()
-        }
-        leads.append(lead)
-    
-    await db.leads.insert_many(leads)
-    print(f"✅ Created {count} leads")
-
-async def generate_expenses(employee_ids, count=100):
-    expenses = []
-    categories = ['travel', 'meals', 'supplies', 'software', 'marketing', 'other']
-    
-    for i in range(count):
-        days_ago = random.randint(0, 90)
-        expense_date = (datetime.now(timezone.utc) - timedelta(days=days_ago)).strftime('%Y-%m-%d')
-        
-        expense = {
-            'id': str(uuid.uuid4()),
-            'employee_id': random.choice(employee_ids[:50]),
-            'category': random.choice(categories),
-            'amount': float(random.randint(500, 50000)),
-            'description': f"Business expense for {random.choice(categories)}",
-            'date': expense_date,
-            'status': random.choice(['pending', 'approved', 'rejected']),
+        })
+        await db.purchase_orders.insert_one({
+            'id': str(uuid.uuid4()), 'purchase_request_id': pr_id,
+            'store_id': random.choice(store_ids), 'supplier_name': 'Ratan Electronics',
+            'items': [random.choice(ITEM_CATALOG)], 'total_amount': 50000.0,
+            'status': 'pending', 'organization_id': ORGANIZATION_ID,
             'created_at': datetime.now(timezone.utc).isoformat()
-        }
-        expenses.append(expense)
-    
-    await db.expenses.insert_many(expenses)
-    print(f"✅ Created {count} expenses")
+        })
 
-async def clear_existing_data():
-    await db.employees.delete_many({})
-    await db.stores.delete_many({})
-    await db.attendance.delete_many({})
-    await db.projects.delete_many({})
-    await db.leads.delete_many({})
-    await db.expenses.delete_many({})
-    await db.leave_requests.delete_many({})
-    print("🗑️  Cleared existing data")
+    # 7. Inventory, Assets, Tickets, KB, Announcements
+    for i in range(10):
+        await db.inventory.insert_one({
+            'id': str(uuid.uuid4()), 'name': f"Item {i+1}", 'quantity': random.randint(10, 100),
+            'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+        })
+        await db.assets.insert_one({
+            'id': str(uuid.uuid4()), 'name': f"MacBook {i+1}", 'status': 'available',
+            'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+        })
+    await db.tickets.insert_one({'id': str(uuid.uuid4()), 'subject': 'IT Help', 'status': 'open', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()})
+    await db.kb.insert_one({'id': str(uuid.uuid4()), 'title': 'Guidelines', 'content': '...', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()})
+    await db.announcements.insert_one({'id': str(uuid.uuid4()), 'title': 'Happy New Year', 'content': '...', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()})
 
-async def main():
-    print("🚀 Starting data seeding...")
-    
-    # Clear existing data
-    await clear_existing_data()
-    
-    # Generate employees first
-    await generate_employees(200)
-    
-    # Get employee IDs
-    employees = await db.employees.find({}, {'id': 1, '_id': 0}).to_list(200)
-    employee_ids = [emp['id'] for emp in employees]
-    
-    # Generate other data
-    await generate_stores(10)
-    await generate_attendance_logs(employee_ids, 30)
-    await generate_projects(20)
-    await generate_leads(50)
-    await generate_expenses(employee_ids, 100)
-    
-    print("\n✨ Data seeding completed successfully!")
-    print(f"📊 Summary:")
-    print(f"   - 200 Employees")
-    print(f"   - 10 Stores")
-    print(f"   - ~1500 Attendance Logs")
-    print(f"   - 20 Projects")
-    print(f"   - 50 Leads")
-    print(f"   - 100 Expenses")
-    
+    print("\n✨ ALL COLLECTIONS POPULATED! Demo is 100% exploreable.")
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(seed())

@@ -118,6 +118,7 @@ async def seed_purchase_data():
             "status": status,
             "approved_by": random.choice(requestors) if status == "approved" else None,
             "approved_date": (datetime.now(timezone.utc) - timedelta(days=random.randint(0, days_ago))).isoformat() if status == "approved" else None,
+            "organization_id": "default",
             "created_at": created_at,
         }
         await db.purchase_requests.insert_one(pr_doc)
@@ -146,6 +147,7 @@ async def seed_purchase_data():
             "delivery_date": delivery_date,
             "status": status,
             "created_by": random.choice(requestors),
+            "organization_id": "default",
             "created_at": created_at,
         }
         await db.purchase_orders.insert_one(po_doc)

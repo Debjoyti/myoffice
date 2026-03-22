@@ -195,15 +195,15 @@ const Dashboard = ({ user, onLogout }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
                   <div style={{ padding: '12px', background: 'rgba(239,68,68,0.05)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.1)' }}>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0' }}>Burn Rate</p>
-                    <p style={{ color: '#ef4444', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>₹1.2M</p>
+                    <p style={{ color: '#ef4444', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>₹{((stats?.burn_rate || 0) / 1000).toFixed(1)}K</p>
                   </div>
                   <div style={{ padding: '12px', background: 'rgba(16,185,129,0.05)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.1)' }}>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0' }}>Revenue Projection</p>
-                    <p style={{ color: '#10b981', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>₹4.8M</p>
+                    <p style={{ color: '#10b981', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>₹{((stats?.projected_revenue || 0) / 100000).toFixed(1)}L</p>
                   </div>
                   <div style={{ padding: '12px', background: 'rgba(129,140,248,0.05)', borderRadius: '12px', border: '1px solid rgba(129,140,248,0.1)' }}>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0' }}>Hiring Progress</p>
-                    <p style={{ color: '#818cf8', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>65%</p>
+                    <p style={{ color: '#818cf8', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>{Math.round(stats?.hiring_progress || 0)}%</p>
                   </div>
                 </div>
               </div>

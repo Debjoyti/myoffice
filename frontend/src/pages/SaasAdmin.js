@@ -10,6 +10,7 @@ const SaasAdmin = ({ user, onLogout }) => {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isAdding, setIsAdding] = useState(false);
     const [newClient, setNewClient] = useState({ 
         name: '', email: '', password: '', 
         max_employees: '', max_projects: '', 
@@ -70,6 +71,7 @@ const SaasAdmin = ({ user, onLogout }) => {
             if (!newClient.name || !newClient.email || !newClient.password) {
                 return alert('Name, Email, and Password are required');
             }
+            const token = localStorage.getItem('token');
             await axios.post(`${API}/saas/clients`, {
                 ...newClient,
                 max_employees: newClient.max_employees ? parseInt(newClient.max_employees) : null,

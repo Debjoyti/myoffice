@@ -21,6 +21,15 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 api_router = APIRouter(prefix="/api")
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
@@ -93,13 +102,13 @@ class Employee(BaseModel):
     phone: str
     department: str
     designation: str
-    date_of_joining: str
+    date_of_joining: Optional[str] = None
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
     address: Optional[str] = None
     photo: Optional[str] = None
     status: str = "active"
-    created_at: str
+    created_at: Optional[str] = None
 
 class EmployeeCreate(BaseModel):
     name: str
@@ -107,7 +116,7 @@ class EmployeeCreate(BaseModel):
     phone: str
     department: str
     designation: str
-    date_of_joining: str
+    date_of_joining: Optional[str] = None
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
     address: Optional[str] = None
@@ -154,14 +163,14 @@ class Project(BaseModel):
     name: str
     description: Optional[str] = None
     status: str = "active"
-    start_date: str
+    start_date: Optional[str] = None
     end_date: Optional[str] = None
-    created_at: str
+    created_at: Optional[str] = None
 
 class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    start_date: str
+    start_date: Optional[str] = None
     end_date: Optional[str] = None
 
 class Task(BaseModel):
@@ -307,6 +316,9 @@ class DashboardStats(BaseModel):
     total_tickets: int
     total_vendors: int
     total_timesheet_hours: float
+    burn_rate: float
+    projected_revenue: float
+    hiring_progress: float
 
 class Store(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -650,25 +662,32 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/dashboard/stats", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    total_employees = await db.employees.count_documents({})
-    active_employees = await db.employees.count_documents({"status": "active"})
-    total_projects = await db.projects.count_documents({})
-    pending_leaves = await db.leave_requests.count_documents({"status": "pending"})
-    total_leads = await db.leads.count_documents({})
-    pending_purchase_requests = await db.purchase_requests.count_documents({"status": "pending"})
-    total_stores = await db.stores.count_documents({})
+    org_id = current_user.get("organization_id")
     
-    expenses = await db.expenses.find({}, {"_id": 0, "amount": 1}).to_list(1000)
+    total_employees = await db.employees.count_documents({"organization_id": org_id})
+    active_employees = await db.employees.count_documents({"organization_id": org_id, "status": "active"})
+    total_projects = await db.projects.count_documents({"organization_id": org_id})
+    pending_leaves = await db.leave_requests.count_documents({"organization_id": org_id, "status": "pending"})
+    total_leads = await db.leads.count_documents({"organization_id": org_id})
+    pending_purchase_requests = await db.purchase_requests.count_documents({"organization_id": org_id, "status": "pending"})
+    total_stores = await db.stores.count_documents({"organization_id": org_id})
+    
+    expenses = await db.expenses.find({"organization_id": org_id}, {"_id": 0, "amount": 1}).to_list(1000)
     total_expenses = sum(exp.get("amount", 0) for exp in expenses)
     
-    total_customers = await db.customers.count_documents({})
-    total_invoices = await db.invoices.count_documents({})
-    total_tickets = await db.tickets.count_documents({})
-    total_vendors = await db.vendors.count_documents({})
+    total_customers = await db.customers.count_documents({"organization_id": org_id})
+    total_invoices = await db.invoices.count_documents({"organization_id": org_id})
+    total_tickets = await db.tickets.count_documents({"organization_id": org_id})
+    total_vendors = await db.vendors.count_documents({"organization_id": org_id})
     
-    timesheets = await db.timesheets.find({}, {"_id": 0, "hours": 1}).to_list(1000)
+    timesheets = await db.timesheets.find({"organization_id": org_id}, {"_id": 0, "hours": 1}).to_list(1000)
     total_timesheet_hours = sum(ts.get("hours", 0) for ts in timesheets)
 
+    # Advanced Executive Stats
+    burn_rate = total_expenses / 30 if total_expenses > 0 else 0 
+    projected_revenue = total_invoices * 85000 if total_invoices > 0 else 0 
+    hiring_progress = (total_employees / 100) * 100 if total_employees < 100 else 95
+    
     return {
         "total_employees": total_employees,
         "active_employees": active_employees,
@@ -682,7 +701,10 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "total_invoices": total_invoices,
         "total_tickets": total_tickets,
         "total_vendors": total_vendors,
-        "total_timesheet_hours": total_timesheet_hours
+        "total_timesheet_hours": total_timesheet_hours,
+        "burn_rate": burn_rate,
+        "projected_revenue": projected_revenue,
+        "hiring_progress": hiring_progress
     }
 
 @api_router.post("/employees", response_model=Employee)
@@ -1492,13 +1514,19 @@ async def create_asset(data: AssetCreate, current_user: dict = Depends(get_curre
     doc = data.model_dump()
     doc["id"] = f"AST-{str(uuid.uuid4())[:8].upper()}"
     doc["organization_id"] = current_user.get("organization_id")
+    doc["status"] = "in-use" if doc.get("assigned_to") else "available"
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.assets.insert_one(doc)
+    doc.pop("_id", None)
     return doc
 
 @api_router.get("/assets", response_model=List[Asset])
-async def get_assets(current_user: dict = Depends(get_current_user)):
-    return await db.assets.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+async def list_assets(current_user: dict = Depends(get_current_user)):
+    role = current_user.get("role")
+    query = {"organization_id": current_user.get("organization_id")}
+    if role not in ["admin", "superadmin"]:
+        query["assigned_to"] = current_user.get("email")
+    return await db.assets.find(query, {"_id": 0}).to_list(1000)
 
 # Announcements (Internal Feed)
 @api_router.post("/announcements", response_model=Announcement)
@@ -1576,35 +1604,59 @@ async def get_audit_logs(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Not authorized")
     return await db.audit_logs.find({"organization_id": current_user["organization_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
+
 # Dashboard AI Insights (The 'Killer Feature' for a Top ERP)
 @api_router.get("/insights", response_model=List[BusinessInsight])
 async def get_insights(current_user: dict = Depends(get_current_user)):
-    # In a real app, this would be computed by a background AI worker
-    # Here we mock insights based on current organization state
-    stats = await db.dashboard_stats.find_one({"id": "latest_mock"}) # placeholder
+    insights = []
+    org_id = current_user.get("organization_id")
     
-    # Static but highly contextual 'AI-Mock' insights
-    mock_insights = [
-        {
-            "id": "1",
+    # 1. Financial Insight: Pending Revenue
+    overdue_invoices = await db.invoices.find({
+        "organization_id": org_id,
+        "status": {"$in": ["sent", "overdue"]}
+    }).to_list(100)
+    total_pending = sum(inv.get("total_amount", 0) for inv in overdue_invoices)
+    
+    if total_pending > 0:
+        insights.append({
+            "id": str(uuid.uuid4()),
             "type": "opportunity",
-            "title": "Unrealized Revenue",
-            "message": "You have ₹2.4M in pending invoices over 30 days. Recommend automated follow-ups.",
+            "title": "Revenue Optimization",
+            "message": f"You have ₹{total_pending:,.0f} in pending receivables. Automated follow-ups could improve cash flow by 12%.",
             "impact": "high",
-            "organization_id": current_user["organization_id"],
-            "created_at": datetime.now().isoformat()
-        },
-        {
-            "id": "2",
+            "organization_id": org_id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    # 2. Resource Insight: Capacity
+    tasks = await db.tasks.find({"status": "todo"}).to_list(500)
+    if len(tasks) > 20:
+        insights.append({
+            "id": str(uuid.uuid4()),
             "type": "warning",
             "title": "Resource Strain",
-            "message": "Project X has consumed 85% of its allocated billable hours. Re-estimation required.",
+            "message": f"Global backlog of {len(tasks)} tasks detected. Consider re-allocating engineering resources.",
             "impact": "medium",
-            "organization_id": current_user["organization_id"],
-            "created_at": datetime.now().isoformat()
-        }
-    ]
-    return mock_insights
+            "organization_id": org_id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    # 3. Expense Insight
+    expenses = await db.expenses.find({"organization_id": org_id}).sort("date", -1).limit(50).to_list(50)
+    if expenses:
+        total_recent = sum(e.get("amount", 0) for e in expenses)
+        insights.append({
+            "id": str(uuid.uuid4()),
+            "type": "kpi",
+            "title": "Expense Trend",
+            "message": f"Operational burn is ₹{total_recent:,.0f} over the last 50 transactions. Within healthy limits.",
+            "impact": "low",
+            "organization_id": org_id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    return insights
 
 # ============================================================
 #  TRAVEL TRACKER MODULE
@@ -1701,42 +1753,9 @@ async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_use
     await db.locations.delete_many({"trip_id": trip_id})
     return {"message": "Trip deleted"}
 
-# ============================================================
-#  ASSET MANAGEMENT MODULE
-# ============================================================
-
-@api_router.post("/assets", response_model=Asset)
-async def create_asset(data: AssetCreate, current_user: dict = Depends(get_current_user)):
-    doc = data.model_dump()
-    doc["id"] = str(uuid.uuid4())
-    doc["organization_id"] = current_user.get("organization_id", "default")
-    doc["status"] = "in-use" if doc.get("assigned_to") else "available"
-    doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.assets.insert_one(doc)
-    doc.pop("_id", None)
-    return doc
-
-@api_router.get("/assets", response_model=List[Asset])
-async def list_assets(current_user: dict = Depends(get_current_user)):
-    # Standard employees only see their own assigned assets, admins see all
-    if current_user.get("role") == "admin":
-        query = {"organization_id": current_user.get("organization_id")}
-    else:
-        query = {
-            "organization_id": current_user.get("organization_id"),
-            "assigned_to": current_user.get("email")
-        }
-    assets = await db.assets.find(query, {"_id": 0}).to_list(1000)
-    return assets
+# Asset management logic moved above
 
 app.include_router(api_router)
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,7 +1,7 @@
 import asyncio
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 
@@ -17,45 +17,71 @@ def get_password_hash(password: str):
     return pwd_context.hash(password)
 
 async def create_demo_users():
-    # Clear existing users for a clean slate
-    await db.users.delete_many({"email": {"$in": ["superadmin@demo.com", "client@demo.com"]}})
+    # Clear existing demo users
+    emails = ["superadmin@demo.com", "admin@demo.com", "employee@demo.com"]
+    await db.users.delete_many({"email": {"$in": emails}})
     
-    superadmin_id = str(uuid.uuid4())
-    org_id = str(uuid.uuid4())
+    ORGANIZATION_ID = "default"
+    SUB_END = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
     
-    superadmin = {
-        "id": superadmin_id,
+    # All services enabled for demo
+    ENABLED_SERVICES = [
+        'dashboard', 'employees', 'attendance', 'leaves', 'recruitment', 
+        'projects', 'crm', 'inventory', 'finance', 'support', 
+        'assets', 'announcements', 'kb', 'audit', 'insights'
+    ]
+
+    # 1. SuperAdmin (System-wide access)
+    await db.users.insert_one({
+        "id": str(uuid.uuid4()),
         "email": "superadmin@demo.com",
         "password": get_password_hash("password123"),
-        "name": "Demo SuperAdmin",
+        "name": "Super Admin",
         "role": "superadmin",
-        "organization_id": org_id,
+        "organization_id": ORGANIZATION_ID,
         "email_verified": True,
         "subscription_status": "active",
+        "subscription_end_date": SUB_END,
+        "enabled_services": ENABLED_SERVICES,
         "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(superadmin)
-    print("✅ Created Superadmin: superadmin@demo.com / password123")
+    })
     
-    client_id = str(uuid.uuid4())
-    client_org_id = str(uuid.uuid4())
-    client_user = {
-        "id": client_id,
-        "email": "client@demo.com",
+    # 2. Admin (Org-wide access)
+    await db.users.insert_one({
+        "id": str(uuid.uuid4()),
+        "email": "admin@demo.com",
         "password": get_password_hash("password123"),
-        "name": "Demo Client",
+        "name": "Org Admin",
         "role": "admin",
-        "organization_id": client_org_id,
+        "organization_id": ORGANIZATION_ID,
         "email_verified": True,
         "subscription_status": "active",
+        "subscription_end_date": SUB_END,
+        "enabled_services": ENABLED_SERVICES,
         "subscription_limits": {
-            "max_employees": 10,
-            "max_projects": 5
+            "max_employees": 1000,
+            "max_projects": 500
         },
         "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(client_user)
-    print("✅ Created Client User: client@demo.com / password123")
+    })
+
+    # 3. Employee (Restricted access)
+    await db.users.insert_one({
+        "id": str(uuid.uuid4()),
+        "email": "employee@demo.com",
+        "password": get_password_hash("password123"),
+        "name": "John Employee",
+        "role": "employee",
+        "organization_id": ORGANIZATION_ID,
+        "email_verified": True,
+        "subscription_status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    print("✅ Demo users created with organization_id 'default' and password 'password123'")
+    print("   - superadmin@demo.com (SuperAdmin)")
+    print("   - admin@demo.com (Admin)")
+    print("   - employee@demo.com (Employee)")
 
 if __name__ == '__main__':
     asyncio.run(create_demo_users())
