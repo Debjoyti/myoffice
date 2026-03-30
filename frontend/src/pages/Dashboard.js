@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
-import { Users, Briefcase, Calendar, TrendingUp, DollarSign, ShoppingCart, Store, ClipboardList, Receipt, Clock, MessageSquare } from 'lucide-react';
+import { Users, Briefcase, Calendar, TrendingUp, DollarSign, ShoppingCart, Store, ClipboardList, Receipt, Clock, MessageSquare, Building2, Plus } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -9,12 +9,14 @@ const API = `${BACKEND_URL}/api`;
 const Dashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState(null);
   const [insights, setInsights] = useState([]);
+  const [recentCompanies, setRecentCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => { 
     fetchStats(); 
     fetchInsights();
+    fetchRecentCompanies();
   }, []);
 
   const fetchStats = async () => {
@@ -36,6 +38,14 @@ const Dashboard = ({ user, onLogout }) => {
       setInsights(res.data);
     } catch { }
     setLoading(false);
+  };
+
+  const fetchRecentCompanies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/companies`, { headers: { Authorization: `Bearer ${token}` } });
+      setRecentCompanies((res.data || []).slice(0, 4));
+    } catch { }
   };
 
   const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U';
@@ -60,10 +70,10 @@ const Dashboard = ({ user, onLogout }) => {
   const isExpired = daysRemaining !== null && daysRemaining <= 0;
 
   const statCards = [
-    { id: 'employees', title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', trend: '+12%' },
-    { id: 'projects', title: 'Active Projects', value: stats?.total_projects ?? '—', icon: Briefcase, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', trend: '+3' },
+    { id: 'employees', title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+    { id: 'projects', title: 'Active Projects', value: stats?.total_projects ?? '—', icon: Briefcase, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
     { id: 'leaves', title: 'Pending Leaves', value: stats?.pending_leaves ?? '—', icon: Calendar, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    { id: 'crm', title: 'CRM Leads', value: stats?.total_leads ?? '—', icon: TrendingUp, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', trend: '+18%' },
+    { id: 'crm', title: 'CRM Leads', value: stats?.total_leads ?? '—', icon: TrendingUp, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
     { id: 'finance', title: 'Invoices', value: stats?.total_invoices ?? '—', icon: Receipt, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
     { id: 'support', title: 'Support Tickets', value: stats?.total_tickets ?? '—', icon: MessageSquare, color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
     { id: 'finance', title: 'Total Expenses', value: `₹${((stats?.total_expenses || 0) / 100000).toFixed(1)}L`, icon: DollarSign, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
@@ -261,6 +271,70 @@ const Dashboard = ({ user, onLogout }) => {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Company Onboarding Widget */}
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Building2 size={18} color="#818cf8" />
+                </div>
+                <div>
+                  <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: 0 }}>🏢 New Company Onboardings</h2>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Recently registered company profiles</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <a href="/company-onboarding" style={{ fontSize: '12px', color: '#818cf8', textDecoration: 'none', fontWeight: 600 }}>View All →</a>
+                <a href="/company-onboarding" style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', textDecoration: 'none',
+                  borderRadius: '10px', fontWeight: 700, fontSize: '12px'
+                }}>
+                  <Plus size={14} /> Onboard Company
+                </a>
+              </div>
+            </div>
+
+            {recentCompanies.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+                <Building2 size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: '10px' }} />
+                <p style={{ margin: 0, fontSize: '14px' }}>No companies onboarded yet — <a href="/company-onboarding" style={{ color: '#818cf8', textDecoration: 'none' }}>get started</a></p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
+                {recentCompanies.map((c, i) => {
+                  const initials = (c.name || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                  const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981'];
+                  const color = colors[i % colors.length];
+                  return (
+                    <a key={c.id} href="/company-onboarding" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    >
+                      {c.logo ? (
+                        <img src={c.logo} alt="logo" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain', background: 'rgba(255,255,255,0.08)', flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)' }} />
+                      ) : (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${color}22`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color, flexShrink: 0 }}>
+                          {initials}
+                        </div>
+                      )}
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '13px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: '2px 0 0' }}>{c.industry || 'No industry'} {c.city ? `• ${c.city}` : ''}</p>
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                          {c.pan_number && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontFamily: 'monospace' }}>PAN</span>}
+                          {c.gst_number && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.12)', color: '#34d399', fontFamily: 'monospace' }}>GST</span>}
+                          {c.logo && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(245,158,11,0.12)', color: '#fbbf24' }}>🎨 Logo</span>}
+                          {c.stamp && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(236,72,153,0.12)', color: '#f472b6' }}>🔏 Stamp</span>}
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Bottom Row: System Health */}

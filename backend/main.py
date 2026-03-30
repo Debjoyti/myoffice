@@ -81,6 +81,7 @@ class User(BaseModel):
     name: str
     role: str
     organization_id: Optional[str] = None
+    company_id: Optional[str] = None  # assigned company for accountant role
     email_verified: bool = False
     subscription_status: str = "trial"
     subscription_limits: Optional[dict] = None
@@ -274,6 +275,7 @@ class OfferLetter(BaseModel):
     phone: str
     designation: str
     ctc_yearly: float
+    details: dict = {}
     status: str = "Generated"
     created_at: str
 
@@ -916,26 +918,38 @@ async def create_expense(exp_data: ExpenseCreate, current_user: dict = Depends(g
     exp_doc = exp_data.model_dump()
     exp_doc["id"] = str(uuid.uuid4())
     exp_doc["status"] = "pending"
+    exp_doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        exp_doc["company_id"] = get_accountant_company(current_user)
     exp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.expenses.insert_one(exp_doc)
     return exp_doc
 
 @api_router.get("/expenses", response_model=List[Expense])
 async def get_expenses(current_user: dict = Depends(get_current_user)):
-    expenses = await db.expenses.find({}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    expenses = await db.expenses.find(query, {"_id": 0}).to_list(1000)
     return expenses
 
 @api_router.post("/inventory", response_model=InventoryItem)
 async def create_inventory_item(item_data: InventoryItemCreate, current_user: dict = Depends(get_current_user)):
     item_doc = item_data.model_dump()
     item_doc["id"] = str(uuid.uuid4())
+    item_doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        item_doc["company_id"] = get_accountant_company(current_user)
     item_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.inventory.insert_one(item_doc)
     return item_doc
 
 @api_router.get("/inventory", response_model=List[InventoryItem])
 async def get_inventory(current_user: dict = Depends(get_current_user)):
-    items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    items = await db.inventory.find(query, {"_id": 0}).to_list(1000)
     return items
 
 @api_router.post("/stores", response_model=Store)
@@ -1441,7 +1455,10 @@ async def create_customer(data: CustomerCreate, current_user: dict = Depends(get
 
 @api_router.get("/customers", response_model=List[Customer])
 async def get_customers(current_user: dict = Depends(get_current_user)):
-    return await db.customers.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    return await db.customers.find(query, {"_id": 0}).to_list(1000)
 
 # Invoices (Zoho Books)
 @api_router.post("/invoices", response_model=Invoice)
@@ -1450,6 +1467,8 @@ async def create_invoice(data: InvoiceCreate, current_user: dict = Depends(get_c
     doc["id"] = str(uuid.uuid4())
     doc["invoice_number"] = f"INV-{datetime.now().year}-{str(uuid.uuid4())[:4].upper()}"
     doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        doc["company_id"] = get_accountant_company(current_user)
     doc["status"] = "draft"
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.invoices.insert_one(doc)
@@ -1457,7 +1476,10 @@ async def create_invoice(data: InvoiceCreate, current_user: dict = Depends(get_c
 
 @api_router.get("/invoices", response_model=List[Invoice])
 async def get_invoices(current_user: dict = Depends(get_current_user)):
-    return await db.invoices.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    return await db.invoices.find(query, {"_id": 0}).to_list(1000)
 
 # Timesheets (Zoho Projects/People)
 @api_router.post("/timesheets", response_model=Timesheet)
@@ -1500,13 +1522,18 @@ async def create_vendor(data: VendorCreate, current_user: dict = Depends(get_cur
     doc = data.model_dump()
     doc["id"] = f"VND-{str(uuid.uuid4())[:8].upper()}"
     doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        doc["company_id"] = get_accountant_company(current_user)
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.vendors.insert_one(doc)
     return doc
 
 @api_router.get("/vendors", response_model=List[Vendor])
 async def get_vendors(current_user: dict = Depends(get_current_user)):
-    return await db.vendors.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    return await db.vendors.find(query, {"_id": 0}).to_list(1000)
 
 # Assets (Office Management)
 @api_router.post("/assets", response_model=Asset)
@@ -1514,6 +1541,8 @@ async def create_asset(data: AssetCreate, current_user: dict = Depends(get_curre
     doc = data.model_dump()
     doc["id"] = f"AST-{str(uuid.uuid4())[:8].upper()}"
     doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        doc["company_id"] = get_accountant_company(current_user)
     doc["status"] = "in-use" if doc.get("assigned_to") else "available"
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.assets.insert_one(doc)
@@ -1524,7 +1553,9 @@ async def create_asset(data: AssetCreate, current_user: dict = Depends(get_curre
 async def list_assets(current_user: dict = Depends(get_current_user)):
     role = current_user.get("role")
     query = {"organization_id": current_user.get("organization_id")}
-    if role not in ["admin", "superadmin"]:
+    if role == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    elif role not in ["admin", "superadmin", "accountant"]:
         query["assigned_to"] = current_user.get("email")
     return await db.assets.find(query, {"_id": 0}).to_list(1000)
 
@@ -1755,7 +1786,365 @@ async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_use
 
 # Asset management logic moved above
 
+
+# ─────────────────── ACCOUNTANT PORTAL ───────────────────
+
+class AccountCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    company_id: str
+    phone: Optional[str] = None
+    designation: Optional[str] = "Accountant"
+
+class ChartOfAccountCreate(BaseModel):
+    code: str
+    name: str
+    type: str
+    sub_type: Optional[str] = None
+    description: Optional[str] = None
+    opening_balance: float = 0.0
+    is_bank: bool = False
+
+class JournalLine(BaseModel):
+    account_id: str
+    account_name: str
+    debit: float = 0.0
+    credit: float = 0.0
+    description: Optional[str] = None
+
+class JournalEntryCreate(BaseModel):
+    date: str
+    narration: str
+    reference: Optional[str] = None
+    lines: List[JournalLine]
+
+class BankAccountCreate(BaseModel):
+    account_name: str
+    bank_name: str
+    account_number: str
+    ifsc: Optional[str] = None
+    balance: float = 0.0
+
+class GSTReturnCreate(BaseModel):
+    period: str
+    return_type: str
+    taxable_value: float = 0.0
+    igst: float = 0.0
+    cgst: float = 0.0
+    sgst: float = 0.0
+
+def require_accountant(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ("accountant", "admin", "superadmin"):
+        raise HTTPException(status_code=403, detail="Accountant access required")
+    return current_user
+
+def get_accountant_company(current_user: dict) -> str:
+    return current_user.get("company_id") or current_user.get("organization_id", "default")
+
+@api_router.post("/accountants", tags=["accountants"])
+async def create_accountant(data: AccountCreate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ("admin", "superadmin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    existing = await db.users.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user_doc = {
+        "id": str(uuid.uuid4()),
+        "email": data.email,
+        "password": get_password_hash(data.password),
+        "name": data.name,
+        "role": "accountant",
+        "company_id": data.company_id,
+        "organization_id": current_user.get("organization_id", "default"),
+        "phone": data.phone,
+        "designation": data.designation,
+        "email_verified": True,
+        "enabled_services": ["ledger", "journal", "reports", "gst", "bank"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one({k: v for k, v in user_doc.items() if k != "_id"})
+    user_doc.pop("password")
+    return user_doc
+
+@api_router.get("/accountants", tags=["accountants"])
+async def list_accountants(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ("admin", "superadmin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    accts = await db.users.find({"role": "accountant", "organization_id": current_user.get("organization_id")}, {"_id": 0, "password": 0}).to_list(200)
+    return accts
+
+@api_router.delete("/accountants/{accountant_id}", tags=["accountants"])
+async def delete_accountant(accountant_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ("admin", "superadmin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.users.delete_one({"id": accountant_id, "role": "accountant"})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Accountant not found")
+    return {"message": "Accountant deleted"}
+
+@api_router.post("/ledger/accounts", tags=["ledger"])
+async def create_ledger_account(data: ChartOfAccountCreate, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": company_id,
+        "current_balance": data.opening_balance,
+        "currency": "INR",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        **data.model_dump()
+    }
+    await db.chart_of_accounts.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/ledger/accounts", tags=["ledger"])
+async def list_ledger_accounts(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    accounts = await db.chart_of_accounts.find({"company_id": company_id}, {"_id": 0}).sort("code", 1).to_list(500)
+    return accounts
+
+@api_router.put("/ledger/accounts/{account_id}", tags=["ledger"])
+async def update_ledger_account(account_id: str, data: ChartOfAccountCreate, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    await db.chart_of_accounts.update_one({"id": account_id, "company_id": company_id}, {"$set": data.model_dump()})
+    updated = await db.chart_of_accounts.find_one({"id": account_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/ledger/accounts/{account_id}", tags=["ledger"])
+async def delete_ledger_account(account_id: str, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    await db.chart_of_accounts.delete_one({"id": account_id, "company_id": company_id})
+    return {"message": "Account deleted"}
+
+@api_router.post("/ledger/journal", tags=["ledger"])
+async def create_journal_entry(data: JournalEntryCreate, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    total_debit = sum(l.debit for l in data.lines)
+    total_credit = sum(l.credit for l in data.lines)
+    if abs(total_debit - total_credit) > 0.01:
+        raise HTTPException(status_code=400, detail=f"Entry must balance: debits={total_debit:.2f}, credits={total_credit:.2f}")
+    count = await db.journal_entries.count_documents({"company_id": company_id}) + 1
+    entry = {
+        "id": str(uuid.uuid4()),
+        "company_id": company_id,
+        "entry_number": f"JE-{count:05d}",
+        "total_debit": total_debit,
+        "total_credit": total_credit,
+        "status": "posted",
+        "created_by": current_user.get("name", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "date": data.date,
+        "narration": data.narration,
+        "reference": data.reference,
+        "lines": [l.model_dump() for l in data.lines]
+    }
+    await db.journal_entries.insert_one({k: v for k, v in entry.items() if k != "_id"})
+    for line in data.lines:
+        await db.chart_of_accounts.update_one(
+            {"id": line.account_id, "company_id": company_id},
+            {"$inc": {"current_balance": line.debit - line.credit}}
+        )
+    return entry
+
+@api_router.get("/ledger/journal", tags=["ledger"])
+async def list_journal_entries(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    entries = await db.journal_entries.find({"company_id": company_id}, {"_id": 0}).sort("date", -1).to_list(500)
+    return entries
+
+@api_router.delete("/ledger/journal/{entry_id}", tags=["ledger"])
+async def reverse_journal_entry(entry_id: str, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    entry = await db.journal_entries.find_one({"id": entry_id, "company_id": company_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Journal entry not found")
+    await db.journal_entries.update_one({"id": entry_id}, {"$set": {"status": "reversed"}})
+    return {"message": "Entry reversed"}
+
+@api_router.get("/ledger/balance-sheet", tags=["reports"])
+async def get_balance_sheet(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    accounts = await db.chart_of_accounts.find({"company_id": company_id}, {"_id": 0}).to_list(500)
+    result = {"assets": {"current": [], "fixed": [], "total": 0}, "liabilities": {"current": [], "long_term": [], "total": 0}, "equity": {"items": [], "total": 0}}
+    for a in accounts:
+        bal = a.get("current_balance", 0)
+        item = {"name": a["name"], "code": a["code"], "balance": bal}
+        atype = a.get("type", "").lower()
+        sub = a.get("sub_type", "Current").lower()
+        if atype == "asset":
+            result["assets"]["current" if "current" in sub else "fixed"].append(item)
+            result["assets"]["total"] += bal
+        elif atype == "liability":
+            result["liabilities"]["current" if "current" in sub else "long_term"].append(item)
+            result["liabilities"]["total"] += bal
+        elif atype == "equity":
+            result["equity"]["items"].append(item); result["equity"]["total"] += bal
+    return result
+
+@api_router.get("/ledger/pnl", tags=["reports"])
+async def get_pnl(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    accounts = await db.chart_of_accounts.find({"company_id": company_id}, {"_id": 0}).to_list(500)
+    revenue = []; expenses = []; total_revenue = 0; total_expense = 0
+    for a in accounts:
+        bal = abs(a.get("current_balance", 0))
+        item = {"name": a["name"], "code": a["code"], "balance": bal}
+        if a.get("type") == "Revenue":
+            revenue.append(item); total_revenue += bal
+        elif a.get("type") == "Expense":
+            expenses.append(item); total_expense += bal
+    return {"revenue": revenue, "expenses": expenses, "total_revenue": total_revenue, "total_expense": total_expense, "net_profit": total_revenue - total_expense, "gross_margin": ((total_revenue - total_expense) / total_revenue * 100) if total_revenue else 0}
+
+@api_router.get("/ledger/trial-balance", tags=["reports"])
+async def get_trial_balance(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    accounts = await db.chart_of_accounts.find({"company_id": company_id}, {"_id": 0}).sort("code", 1).to_list(500)
+    rows = []; total_debit = 0; total_credit = 0
+    for a in accounts:
+        bal = a.get("current_balance", 0)
+        d = bal if bal > 0 else 0; c = abs(bal) if bal < 0 else 0
+        rows.append({"code": a["code"], "name": a["name"], "type": a.get("type"), "debit": d, "credit": c})
+        total_debit += d; total_credit += c
+    return {"rows": rows, "total_debit": total_debit, "total_credit": total_credit}
+
+@api_router.post("/ledger/gst", tags=["gst"])
+async def create_gst_return(data: GSTReturnCreate, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    doc = {"id": str(uuid.uuid4()), "company_id": company_id, "total_tax": data.igst + data.cgst + data.sgst, "status": "draft", "created_at": datetime.now(timezone.utc).isoformat(), **data.model_dump()}
+    await db.gst_returns.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/ledger/gst", tags=["gst"])
+async def list_gst_returns(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    returns = await db.gst_returns.find({"company_id": company_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return returns
+
+@api_router.put("/ledger/gst/{gst_id}/file", tags=["gst"])
+async def file_gst_return(gst_id: str, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    await db.gst_returns.update_one({"id": gst_id, "company_id": company_id}, {"$set": {"status": "filed", "filed_on": datetime.now(timezone.utc).isoformat()}})
+    return {"message": "GST return filed"}
+
+@api_router.post("/ledger/bank", tags=["bank"])
+async def create_bank_account(data: BankAccountCreate, current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    doc = {"id": str(uuid.uuid4()), "company_id": company_id, "currency": "INR", "created_at": datetime.now(timezone.utc).isoformat(), **data.model_dump()}
+    await db.bank_accounts.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/ledger/bank", tags=["bank"])
+async def list_bank_accounts(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    banks = await db.bank_accounts.find({"company_id": company_id}, {"_id": 0}).to_list(100)
+    return banks
+
+@api_router.get("/ledger/summary", tags=["ledger"])
+async def get_accountant_summary(current_user: dict = Depends(require_accountant)):
+    company_id = get_accountant_company(current_user)
+    accounts = await db.chart_of_accounts.find({"company_id": company_id}, {"_id": 0}).to_list(500)
+    journals = await db.journal_entries.find({"company_id": company_id, "status": "posted"}, {"_id": 0}).to_list(500)
+    banks = await db.bank_accounts.find({"company_id": company_id}, {"_id": 0}).to_list(100)
+    gst_pending = await db.gst_returns.count_documents({"company_id": company_id, "status": "draft"})
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    total_assets = sum(a.get("current_balance", 0) for a in accounts if a.get("type") == "Asset")
+    total_liab = sum(a.get("current_balance", 0) for a in accounts if a.get("type") == "Liability")
+    total_revenue = sum(abs(a.get("current_balance", 0)) for a in accounts if a.get("type") == "Revenue")
+    total_expense = sum(abs(a.get("current_balance", 0)) for a in accounts if a.get("type") == "Expense")
+    return {"company": company, "total_assets": total_assets, "total_liabilities": total_liab, "net_worth": total_assets - total_liab, "total_revenue": total_revenue, "total_expense": total_expense, "net_profit": total_revenue - total_expense, "bank_balance": sum(b.get("balance", 0) for b in banks), "total_accounts": len(accounts), "journal_count": len(journals), "pending_gst": gst_pending, "bank_accounts": len(banks)}
+
+
+
+# ─────────────────── COMPANY ONBOARDING ───────────────────
+
+class CompanyProfile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    organization_id: str
+    name: str
+    legal_name: Optional[str] = None
+    industry: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = "India"
+    pincode: Optional[str] = None
+    pan_number: Optional[str] = None
+    gst_number: Optional[str] = None
+    cin_number: Optional[str] = None
+    logo: Optional[str] = None        # base64 data URI
+    stamp: Optional[str] = None       # base64 data URI
+    status: str = "active"
+    onboarded_by: Optional[str] = None
+    created_at: str
+
+class CompanyProfileCreate(BaseModel):
+    name: str
+    legal_name: Optional[str] = None
+    industry: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = "India"
+    pincode: Optional[str] = None
+    pan_number: Optional[str] = None
+    gst_number: Optional[str] = None
+    cin_number: Optional[str] = None
+    logo: Optional[str] = None
+    stamp: Optional[str] = None
+
+@api_router.post("/companies", response_model=CompanyProfile)
+async def create_company(data: CompanyProfileCreate, current_user: dict = Depends(get_current_user)):
+    company = {
+        "id": str(uuid.uuid4()),
+        "organization_id": current_user.get("organization_id", "default"),
+        "onboarded_by": current_user.get("name", ""),
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        **data.model_dump()
+    }
+    await db.companies.insert_one({k: v for k, v in company.items() if k != "_id"})
+    return CompanyProfile(**company)
+
+@api_router.get("/companies")
+async def list_companies(current_user: dict = Depends(get_current_user)):
+    org = current_user.get("organization_id", "default")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org}
+    companies = await db.companies.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return companies
+
+@api_router.get("/companies/{company_id}", response_model=CompanyProfile)
+async def get_company(company_id: str, current_user: dict = Depends(get_current_user)):
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return CompanyProfile(**company)
+
+@api_router.put("/companies/{company_id}", response_model=CompanyProfile)
+async def update_company(company_id: str, data: CompanyProfileCreate, current_user: dict = Depends(get_current_user)):
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
+    await db.companies.update_one({"id": company_id}, {"$set": update_fields})
+    updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    return CompanyProfile(**updated)
+
+@api_router.delete("/companies/{company_id}")
+async def delete_company(company_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.companies.delete_one({"id": company_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return {"message": "Company deleted successfully"}
+
 app.include_router(api_router)
+
 
 logging.basicConfig(
     level=logging.INFO,

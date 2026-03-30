@@ -133,15 +133,15 @@ async def seed():
         })
     for i in range(15):
         await db.invoices.insert_one({
-            'id': str(uuid.uuid4()), 'invoice_number': f"INV-24-{i+100}",
+            'id': str(uuid.uuid4()), 'invoice_number': f"INV-24-{i+100}", 'customer_id': 'CUST-1', 'items': [],
             'total_amount': float(random.randint(10000, 200000)),
             'status': random.choice(['paid', 'sent', 'overdue']),
-            'due_date': '2024-06-01', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            'due_date': '2024-06-01', 'organization_id': ORGANIZATION_ID, 'company_id': 'demo-comp-1', 'created_at': datetime.now(timezone.utc).isoformat()
         })
     for i in range(20):
         await db.expenses.insert_one({
-            'id': str(uuid.uuid4()), 'category': 'Travel', 'amount': float(random.randint(500, 5000)),
-            'date': '2024-04-10', 'status': 'approved', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            'id': str(uuid.uuid4()), 'employee_id': random.choice(emp_ids) if emp_ids else 'EMP-1', 'category': 'Travel', 'amount': float(random.randint(500, 5000)),
+            'date': '2024-04-10', 'status': 'approved', 'organization_id': ORGANIZATION_ID, 'company_id': 'demo-comp-1', 'created_at': datetime.now(timezone.utc).isoformat()
         })
 
     # 6. Procurement (PRs, POs)
@@ -149,6 +149,7 @@ async def seed():
         pr_id = str(uuid.uuid4())
         await db.purchase_requests.insert_one({
             'id': pr_id, 'store_id': random.choice(store_ids),
+            'requested_by': random.choice(emp_ids) if emp_ids else 'EMP-1',
             'items': [random.choice(ITEM_CATALOG)], 'total_amount': 50000.0,
             'status': 'approved', 'organization_id': ORGANIZATION_ID,
             'created_at': datetime.now(timezone.utc).isoformat()
@@ -157,19 +158,20 @@ async def seed():
             'id': str(uuid.uuid4()), 'purchase_request_id': pr_id,
             'store_id': random.choice(store_ids), 'supplier_name': 'Ratan Electronics',
             'items': [random.choice(ITEM_CATALOG)], 'total_amount': 50000.0,
-            'status': 'pending', 'organization_id': ORGANIZATION_ID,
+            'status': 'pending', 'created_by': random.choice(emp_ids) if emp_ids else 'EMP-1',
+            'organization_id': ORGANIZATION_ID,
             'created_at': datetime.now(timezone.utc).isoformat()
         })
 
     # 7. Inventory, Assets, Tickets, KB, Announcements
     for i in range(10):
         await db.inventory.insert_one({
-            'id': str(uuid.uuid4()), 'name': f"Item {i+1}", 'quantity': random.randint(10, 100),
-            'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            'id': str(uuid.uuid4()), 'name': f"Item {i+1}", 'category': 'Hardware', 'quantity': random.randint(10, 100), 'unit': 'Nos', 'price_per_unit': 1500.0,
+            'organization_id': ORGANIZATION_ID, 'company_id': 'demo-comp-1', 'created_at': datetime.now(timezone.utc).isoformat()
         })
         await db.assets.insert_one({
-            'id': str(uuid.uuid4()), 'name': f"MacBook {i+1}", 'status': 'available',
-            'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()
+            'id': str(uuid.uuid4()), 'name': f"MacBook {i+1}", 'type': 'Laptop', 'status': 'available',
+            'organization_id': ORGANIZATION_ID, 'company_id': 'demo-comp-1', 'created_at': datetime.now(timezone.utc).isoformat()
         })
     await db.tickets.insert_one({'id': str(uuid.uuid4()), 'subject': 'IT Help', 'status': 'open', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()})
     await db.kb.insert_one({'id': str(uuid.uuid4()), 'title': 'Guidelines', 'content': '...', 'organization_id': ORGANIZATION_ID, 'created_at': datetime.now(timezone.utc).isoformat()})

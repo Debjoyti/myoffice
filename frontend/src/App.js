@@ -21,6 +21,8 @@ import Settings from './pages/Settings';
 import KnowledgeBase from './pages/KnowledgeBase';
 import AuditLogs from './pages/AuditLogs';
 import Subscription from './pages/Subscription';
+import CompanyOnboarding from './pages/CompanyOnboarding';
+import AccountantPortal from './pages/AccountantPortal';
 // import TravelTracker from './pages/TravelTracker';
 import '@/App.css';
 
@@ -85,12 +87,15 @@ function App() {
           path="/"
           element={
             user ? (
-              needsOnboarding ? <Navigate to="/onboarding" /> : <Dashboard user={user} onLogout={handleLogout} />
+              needsOnboarding ? <Navigate to="/onboarding" /> 
+              : user.role === 'accountant' ? <AccountantPortal user={user} onLogout={handleLogout} />
+              : <Dashboard user={user} onLogout={handleLogout} />
             ) : (
               <Navigate to="/login" />
             )
           }
         />
+        <Route path="/accountant" element={user && (user.role === 'accountant' || user.role === 'admin' || user.role === 'superadmin') ? <AccountantPortal user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/employee-management" element={user && !needsOnboarding ? <EmployeeManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/projects" element={user && !needsOnboarding ? <Projects user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/crm" element={user && !needsOnboarding ? <CRM user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
@@ -109,6 +114,7 @@ function App() {
         <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
+        <Route path="/company-onboarding" element={user && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         {/* <Route path="/travel-tracker" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} /> */}
       </Routes>
     </BrowserRouter>

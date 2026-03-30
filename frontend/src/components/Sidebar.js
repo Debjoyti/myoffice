@@ -19,46 +19,78 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     'recruitment': 'recruitment',
     'kb': 'kb',
     'audit': 'audit',
+    'company-onboarding': 'dashboard', // Company onboarding always accessible
     'settings': 'dashboard', // Settings usually always available
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/', tcode: 'S000' },
-    ...(user && user.role === 'superadmin' ? [{ id: 'saas-admin', label: 'SAAS Admin', icon: Shield, path: '/saas-admin', tcode: 'SU01' }] : []),
-    ...(user && user.role === 'admin' ? [{ id: 'subscription', label: 'Subscription', icon: Receipt, path: '/subscription', tcode: 'SUB1' }] : []),
-    { id: 'employee-management', label: 'Employee Management', icon: Users, path: '/employee-management', tcode: 'PA30' },
-    { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects', tcode: 'CJ20N' },
-    { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm', tcode: 'VA01' },
-    { id: 'expenses', label: 'Expenses', icon: TrendingUp, path: '/expenses', tcode: 'FB60' },
-    { id: 'business-orders', label: 'Business Orders', icon: Package, path: '/business-orders', tcode: 'ME51N' },
-    { id: 'hrms', label: 'HRMS', icon: FileText, path: '/hrms', tcode: 'PA40' },
-    { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team', tcode: 'SU01' },
-    { id: 'finance', label: 'Finance & Books', icon: Receipt, path: '/finance', tcode: 'VF01' },
-    { id: 'timesheets', label: 'Timesheets', icon: Clock, path: '/timesheets', tcode: 'CAT2' },
-    { id: 'support-desk', label: 'Support Desk', icon: MessageSquare, path: '/support-desk', tcode: 'SO11' },
-    { id: 'feed', label: 'Office Feed', icon: Rss, path: '/feed', tcode: 'ZFEED' },
-    { id: 'assets', label: 'Asset Management', icon: Box, path: '/assets', tcode: 'AA01' },
-    { id: 'recruitment', label: 'Recruitment (ATS)', icon: Briefcase, path: '/recruitment', tcode: 'PB10' },
-    { id: 'kb', label: 'Knowledge Base', icon: Book, path: '/kb', tcode: 'DB02' },
-    { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20' },
-    // { id: 'travel-tracker', label: 'Travel Tracker', icon: MapPin, path: '/travel-tracker', tcode: 'TRV1' },
-    { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO' },
-  ].filter(item => {
-    // Superadmin sees everything
+  const categorizedMenuItems = [
+    {
+      group: null,
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/', tcode: 'S000' },
+      ]
+    },
+    {
+      group: 'Personal & Work',
+      items: [
+        { id: 'feed', label: 'Office Feed', icon: Rss, path: '/feed', tcode: 'ZFEED' },
+        { id: 'timesheets', label: 'Timesheets', icon: Clock, path: '/timesheets', tcode: 'CAT2' },
+        { id: 'support-desk', label: 'Support Desk', icon: MessageSquare, path: '/support-desk', tcode: 'SO11' },
+        { id: 'kb', label: 'Knowledge Base', icon: Book, path: '/kb', tcode: 'DB02' },
+      ]
+    },
+    {
+      group: 'Sales & Projects',
+      items: [
+        { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm', tcode: 'VA01' },
+        { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects', tcode: 'CJ20N' },
+      ]
+    },
+    {
+      group: 'HR & Operations',
+      items: [
+        { id: 'hrms', label: 'HR People Hub', icon: Users, path: '/hrms', tcode: 'PA40' },
+        { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team', tcode: 'SU01' },
+      ]
+    },
+    {
+      group: 'Finance & Assets',
+      items: [
+        { id: 'accountant', label: 'Accountant Portal', icon: ClipboardList, path: '/accountant', tcode: 'FB01' },
+        { id: 'finance', label: 'Finance & Books', icon: Receipt, path: '/finance', tcode: 'VF01' },
+        { id: 'expenses', label: 'Expenses', icon: TrendingUp, path: '/expenses', tcode: 'FB60' },
+        { id: 'business-orders', label: 'Business Orders', icon: Package, path: '/business-orders', tcode: 'ME51N' },
+        { id: 'assets', label: 'Asset Management', icon: Box, path: '/assets', tcode: 'AA01' },
+      ]
+    },
+    {
+      group: 'Administration',
+      items: [
+        ...(user && user.role === 'superadmin' ? [{ id: 'saas-admin', label: 'SAAS Admin', icon: Shield, path: '/saas-admin', tcode: 'SU01' }] : []),
+        ...(user && user.role === 'admin' ? [{ id: 'subscription', label: 'Subscription', icon: Receipt, path: '/subscription', tcode: 'SUB1' }] : []),
+        { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20' },
+        { id: 'company-onboarding', label: 'Company Onboarding', icon: Building2, path: '/company-onboarding', tcode: 'COMP' },
+        { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO' },
+      ]
+    }
+  ];
+
+  const isItemVisible = (item) => {
     if (user?.role === 'superadmin') return true;
-    
-    // Always visible items
     if (['dashboard', 'subscription', 'settings'].includes(item.id)) return true;
-    
-    // Check if service is enabled for this organization
+    if (user?.role === 'accountant' && ['dashboard', 'accountant', 'settings', 'feed'].includes(item.id)) return true;
     const serviceId = serviceMapping[item.id];
-    if (!serviceId) return true; // Default to visible if no mapping
-    
-    // If enabled_services is not set yet (old data), show all
+    if (!serviceId) return true;
     if (!user?.enabled_services) return true;
-    
     return user.enabled_services.includes(serviceId);
-  });
+  };
+
+  const visibleGroups = categorizedMenuItems.map(cat => ({
+    ...cat,
+    items: cat.items.filter(isItemVisible)
+  })).filter(cat => cat.items.length > 0);
+
+  const flatMenuItems = visibleGroups.flatMap(cat => cat.items);
 
   const [tcodeSearch, setTcodeSearch] = useState('');
   const navigate = useNavigate();
@@ -66,7 +98,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
   const handleTcodeSubmit = (e) => {
     e.preventDefault();
     const command = tcodeSearch.trim().toUpperCase();
-    const target = menuItems.find(item => item.tcode === command || item.id === command.toLowerCase());
+    const target = flatMenuItems.find(item => item.tcode === command || item.id === command.toLowerCase());
     if (target) {
       setActivePage(target.id);
       navigate(target.path);
@@ -183,42 +215,65 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
 
         {/* Nav */}
         <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 10px' }}>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activePage === item.id;
-            return (
-              <Link
-                key={item.id}
-                to={item.path}
-                data-testid={`nav-${item.id}`}
-                className={`sidebar-link ${isActive ? 'active' : ''}`}
-                style={{
-                  color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
-                  marginBottom: '2px',
-                  textDecoration: 'none',
-                }}
-                onClick={() => {
-                  setActivePage(item.id);
-                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                }}
-              >
-                <Icon size={16} style={{ color: isActive ? '#818cf8' : 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
-                  <span style={{ 
-                    fontSize: '10px', 
-                    color: isActive ? '#818cf8' : 'rgba(255,255,255,0.2)', 
-                    fontWeight: 700,
-                    background: isActive ? 'rgba(129,140,248,0.15)' : 'transparent',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                  }}>
-                    {item.tcode}
-                  </span>
+          {visibleGroups.map((group, idx) => (
+            <div key={idx} style={{ marginBottom: '16px' }}>
+              {group.group && (
+                <div style={{ 
+                  padding: '8px 12px 4px', 
+                  fontSize: '10px', 
+                  fontWeight: 800, 
+                  color: 'rgba(255,255,255,0.3)', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '1px' 
+                }}>
+                  {group.group}
                 </div>
-              </Link>
-            );
-          })}
+              )}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.path}
+                    data-testid={`nav-${item.id}`}
+                    className={`sidebar-link ${isActive ? 'active' : ''}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '10px 12px',
+                      color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.6)',
+                      background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+                      borderRadius: '8px',
+                      marginBottom: '2px',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; } }}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; } }}
+                    onClick={() => {
+                      setActivePage(item.id);
+                      if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                    }}
+                  >
+                    <Icon size={16} style={{ color: isActive ? '#818cf8' : 'rgba(255,255,255,0.4)', flexShrink: 0 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <span style={{ fontSize: '13px', fontWeight: isActive ? 600 : 500 }}>{item.label}</span>
+                      <span style={{ 
+                        fontSize: '10px', 
+                        color: isActive ? '#818cf8' : 'rgba(255,255,255,0.2)', 
+                        fontWeight: 700,
+                        background: isActive ? 'rgba(129,140,248,0.15)' : 'transparent',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                      }}>
+                        {item.tcode}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}

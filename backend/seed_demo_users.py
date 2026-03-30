@@ -18,7 +18,7 @@ def get_password_hash(password: str):
 
 async def create_demo_users():
     # Clear existing demo users
-    emails = ["superadmin@demo.com", "admin@demo.com", "employee@demo.com"]
+    emails = ["superadmin@demo.com", "admin@demo.com", "employee@demo.com", "accountant@demo.com"]
     await db.users.delete_many({"email": {"$in": emails}})
     
     ORGANIZATION_ID = "default"
@@ -78,10 +78,26 @@ async def create_demo_users():
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
+    # 4. Accountant (Jane)
+    await db.users.insert_one({
+        "id": str(uuid.uuid4()),
+        "email": "accountant@demo.com",
+        "password": get_password_hash("password123"),
+        "name": "Jane Accountant",
+        "role": "accountant",
+        "company_id": "demo-comp-1",
+        "organization_id": ORGANIZATION_ID,
+        "email_verified": True,
+        "subscription_status": "active",
+        "enabled_services": ["ledger", "journal", "reports", "gst", "bank"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
     print("✅ Demo users created with organization_id 'default' and password 'password123'")
     print("   - superadmin@demo.com (SuperAdmin)")
     print("   - admin@demo.com (Admin)")
     print("   - employee@demo.com (Employee)")
+    print("   - accountant@demo.com (Accountant)")
 
 if __name__ == '__main__':
     asyncio.run(create_demo_users())
