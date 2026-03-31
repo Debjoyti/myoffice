@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Menu, X, LayoutDashboard, Users, Calendar, Umbrella, FolderKanban, Briefcase, TrendingUp, Package, Building2, FileText, ClipboardList, Settings, UserPlus, Shield, Receipt, Clock, MessageSquare, Rss, Box, Search, Bell, Book, ShieldCheck, MapPin } from 'lucide-react';
 
 const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, setIsSidebarOpen }) => {
@@ -91,6 +91,33 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
   })).filter(cat => cat.items.length > 0);
 
   const flatMenuItems = visibleGroups.flatMap(cat => cat.items);
+
+  const location = useLocation();
+  // Derive activePage from current URL path
+  const pathToId = {
+    '/': 'dashboard',
+    '/employee-management': 'employee-management',
+    '/projects': 'projects',
+    '/crm': 'crm',
+    '/expenses': 'expenses',
+    '/business-orders': 'business-orders',
+    '/hrms': 'hrms',
+    '/team': 'team',
+    '/saas-admin': 'saas-admin',
+    '/finance': 'finance',
+    '/timesheets': 'timesheets',
+    '/support-desk': 'support-desk',
+    '/feed': 'feed',
+    '/assets': 'assets',
+    '/recruitment': 'recruitment',
+    '/kb': 'kb',
+    '/audit': 'audit',
+    '/settings': 'settings',
+    '/subscription': 'subscription',
+    '/company-onboarding': 'company-onboarding',
+    '/accountant': 'accountant',
+  };
+  const currentActivePage = pathToId[location.pathname] || activePage;
 
   const [tcodeSearch, setTcodeSearch] = useState('');
   const navigate = useNavigate();
@@ -231,7 +258,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
               )}
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = activePage === item.id;
+                const isActive = currentActivePage === item.id;
                 return (
                   <Link
                     key={item.id}

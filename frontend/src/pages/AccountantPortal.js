@@ -236,7 +236,7 @@ export default function AccountantPortal({ user, onLogout }) {
       <div style={{ width: '250px', background: Z.sidebar, borderRight: `1px solid ${Z.sidebarBorder}`, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '24px 20px', borderBottom: `1px solid ${Z.sidebarBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><div style={{ background: Z.primary, padding: '8px', borderRadius: '10px' }}><Calculator size={20} color="#fff" /></div><div><h1 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>BizBooks</h1><p style={{ fontSize: '11px', color: Z.soft, margin: 0, fontWeight: 700 }}>ACCOUNTANT PORTAL</p></div></div>
-          <div style={{ background: '#fff', border: `1px solid ${Z.border}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}><span style={{ fontSize: '13px', fontWeight: 600 }}>{summary?.company?.name || 'My Organization'}</span><ChevronDown size={14} color={Z.soft} /></div>
+          <div style={{ background: '#fff', border: `1px solid ${Z.border}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}><span style={{ fontSize: '13px', fontWeight: 600 }}>{data.summary?.company?.name || 'My Organization'}</span><ChevronDown size={14} color={Z.soft} /></div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
           {navItems.map(n => (

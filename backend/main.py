@@ -475,6 +475,39 @@ class TicketCreate(BaseModel):
     priority: str = "medium"
     contact_email: EmailStr
 
+class POSHComplaint(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    complainant_id: str
+    incident_date: str
+    description: str
+    accused_name: str
+    status: str = "Under Review"  # Under Review, Investigating, Action Taken, Closed
+    organization_id: str
+    created_at: str
+
+class POSHComplaintCreate(BaseModel):
+    incident_date: str
+    description: str
+    accused_name: str
+
+class WFHRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    employee_name: str
+    start_date: str
+    end_date: str
+    reason: str
+    status: str = "pending"  # pending, approved, rejected
+    organization_id: str
+    created_at: str
+
+class WFHRequestCreate(BaseModel):
+    start_date: str
+    end_date: str
+    reason: str
+
 class Vendor(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -833,6 +866,61 @@ class AnalyticsCreate(BaseModel):
     event_data: dict
     page: Optional[str] = None
 
+@api_router.post("/posh-complaints", response_model=POSHComplaint)
+async def create_posh_complaint(complaint_data: POSHComplaintCreate, current_user: dict = Depends(get_current_user)):
+    doc = complaint_data.model_dump()
+    doc["id"] = f"POSH-{str(uuid.uuid4())[:8].upper()}"
+    doc["complainant_id"] = current_user.get("id")
+    doc["status"] = "Under Review"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.posh_complaints.insert_one(doc)
+    return doc
+
+@api_router.get("/posh-complaints", response_model=List[POSHComplaint])
+async def get_posh_complaints(current_user: dict = Depends(get_current_user)):
+    query = {"organization_id": current_user.get("organization_id")}
+    # Employees only see their own complaints, admins see all
+    if current_user.get("role") not in ["admin", "superadmin", "hr"]:
+        query["complainant_id"] = current_user.get("id")
+    complaints = await db.posh_complaints.find(query, {"_id": 0}).to_list(1000)
+    return complaints
+
+@api_router.patch("/posh-complaints/{complaint_id}/status")
+async def update_posh_status(complaint_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin", "hr"]:
+        raise HTTPException(status_code=403, detail="Not authorized to update status")
+    result = await db.posh_complaints.update_one({"id": complaint_id}, {"$set": {"status": status_data.status}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    return {"message": "Status updated"}
+
+@api_router.post("/wfh-requests", response_model=WFHRequest)
+async def create_wfh_request(wfh_data: WFHRequestCreate, current_user: dict = Depends(get_current_user)):
+    doc = wfh_data.model_dump()
+    doc["id"] = f"WFH-{str(uuid.uuid4())[:8].upper()}"
+    doc["employee_id"] = current_user.get("id")
+    doc["employee_name"] = current_user.get("name")
+    doc["status"] = "pending"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.wfh_requests.insert_one(doc)
+    return doc
+
+@api_router.get("/wfh-requests", response_model=List[WFHRequest])
+async def get_wfh_requests(current_user: dict = Depends(get_current_user)):
+    requests = await db.wfh_requests.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+    return requests
+
+@api_router.patch("/wfh-requests/{request_id}/status")
+async def update_wfh_status(request_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    result = await db.wfh_requests.update_one({"id": request_id}, {"$set": {"status": status_data.status}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return {"message": "Status updated"}
+
 @api_router.patch("/leave-requests/{leave_id}/status")
 async def update_leave_status(leave_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
     result = await db.leave_requests.update_one({"id": leave_id}, {"$set": {"status": status_data.status}})
@@ -900,6 +988,13 @@ async def get_leads(current_user: dict = Depends(get_current_user)):
     leads = await db.leads.find({}, {"_id": 0}).to_list(1000)
     return leads
 
+@api_router.patch("/leads/{lead_id}/status")
+async def update_lead_status(lead_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
+    result = await db.leads.update_one({"id": lead_id}, {"$set": {"status": status_data.status}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {"message": "Lead status updated"}
+
 @api_router.post("/deals", response_model=Deal)
 async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_current_user)):
     deal_doc = deal_data.model_dump()
@@ -932,6 +1027,30 @@ async def get_expenses(current_user: dict = Depends(get_current_user)):
         query["company_id"] = get_accountant_company(current_user)
     expenses = await db.expenses.find(query, {"_id": 0}).to_list(1000)
     return expenses
+
+@api_router.patch("/expenses/{expense_id}/approve")
+async def approve_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can approve expenses")
+    result = await db.expenses.update_one(
+        {"id": expense_id},
+        {"$set": {"status": "approved", "approved_by": current_user["id"], "approved_date": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return {"message": "Expense approved"}
+
+@api_router.patch("/expenses/{expense_id}/reject")
+async def reject_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can reject expenses")
+    result = await db.expenses.update_one(
+        {"id": expense_id},
+        {"$set": {"status": "rejected", "approved_by": current_user["id"], "approved_date": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return {"message": "Expense rejected"}
 
 @api_router.post("/inventory", response_model=InventoryItem)
 async def create_inventory_item(item_data: InventoryItemCreate, current_user: dict = Depends(get_current_user)):
@@ -1515,6 +1634,13 @@ async def create_ticket(data: TicketCreate, current_user: dict = Depends(get_cur
 @api_router.get("/tickets", response_model=List[Ticket])
 async def get_tickets(current_user: dict = Depends(get_current_user)):
     return await db.tickets.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+
+@api_router.patch("/tickets/{ticket_id}/status")
+async def update_ticket_status(ticket_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
+    result = await db.tickets.update_one({"id": ticket_id}, {"$set": {"status": status_data.status, "assigned_to": current_user.get("id")}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return {"message": "Ticket status updated"}
 
 # Vendors (Zoho Books/Inventory)
 @api_router.post("/vendors", response_model=Vendor)

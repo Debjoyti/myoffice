@@ -13,6 +13,8 @@ import LeaveManagement from './LeaveManagement';
 import OfferLetters from './OfferLetters';
 import HRConfig from './HRConfig';
 import Recruitment from './Recruitment';
+import POSH from './POSH';
+import WFHRequests from './WFHRequests';
 import Sidebar from '../components/Sidebar';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -24,6 +26,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
     const [employees, setEmployees] = useState([]);
     const [attendance, setAttendance] = useState([]);
     const [leaves, setLeaves] = useState([]);
+    const [wfhRequests, setWfhRequests] = useState([]);
     const [stats, setStats] = useState(null);
 
     const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
@@ -34,22 +37,25 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
 
     const fetchData = async () => {
         try {
-            const [empRes, attRes, leaveRes] = await Promise.all([
+            const [empRes, attRes, leaveRes, wfhRes] = await Promise.all([
                 axios.get(`${API}/employees`, { headers: headers() }).catch(() => ({ data: [] })),
                 axios.get(`${API}/attendance`, { headers: headers() }).catch(() => ({ data: [] })),
-                axios.get(`${API}/leave-management`, { headers: headers() }).catch(() => ({ data: [] }))
+                axios.get(`${API}/leave-management`, { headers: headers() }).catch(() => ({ data: [] })),
+                axios.get(`${API}/wfh-requests`, { headers: headers() }).catch(() => ({ data: [] }))
             ]);
             setEmployees(empRes.data);
             setAttendance(attRes.data);
             setLeaves(leaveRes.data);
+            setWfhRequests(wfhRes.data);
             
             const totalEmp = empRes.data.length;
             const onLeave = leaveRes.data.filter(l => l.status === 'approved' && new Date(l.start_date) <= new Date() && new Date(l.end_date) >= new Date()).length;
             const pendingLeaves = leaveRes.data.filter(l => l.status === 'pending').length;
+            const pendingWfh = wfhRes.data.filter(r => r.status === 'pending').length;
             const presentToday = attRes.data.filter(a => a.date === new Date().toISOString().split('T')[0] && a.status === 'present').length;
             
             setStats({
-                totalEmp, onLeave, pendingLeaves, presentToday,
+                totalEmp, onLeave, pendingLeaves, presentToday, pendingWfh,
                 absentRate: totalEmp > 0 ? ((totalEmp - presentToday - onLeave) / totalEmp * 100).toFixed(1) : 0
             });
         } catch (e) { console.error('Failed to fetch HR data', e); }
@@ -98,9 +104,11 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     <button style={getTabStyle('employees')} onClick={() => setActiveTab('employees')}>Employee Directory</button>
                     <button style={getTabStyle('attendance')} onClick={() => setActiveTab('attendance')}>Attendance</button>
                     <button style={getTabStyle('leave')} onClick={() => setActiveTab('leave')}>Leave Tracker</button>
+                    <button style={getTabStyle('wfh')} onClick={() => setActiveTab('wfh')}>Work From Home</button>
                     <button style={getTabStyle('recruitment')} onClick={() => setActiveTab('recruitment')}>Recruitment (ATS)</button>
                     <button style={getTabStyle('offer-letters')} onClick={() => setActiveTab('offer-letters')}>Offer Letters</button>
                     <button style={getTabStyle('hr-config')} onClick={() => setActiveTab('hr-config')}>Configuration</button>
+                    <button style={getTabStyle('posh')} onClick={() => setActiveTab('posh')}>POSH Compliance</button>
                 </div>
             </div>
 
@@ -115,6 +123,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                                     { label: 'Present Today', val: stats?.presentToday || 0, icon: Clock, bg: 'rgba(16,185,129,0.12)', c: '#34d399' },
                                     { label: 'On Leave', val: stats?.onLeave || 0, icon: Calendar, bg: 'rgba(245,158,11,0.12)', c: '#fbbf24' },
                                     { label: 'Leave Requests', val: stats?.pendingLeaves || 0, icon: FileText, bg: 'rgba(239,68,68,0.12)', c: '#f87171' },
+                                    { label: 'Pending WFH', val: stats?.pendingWfh || 0, icon: Clock, bg: 'rgba(6,182,212,0.12)', c: '#22d3ee' },
                                 ].map((kpi, i) => {
                                     const Icon = kpi.icon;
                                     return (
@@ -205,9 +214,11 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'employees' && <Employees isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'attendance' && <Attendance isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'leave' && <LeaveManagement isSubComponent={true} user={user} onLogout={onLogout} />}
+                    {activeTab === 'wfh' && <WFHRequests isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'recruitment' && <Recruitment isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'offer-letters' && <OfferLetters isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'hr-config' && <HRConfig isSubComponent={true} user={user} onLogout={onLogout} />}
+                    {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}
                 </div>
             </div>
         </>

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Recruitment = ({ user, onLogout }) => {
+const Recruitment = ({ user, onLogout, isSubComponent }) => {
   const [jobs, setJobs] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [activeTab, setActiveTab] = useState('jobs');
@@ -58,11 +58,8 @@ const Recruitment = ({ user, onLogout }) => {
     } catch { toast.error('Failed to add candidate'); }
   };
 
-  return (
-    <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="recruitment" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="page-content">
-        <div className="page-inner">
+  const content = (
+    <>
           <div className="page-header">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
@@ -147,8 +144,6 @@ const Recruitment = ({ user, onLogout }) => {
               </table>
             </div>
           )}
-        </div>
-      </div>
 
       {/* New Job Modal */}
       {showJobModal && (
@@ -218,6 +213,19 @@ const Recruitment = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isSubComponent) return content;
+
+  return (
+    <div className="page-root">
+      <Sidebar user={user} onLogout={onLogout} activePage="recruitment" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <div className="page-content">
+        <div className="page-inner">
+          {content}
+        </div>
+      </div>
     </div>
   );
 };
