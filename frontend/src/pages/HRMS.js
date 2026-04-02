@@ -15,6 +15,7 @@ import HRConfig from './HRConfig';
 import Recruitment from './Recruitment';
 import POSH from './POSH';
 import WFHRequests from './WFHRequests';
+import Resignations from './Resignations';
 import Sidebar from '../components/Sidebar';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -40,7 +41,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
             const [empRes, attRes, leaveRes, wfhRes] = await Promise.all([
                 axios.get(`${API}/employees`, { headers: headers() }).catch(() => ({ data: [] })),
                 axios.get(`${API}/attendance`, { headers: headers() }).catch(() => ({ data: [] })),
-                axios.get(`${API}/leave-management`, { headers: headers() }).catch(() => ({ data: [] })),
+                axios.get(`${API}/leave-requests`, { headers: headers() }).catch(() => ({ data: [] })),
                 axios.get(`${API}/wfh-requests`, { headers: headers() }).catch(() => ({ data: [] }))
             ]);
             setEmployees(empRes.data);
@@ -49,10 +50,16 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
             setWfhRequests(wfhRes.data);
             
             const totalEmp = empRes.data.length;
-            const onLeave = leaveRes.data.filter(l => l.status === 'approved' && new Date(l.start_date) <= new Date() && new Date(l.end_date) >= new Date()).length;
+            // Fixed: use correct field names from_date/to_date (not start_date/end_date)
+            const today = new Date().toISOString().split('T')[0];
+            const onLeave = leaveRes.data.filter(l => 
+                l.status === 'approved' && 
+                l.from_date <= today && 
+                l.to_date >= today
+            ).length;
             const pendingLeaves = leaveRes.data.filter(l => l.status === 'pending').length;
             const pendingWfh = wfhRes.data.filter(r => r.status === 'pending').length;
-            const presentToday = attRes.data.filter(a => a.date === new Date().toISOString().split('T')[0] && a.status === 'present').length;
+            const presentToday = attRes.data.filter(a => a.date === today && a.status === 'present').length;
             
             setStats({
                 totalEmp, onLeave, pendingLeaves, presentToday, pendingWfh,
@@ -109,6 +116,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     <button style={getTabStyle('offer-letters')} onClick={() => setActiveTab('offer-letters')}>Offer Letters</button>
                     <button style={getTabStyle('hr-config')} onClick={() => setActiveTab('hr-config')}>Configuration</button>
                     <button style={getTabStyle('posh')} onClick={() => setActiveTab('posh')}>POSH Compliance</button>
+                    <button style={getTabStyle('resignations')} onClick={() => setActiveTab('resignations')}>Exit / Resignations</button>
                 </div>
             </div>
 
@@ -194,8 +202,11 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                                         {leaves.filter(l => l.status === 'pending').slice(0,4).map(l => (
                                             <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px' }}>
                                                 <div>
-                                                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff' }}>{l.employee_name}</p>
-                                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{l.type} ({l.start_date} to {l.end_date})</p>
+                                                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff' }}>
+                                                        {/* Fixed: look up employee name by id instead of non-existent employee_name field */}
+                                                        {employees.find(e => e.id === l.employee_id)?.name || l.employee_id || 'Unknown'}
+                                                    </p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{l.leave_type} ({l.from_date} to {l.to_date})</p>
                                                 </div>
                                                 <span className="badge-red">Review Required</span>
                                             </div>
@@ -219,6 +230,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'offer-letters' && <OfferLetters isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'hr-config' && <HRConfig isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}
+                    {activeTab === 'resignations' && <Resignations isSubComponent={true} user={user} onLogout={onLogout} />}
                 </div>
             </div>
         </>

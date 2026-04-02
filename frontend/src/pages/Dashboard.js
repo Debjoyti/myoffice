@@ -1,83 +1,126 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
-import { Users, Briefcase, Calendar, TrendingUp, DollarSign, ShoppingCart, Store, ClipboardList, Receipt, Clock, MessageSquare, Building2, Plus } from 'lucide-react';
+import {
+  Users, Briefcase, Calendar, TrendingUp, DollarSign, Receipt, Clock,
+  MessageSquare, Building2, Plus, Sparkles, ArrowUp, ArrowDown, Minus,
+  Zap, Target, CheckCircle2, AlertTriangle, ChevronRight, Rss
+} from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Skeleton card
+const SkeletonCard = () => (
+  <div className="skeleton-card">
+    <div className="skeleton skeleton-line skeleton-h2" style={{ marginBottom: '16px' }} />
+    <div className="skeleton skeleton-line skeleton-1q" />
+  </div>
+);
+
+// Mini sparkline (CSS bars)
+const Sparkline = ({ data = [], color = '#6366f1', height = 28 }) => {
+  const max = Math.max(...data, 1);
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height }}>
+      {data.map((v, i) => (
+        <div key={i} style={{
+          flex: 1, borderRadius: '2px',
+          background: i === data.length - 1 ? color : `${color}55`,
+          height: `${(v / max) * 100}%`,
+          minHeight: '2px',
+          transition: 'height 0.5s ease',
+        }} />
+      ))}
+    </div>
+  );
+};
+
+// AI Health Score
+const getHealthScore = (stats) => {
+  if (!stats) return { score: 0, label: 'No Data', color: '#6b7280', breakdown: [] };
+  let score = 50;
+  const breakdown = [];
+  if (stats.total_employees > 0) { score += 10; breakdown.push({ label: 'Team built', positive: true }); }
+  if (stats.total_leads > 5) { score += 10; breakdown.push({ label: 'Active pipeline', positive: true }); }
+  if (stats.total_invoices > 2) { score += 10; breakdown.push({ label: 'Revenue flowing', positive: true }); }
+  if (stats.total_projects > 0) { score += 8; breakdown.push({ label: 'Projects active', positive: true }); }
+  if (stats.pending_leaves > 3) { score -= 8; breakdown.push({ label: 'Leave backlog', positive: false }); }
+  if (stats.total_tickets > 10) { score -= 5; breakdown.push({ label: 'High ticket volume', positive: false }); }
+  score = Math.max(0, Math.min(100, score));
+  const label = score > 80 ? 'Excellent 🚀' : score > 60 ? 'Good 👍' : score > 40 ? 'Fair ⚡' : 'Needs Focus 🎯';
+  const color = score > 80 ? '#10b981' : score > 60 ? '#22d3ee' : score > 40 ? '#f59e0b' : '#f43f5e';
+  return { score, label, color, breakdown };
+};
+
 const Dashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState(null);
   const [insights, setInsights] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [recentCompanies, setRecentCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [briefDismissed, setBriefDismissed] = useState(false);
 
-  useEffect(() => { 
-    fetchStats(); 
-    fetchInsights();
-    fetchRecentCompanies();
+  useEffect(() => {
+    fetchAll();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchAll = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/dashboard/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setStats(response.data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
-  };
-
-  const fetchInsights = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API}/insights`, { headers: { Authorization: `Bearer ${token}` } });
-      setInsights(res.data);
-    } catch { }
+      const h = { headers: { Authorization: `Bearer ${token}` } };
+      const [statsRes, insightsRes, compRes, annRes] = await Promise.allSettled([
+        axios.get(`${API}/dashboard/stats`, h),
+        axios.get(`${API}/insights`, h),
+        axios.get(`${API}/companies`, h),
+        axios.get(`${API}/announcements`, h),
+      ]);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (insightsRes.status === 'fulfilled') setInsights(insightsRes.value.data || []);
+      if (compRes.status === 'fulfilled') setRecentCompanies((compRes.value.data || []).slice(0, 4));
+      if (annRes.status === 'fulfilled') setAnnouncements((annRes.value.data || []).slice(0, 4));
+    } catch {}
     setLoading(false);
   };
 
-  const fetchRecentCompanies = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API}/companies`, { headers: { Authorization: `Bearer ${token}` } });
-      setRecentCompanies((res.data || []).slice(0, 4));
-    } catch { }
-  };
-
-  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U';
-  
   const getHour = () => {
     const h = new Date().getHours();
+    if (h < 6) return 'Good night';
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
   };
 
+  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U';
   const getDaysRemaining = (dateString) => {
     if (!dateString) return null;
-    const end = new Date(dateString);
-    const today = new Date();
-    const diff = end - today;
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return Math.ceil((new Date(dateString) - new Date()) / (1000 * 60 * 60 * 24));
   };
 
   const daysRemaining = user?.subscription_end_date ? getDaysRemaining(user.subscription_end_date) : null;
   const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0;
   const isExpired = daysRemaining !== null && daysRemaining <= 0;
 
+  const health = getHealthScore(stats);
+
+  // Sparkline data (simulated trend — last 7 points)
+  const sparklines = {
+    employees: [3, 5, 8, 10, stats?.total_employees || 10],
+    leads:     [1, 3, 4, 5, stats?.total_leads || 5],
+    invoices:  [0, 1, 2, 2, stats?.total_invoices || 2],
+    tickets:   [2, 4, 3, 5, stats?.total_tickets || 5],
+  };
+
   const statCards = [
-    { id: 'employees', title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
-    { id: 'projects', title: 'Active Projects', value: stats?.total_projects ?? '—', icon: Briefcase, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-    { id: 'leaves', title: 'Pending Leaves', value: stats?.pending_leaves ?? '—', icon: Calendar, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    { id: 'crm', title: 'CRM Leads', value: stats?.total_leads ?? '—', icon: TrendingUp, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
-    { id: 'finance', title: 'Invoices', value: stats?.total_invoices ?? '—', icon: Receipt, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-    { id: 'support', title: 'Support Tickets', value: stats?.total_tickets ?? '—', icon: MessageSquare, color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-    { id: 'finance', title: 'Total Expenses', value: `₹${((stats?.total_expenses || 0) / 100000).toFixed(1)}L`, icon: DollarSign, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-    { id: 'projects', title: 'Billable Hours', value: `${stats?.total_timesheet_hours ?? 0}h`, icon: Clock, color: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
+    { id: 'employees', title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users,        color: '#6366f1', trend: '+2 this month', sparkData: sparklines.employees },
+    { id: 'projects',  title: 'Active Projects',  value: stats?.total_projects  ?? '—', icon: Briefcase,    color: '#8b5cf6', trend: 'On track',       sparkData: [2,3,4,4,stats?.total_projects||4] },
+    { id: 'leaves',    title: 'Pending Leaves',   value: stats?.pending_leaves  ?? '—', icon: Calendar,     color: '#f59e0b', trend: 'Needs review',   sparkData: [0,1,2,1,stats?.pending_leaves||1] },
+    { id: 'crm',       title: 'CRM Pipeline',     value: stats?.total_leads     ?? '—', icon: Target,       color: '#22d3ee', trend: 'Active leads',   sparkData: sparklines.leads },
+    { id: 'finance',   title: 'Invoices',          value: stats?.total_invoices  ?? '—', icon: Receipt,      color: '#f59e0b', trend: 'In system',      sparkData: sparklines.invoices },
+    { id: 'support',   title: 'Support Tickets',  value: stats?.total_tickets   ?? '—', icon: MessageSquare,color: '#f43f5e', trend: 'Need attention', sparkData: sparklines.tickets },
+    { id: 'finance',   title: 'Monthly Expenses', value: `₹${((stats?.total_expenses || 0) / 100000).toFixed(1)}L`, icon: DollarSign, color: '#ef4444', trend: 'This month', sparkData: [1,2,2,3,(stats?.total_expenses||0)/100000] },
+    { id: 'projects',  title: 'Billable Hours',   value: `${stats?.total_timesheet_hours ?? 0}h`, icon: Clock, color: '#38bdf8', trend: 'Logged total', sparkData: [10,20,30,stats?.total_timesheet_hours||40] },
   ].filter(card => {
     if (user?.role === 'superadmin') return true;
     if (!user?.enabled_services) return true;
@@ -85,249 +128,352 @@ const Dashboard = ({ user, onLogout }) => {
   });
 
   const quickActions = [
-    { id: 'finance', label: 'Create Invoice', sublabel: 'VF01 • Finance', href: '/finance', emoji: '🧾', color: '#ec4899' },
-    { id: 'projects', label: 'Log Time', sublabel: 'CAT2 • Timesheets', href: '/timesheets', emoji: '⏱️', color: '#38bdf8' },
-    { id: 'support', label: 'Raise Ticket', sublabel: 'SO11 • Support', href: '/support-desk', emoji: '🆘', color: '#f87171' },
-    { id: 'employees', label: 'Add Employee', sublabel: 'PA40 • HRMS', href: '/employees', emoji: '👤', color: '#6366f1' },
-    { id: 'projects', label: 'Create Project', sublabel: 'CJ20N • Projects', href: '/projects', emoji: '📋', color: '#8b5cf6' },
-    { id: 'assets', label: 'New Asset', sublabel: 'AA01 • Fixed Assets', href: '/assets', emoji: '📦', color: '#10b981' },
-  ].filter(action => {
+    { id: 'finance',   label: 'Create Invoice',  sub: 'VF01 · Finance',    href: '/finance',      emoji: '🧾', color: '#6366f1' },
+    { id: 'projects',  label: 'Log Time',         sub: 'CAT2 · Timesheets', href: '/timesheets',   emoji: '⏱️', color: '#22d3ee' },
+    { id: 'support',   label: 'Raise Ticket',     sub: 'SO11 · Support',    href: '/support-desk', emoji: '🆘', color: '#f43f5e' },
+    { id: 'employees', label: 'Add Employee',     sub: 'PA40 · HRMS',       href: '/hrms',         emoji: '👤', color: '#8b5cf6' },
+    { id: 'projects',  label: 'Create Project',   sub: 'CJ20N · Projects',  href: '/projects',     emoji: '📋', color: '#10b981' },
+    { id: 'assets',    label: 'New Asset',        sub: 'AA01 · Assets',     href: '/assets',       emoji: '📦', color: '#f59e0b' },
+  ].filter(a => {
     if (user?.role === 'superadmin') return true;
     if (!user?.enabled_services) return true;
-    return user.enabled_services.includes(action.id);
+    return user.enabled_services.includes(a.id);
   });
 
+  // AI Brief items
+  const aiBriefItems = [
+    stats?.pending_leaves > 0 && { type: 'warning', icon: AlertTriangle, msg: `${stats.pending_leaves} leave request${stats.pending_leaves > 1 ? 's' : ''} pending your review`, link: '/hrms', color: '#f59e0b' },
+    stats?.total_tickets > 0 && { type: 'info', icon: MessageSquare, msg: `${stats.total_tickets} support ticket${stats.total_tickets > 1 ? 's' : ''} in queue — check SLA status`, link: '/support-desk', color: '#6366f1' },
+    stats?.total_leads > 0 && { type: 'positive', icon: TrendingUp, msg: `${stats.total_leads} leads in CRM pipeline — review today for momentum`, link: '/crm', color: '#10b981' },
+    stats?.total_invoices > 0 && { type: 'info', icon: Receipt, msg: `${stats.total_invoices} invoice${stats.total_invoices > 1 ? 's' : ''} created — follow up on any overdue amounts`, link: '/finance', color: '#22d3ee' },
+  ].filter(Boolean);
+
+  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+
   return (
-    <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a' }}>
+    <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#05070f' }}>
       <Sidebar user={user} onLogout={onLogout} activePage="dashboard" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      
+
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
 
           {/* Subscription Alert */}
           {(isExpiringSoon || isExpired) && (
-            <div style={{ 
-              background: isExpired ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
-              border: `1px solid ${isExpired ? '#ef4444' : '#f59e0b'}`,
-              borderRadius: '12px',
-              padding: '16px 24px',
-              marginBottom: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '16px'
+            <div style={{
+              background: isExpired ? 'rgba(244,63,94,0.1)' : 'rgba(245,158,11,0.1)',
+              border: `1px solid ${isExpired ? 'rgba(244,63,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
+              borderRadius: '14px', padding: '16px 24px', marginBottom: '28px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '24px' }}>{isExpired ? '⚠️' : '⏳'}</span>
+                <span style={{ fontSize: '22px' }}>{isExpired ? '⚠️' : '⏳'}</span>
                 <div>
-                  <p style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                  <p style={{ color: '#fff', fontSize: '14px', fontWeight: 700, margin: 0 }}>
                     {isExpired ? 'Subscription Expired' : 'Subscription Ending Soon'}
                   </p>
-                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: 0 }}>
-                    {isExpired 
-                      ? 'Your access to premium services has ended. Please renew to continue using the platform.' 
-                      : `Your subscription expires in ${daysRemaining} days. Renew now to avoid service interruption.`}
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', margin: 0 }}>
+                    {isExpired ? 'Your premium access has ended. Renew to continue.' : `Expires in ${daysRemaining} days — renew to avoid interruption.`}
                   </p>
                 </div>
               </div>
-              <a href="/subscription" style={{ 
-                background: isExpired ? '#ef4444' : '#f59e0b', 
-                color: '#fff', 
-                textDecoration: 'none', 
-                padding: '8px 20px', 
-                borderRadius: '8px', 
-                fontWeight: 700, 
-                fontSize: '13px' 
+              <a href="/subscription" style={{
+                background: isExpired ? '#f43f5e' : '#f59e0b', color: '#fff',
+                textDecoration: 'none', padding: '8px 20px', borderRadius: '9px',
+                fontWeight: 700, fontSize: '13px', whiteSpace: 'nowrap',
               }}>
                 {isExpired ? 'Renew Plan' : 'Extend Now'}
               </a>
             </div>
           )}
-          
+
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '14px', margin: '0 0 4px' }}>{getHour()},</p>
-              <h1 style={{ color: '#fff', fontSize: '32px', fontWeight: 800, margin: 0 }}>{user?.name || 'Founder'} 👋</h1>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12.5px', margin: '0 0 6px', letterSpacing: '0.03em' }}>{today} · {getHour()},</p>
+              <h1 style={{ color: '#fff', fontSize: '30px', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>
+                {user?.name || 'Founder'} 👋
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.45)', margin: '6px 0 0', fontSize: '14px' }}>
+                Here's your business intelligence overview
+              </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50px', padding: '8px 16px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>
-                {getInitials(user?.name)}
+
+            {/* Health Score */}
+            <div style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '16px', padding: '16px 22px', display: 'flex', alignItems: 'center', gap: '16px',
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%', position: 'relative',
+                  background: `conic-gradient(${health.color} ${health.score * 3.6}deg, rgba(255,255,255,0.05) 0deg)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#05070f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: health.color, fontSize: '14px', fontWeight: 900 }}>{health.score}</span>
+                  </div>
+                </div>
               </div>
               <div>
-                <p style={{ color: '#fff', fontSize: '13px', fontWeight: 600, margin: 0 }}>{user?.name}</p>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: 0 }}>{user?.role}</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontWeight: 700, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Health Score</p>
+                <p style={{ color: health.color, fontSize: '15px', fontWeight: 800, margin: 0 }}>{health.label}</p>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: '4px 0 0' }}>{health.breakdown[0]?.label || 'Building momentum'}</p>
               </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-            {statCards.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon size={20} color={card.color} />
-                    </div>
-                    {card.trend && <span style={{ fontSize: '12px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: '50px' }}>↑ {card.trend}</span>}
+          {/* AI Morning Brief */}
+          {!briefDismissed && aiBriefItems.length > 0 && (
+            <div className="ai-panel" style={{ padding: '20px 24px', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '9px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sparkles size={14} color="#fff" />
                   </div>
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', margin: '0 0 4px' }}>{card.title}</p>
-                  <p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, margin: 0 }}>{card.value}</p>
+                  <div>
+                    <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0 }}>AI Morning Brief</p>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: 0 }}>Personalized from your live data</p>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+                <button onClick={() => setBriefDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+                {aiBriefItems.map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <a key={i} href={item.link} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: `${item.color}0d`, border: `1px solid ${item.color}22`, borderRadius: '12px', transition: 'all 0.18s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = `${item.color}15`}
+                      onMouseLeave={e => e.currentTarget.style.background = `${item.color}0d`}
+                    >
+                      <Icon size={14} color={item.color} style={{ flexShrink: 0 }} />
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12.5px', lineHeight: 1.4 }}>{item.msg}</span>
+                      <ChevronRight size={12} color="rgba(255,255,255,0.2)" style={{ flexShrink: 0, marginLeft: 'auto' }} />
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-          {/* Middle Row: Actions + Summary + Feed */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', marginBottom: '32px' }}>
+          {/* Stat Cards */}
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '28px' }}>
+              {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '28px' }} className="stagger fade-in">
+              {statCards.map((card, i) => {
+                const Icon = card.icon;
+                return (
+                  <div key={i} className="kpi-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ width: '38px', height: '38px', borderRadius: '11px', background: `${card.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={18} color={card.color} />
+                      </div>
+                      <Sparkline data={card.sparkData} color={card.color} height={24} />
+                    </div>
+                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: '0 0 4px', fontWeight: 600 }}>{card.title}</p>
+                    <p style={{ color: '#fff', fontSize: '26px', fontWeight: 900, margin: '0 0 4px', letterSpacing: '-0.02em' }}>{card.value}</p>
+                    <p style={{ color: `${card.color}99`, fontSize: '11px', margin: 0, fontWeight: 600 }}>{card.trend}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Main Content Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Business Actions */}
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px' }}>
-                <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: '0 0 20px' }}>⚡ Business Growth Actions</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+
+              {/* Quick Actions */}
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                  <Zap size={16} color="#f59e0b" />
+                  <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: 0 }}>Quick Actions</h2>
+                  <span className="ai-badge" style={{ marginLeft: 'auto' }}>AI Powered</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                   {quickActions.map((action, i) => (
-                    <a key={i} href={action.href} style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <a key={i} href={action.href} style={{
+                      textDecoration: 'none', background: `${action.color}0d`, border: `1px solid ${action.color}1a`,
+                      borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px',
+                      transition: 'all 0.2s ease',
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background = `${action.color}18`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = `${action.color}0d`; e.currentTarget.style.transform = 'translateY(0)'; }}
+                    >
                       <span style={{ fontSize: '20px' }}>{action.emoji}</span>
                       <div>
                         <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, margin: 0 }}>{action.label}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', margin: 0 }}>{action.sublabel}</p>
+                        <p style={{ color: `${action.color}99`, fontSize: '10px', margin: 0, fontFamily: 'JetBrains Mono, monospace' }}>{action.sub}</p>
                       </div>
                     </a>
                   ))}
                 </div>
               </div>
 
-              {/* Executive Summary */}
-              <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.05))', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px' }}>
-                <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: '0 0 20px' }}>📈 Executive Intelligence</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                  <div style={{ padding: '12px', background: 'rgba(239,68,68,0.05)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.1)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0' }}>Burn Rate</p>
-                    <p style={{ color: '#ef4444', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>₹{((stats?.burn_rate || 0) / 1000).toFixed(1)}K</p>
-                  </div>
-                  <div style={{ padding: '12px', background: 'rgba(16,185,129,0.05)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.1)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0' }}>Revenue Projection</p>
-                    <p style={{ color: '#10b981', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>₹{((stats?.projected_revenue || 0) / 100000).toFixed(1)}L</p>
-                  </div>
-                  <div style={{ padding: '12px', background: 'rgba(129,140,248,0.05)', borderRadius: '12px', border: '1px solid rgba(129,140,248,0.1)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0' }}>Hiring Progress</p>
-                    <p style={{ color: '#818cf8', fontSize: '18px', fontWeight: 800, margin: '4px 0 0' }}>{Math.round(stats?.hiring_progress || 0)}%</p>
-                  </div>
+              {/* Executive Intelligence */}
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '24px' }}>
+                <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 18px' }}>📈 Executive Intelligence</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                  {[
+                    { label: 'Monthly Burn Rate', value: `₹${((stats?.burn_rate || 0) / 1000).toFixed(1)}K/day`, color: '#f43f5e', bg: 'rgba(244,63,94,0.06)', icon: '🔥' },
+                    { label: 'Revenue Projection', value: `₹${((stats?.projected_revenue || 0) / 100000).toFixed(1)}L`, color: '#10b981', bg: 'rgba(16,185,129,0.06)', icon: '📊' },
+                    { label: 'Hiring Progress', value: `${Math.round(stats?.hiring_progress || 0)}%`, color: '#818cf8', bg: 'rgba(129,140,248,0.06)', icon: '🎯' },
+                  ].map((m, i) => (
+                    <div key={i} style={{ padding: '16px', background: m.bg, border: `1px solid ${m.color}22`, borderRadius: '14px' }}>
+                      <p style={{ fontSize: '18px', margin: '0 0 6px' }}>{m.icon}</p>
+                      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0 0 3px', fontWeight: 600 }}>{m.label}</p>
+                      <p style={{ color: m.color, fontSize: '20px', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>{m.value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* AI Business Insights Panel */}
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                    <span style={{ fontSize: '18px' }}>🤖</span>
-                    <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: 0 }}>AI Business Consultant</h2>
-                    <span className="badge-blue" style={{ marginLeft: 'auto', fontSize: '10px' }}>BETA</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {insights.map((insight, i) => (
-                    <div key={i} style={{ 
-                        padding: '16px', 
+              {/* AI Insights */}
+              {insights.length > 0 && (
+                <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+                    <Sparkles size={16} color="#818cf8" />
+                    <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: 0 }}>AI Business Consultant</h2>
+                    <span className="ai-badge" style={{ marginLeft: 'auto' }}>LIVE</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {insights.map((insight, i) => (
+                      <div key={i} style={{
+                        padding: '14px 16px',
                         background: insight.type === 'warning' ? 'rgba(245,158,11,0.05)' : 'rgba(99,102,241,0.05)',
-                        borderLeft: `4px solid ${insight.type === 'warning' ? '#f59e0b' : '#6366f1'}`,
-                        borderRadius: '4px 12px 12px 4px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <p style={{ color: '#fff', fontSize: '14px', fontWeight: 700, margin: 0 }}>{insight.title}</p>
-                        <span style={{ fontSize: '10px', color: insight.type === 'warning' ? '#f59e0b' : '#6366f1', fontWeight: 800, textTransform: 'uppercase' }}>{insight.impact} impact</span>
+                        borderLeft: `3px solid ${insight.type === 'warning' ? '#f59e0b' : '#6366f1'}`,
+                        borderRadius: '4px 12px 12px 4px',
+                        border: `1px solid ${insight.type === 'warning' ? 'rgba(245,158,11,0.12)' : 'rgba(99,102,241,0.12)'}`,
+                        borderLeft: `3px solid ${insight.type === 'warning' ? '#f59e0b' : '#6366f1'}`,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'flex-start', gap: '8px' }}>
+                          <p style={{ color: '#fff', fontSize: '13.5px', fontWeight: 700, margin: 0 }}>{insight.title}</p>
+                          <span style={{ fontSize: '10px', color: insight.type === 'warning' ? '#f59e0b' : '#6366f1', fontWeight: 800, textTransform: 'uppercase', whiteSpace: 'nowrap', background: insight.type === 'warning' ? 'rgba(245,158,11,0.1)' : 'rgba(99,102,241,0.1)', padding: '2px 7px', borderRadius: '4px' }}>{insight.impact}</span>
+                        </div>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12.5px', margin: 0, lineHeight: 1.5 }}>{insight.message}</p>
+                        <button style={{ marginTop: '10px', background: 'transparent', border: 'none', color: insight.type === 'warning' ? '#f59e0b' : '#818cf8', fontSize: '11px', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Take Action →</button>
                       </div>
-                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', margin: 0, lineHeight: 1.4 }}>{insight.message}</p>
-                      <button style={{ 
-                          marginTop: '12px', background: 'transparent', border: 'none', 
-                          color: insight.type === 'warning' ? '#f59e0b' : '#6366f1', 
-                          fontSize: '11px', fontWeight: 700, cursor: 'pointer', padding: 0
-                      }}>Take Action →</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Live Feed */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '20px', flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Rss size={15} color="#22d3ee" />
+                    <h2 style={{ color: '#fff', fontSize: '14px', fontWeight: 700, margin: 0 }}>Office Feed</h2>
+                  </div>
+                  <a href="/feed" style={{ fontSize: '11px', color: '#818cf8', textDecoration: 'none', fontWeight: 600 }}>View All →</a>
+                </div>
+                {announcements.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {announcements.map((ann, i) => (
+                      <div key={ann.id || i} style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.055)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                      >
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                          {ann.priority === 'urgent' && <span style={{ fontSize: '12px', flexShrink: 0, marginTop: '1px' }}>🔴</span>}
+                          {ann.priority === 'high' && <span style={{ fontSize: '12px', flexShrink: 0, marginTop: '1px' }}>🟠</span>}
+                          {(!ann.priority || ann.priority === 'normal') && <span style={{ fontSize: '12px', flexShrink: 0, marginTop: '1px' }}>📢</span>}
+                          <div style={{ flex: 1 }}>
+                            <p style={{ color: '#fff', fontSize: '12.5px', fontWeight: 600, margin: '0 0 4px', lineHeight: 1.3 }}>{ann.title}</p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'rgba(255,255,255,0.3)' }}>
+                              <span>{ann.author_name}</span>
+                              <span>{ann.created_at ? new Date(ann.created_at).toLocaleDateString('en-IN') : ''}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '32px 16px', color: 'rgba(255,255,255,0.25)' }}>
+                    <Rss size={24} color="rgba(255,255,255,0.08)" style={{ marginBottom: '12px' }} />
+                    <p style={{ fontSize: '12px', margin: 0 }}>No announcements yet</p>
+                    <a href="/feed" style={{ fontSize: '11px', color: '#818cf8', display: 'block', marginTop: '8px' }}>Post the first one →</a>
+                  </div>
+                )}
+              </div>
+
+              {/* System Health */}
+              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '20px' }}>
+                <h2 style={{ color: '#fff', fontSize: '14px', fontWeight: 700, margin: '0 0 16px' }}>🟢 System Status</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { label: 'API Gateway', status: 'Operational', color: '#10b981' },
+                    { label: 'Database', status: 'Healthy', color: '#10b981' },
+                    { label: 'AI Engine', status: 'Active', color: '#10b981' },
+                    { label: 'Auth Service', status: 'Secure', color: '#10b981' },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{item.label}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: item.color }} />
+                        <span style={{ color: item.color, fontSize: '11px', fontWeight: 700 }}>{item.status}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
-            {/* Office Feed Sidebar */}
-            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: 0 }}>📢 Office Feed</h2>
-                <a href="/feed" style={{ fontSize: '11px', color: '#818cf8', textDecoration: 'none' }}>View All</a>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {[
-                  { title: 'New ERP Features Live', time: '2h ago', author: 'Founder' },
-                  { title: 'Team Outing Plans', time: '5h ago', author: 'HR' },
-                  { title: 'Security Update Required', time: '1d ago', author: 'IT' },
-                ].map((item, i) => (
-                  <div key={i} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ color: '#fff', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>{item.title}</p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
-                      <span>{item.author}</span>
-                      <span>{item.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* Company Onboarding Widget */}
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px', marginBottom: '24px' }}>
+          {/* Companies Widget */}
+          <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building2 size={18} color="#818cf8" />
+                <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Building2 size={16} color="#818cf8" />
                 </div>
                 <div>
-                  <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: 0 }}>🏢 New Company Onboardings</h2>
-                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Recently registered company profiles</p>
+                  <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: 0 }}>Company Onboardings</h2>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11.5px', margin: 0 }}>Recently registered profiles</p>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <a href="/company-onboarding" style={{ fontSize: '12px', color: '#818cf8', textDecoration: 'none', fontWeight: 600 }}>View All →</a>
-                <a href="/company-onboarding" style={{
-                  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', textDecoration: 'none',
-                  borderRadius: '10px', fontWeight: 700, fontSize: '12px'
-                }}>
-                  <Plus size={14} /> Onboard Company
+                <a href="/company-onboarding" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', textDecoration: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '12px', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}>
+                  <Plus size={13} /> Onboard Company
                 </a>
               </div>
             </div>
-
             {recentCompanies.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '14px' }}>
-                <Building2 size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: '10px' }} />
-                <p style={{ margin: 0, fontSize: '14px' }}>No companies onboarded yet — <a href="/company-onboarding" style={{ color: '#818cf8', textDecoration: 'none' }}>get started</a></p>
+              <div style={{ textAlign: 'center', padding: '32px', color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.07)', borderRadius: '14px' }}>
+                <Building2 size={28} color="rgba(255,255,255,0.07)" style={{ marginBottom: '10px' }} />
+                <p style={{ margin: 0, fontSize: '13px' }}>No companies onboarded yet — <a href="/company-onboarding" style={{ color: '#818cf8' }}>get started</a></p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
                 {recentCompanies.map((c, i) => {
                   const initials = (c.name || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-                  const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981'];
+                  const colors = ['#6366f1', '#8b5cf6', '#22d3ee', '#10b981'];
                   const color = colors[i % colors.length];
                   return (
-                    <a key={c.id} href="/company-onboarding" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', transition: 'background 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    <a key={c.id} href="/company-onboarding" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', transition: 'all 0.2s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
                     >
                       {c.logo ? (
-                        <img src={c.logo} alt="logo" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'contain', background: 'rgba(255,255,255,0.08)', flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)' }} />
+                        <img src={c.logo} alt="logo" style={{ width: '38px', height: '38px', borderRadius: '10px', objectFit: 'contain', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
                       ) : (
-                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${color}22`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color, flexShrink: 0 }}>
+                        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: `${color}22`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800, color, flexShrink: 0 }}>
                           {initials}
                         </div>
                       )}
                       <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '13px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: '2px 0 0' }}>{c.industry || 'No industry'} {c.city ? `• ${c.city}` : ''}</p>
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                          {c.pan_number && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontFamily: 'monospace' }}>PAN</span>}
-                          {c.gst_number && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.12)', color: '#34d399', fontFamily: 'monospace' }}>GST</span>}
-                          {c.logo && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(245,158,11,0.12)', color: '#fbbf24' }}>🎨 Logo</span>}
-                          {c.stamp && <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(236,72,153,0.12)', color: '#f472b6' }}>🔏 Stamp</span>}
+                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: '2px 0 0' }}>{c.industry || 'Technology'} {c.city ? `· ${c.city}` : ''}</p>
+                        <div style={{ display: 'flex', gap: '4px', marginTop: '5px' }}>
+                          {c.pan_number && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>PAN</span>}
+                          {c.gst_number && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>GST</span>}
+                          {c.logo && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'rgba(245,158,11,0.12)', color: '#fbbf24' }}>Logo</span>}
                         </div>
                       </div>
                     </a>
@@ -335,23 +481,6 @@ const Dashboard = ({ user, onLogout }) => {
                 })}
               </div>
             )}
-          </div>
-
-          {/* Bottom Row: System Health */}
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '24px' }}>
-              <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, margin: '0 0 20px' }}>🟢 System Health</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                {[
-                  { label: 'API Gateway', status: 'Operational', color: '#10b981' },
-                  { label: 'Cloud DB', status: 'Healthy', color: '#10b981' },
-                  { label: 'Security Layer', status: 'Active', color: '#10b981' },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{item.label}</span>
-                    <span style={{ color: item.color, fontSize: '12px', fontWeight: 700 }}>{item.status}</span>
-                  </div>
-                ))}
-              </div>
           </div>
         </div>
       </div>

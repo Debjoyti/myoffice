@@ -12,6 +12,7 @@ const AssetManagement = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // was dead input — now wired
   
   const [formData, setFormData] = useState({ 
     name: '', type: 'Laptop', serial_number: '', assigned_to: '', value: 0, purchase_date: new Date().toISOString().split('T')[0] 
@@ -39,6 +40,18 @@ const AssetManagement = ({ user, onLogout }) => {
       fetchData();
     } catch { toast.error('Failed to register asset'); }
   };
+
+  // Client-side filtering — keeps it instant without extra API calls
+  const filteredAssets = assets.filter(a => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (a.name || '').toLowerCase().includes(q) ||
+      (a.type || '').toLowerCase().includes(q) ||
+      (a.serial_number || '').toLowerCase().includes(q) ||
+      (a.assigned_to || '').toLowerCase().includes(q)
+    );
+  });
 
   const getIcon = (type) => {
     const t = type.toLowerCase();
@@ -69,9 +82,16 @@ const AssetManagement = ({ user, onLogout }) => {
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} size={16} />
-              <input type="text" placeholder="Search by name, type, or serial number..." className="dark-input" style={{ paddingLeft: '40px' }} />
+              <input
+                type="text"
+                placeholder="Search by name, type, or serial number..."
+                className="dark-input"
+                style={{ paddingLeft: '40px' }}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
             </div>
-            <button className="btn-dark-secondary"><Filter size={18} /> Filter</button>
+            <button className="btn-dark-secondary" onClick={() => setSearchQuery('')}><Filter size={18} /> Filter</button>
           </div>
 
           {loading ? (
@@ -83,7 +103,7 @@ const AssetManagement = ({ user, onLogout }) => {
                   <tr><th>Asset ID</th><th>Name</th><th>Type</th><th>Assigned To</th><th>Serial #</th><th>Purchase Value</th><th>Status</th></tr>
                 </thead>
                 <tbody>
-                  {assets.map(asset => (
+                  {filteredAssets.map(asset => (
                     <tr key={asset.id}>
                       <td style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{asset.id}</td>
                       <td style={{ fontWeight: 600, color: '#fff' }}>
@@ -104,8 +124,8 @@ const AssetManagement = ({ user, onLogout }) => {
                   ))}
                 </tbody>
               </table>
-              {assets.length === 0 && (
-                <div className="dark-empty">No assets registered. Better secure that hardware!</div>
+              {filteredAssets.length === 0 && (
+                <div className="dark-empty">{searchQuery ? `No assets found for "${searchQuery}"` : 'No assets registered. Better secure that hardware!'}</div>
               )}
             </div>
           )}

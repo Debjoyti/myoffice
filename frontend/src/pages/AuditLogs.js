@@ -62,7 +62,18 @@ const AuditLogs = ({ user, onLogout }) => {
                         <span className="badge-blue" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>{log.action}</span>
                       </td>
                       <td style={{ fontWeight: 500 }}>{log.module}</td>
-                      <td style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{log.details}</td>
+                      <td style={{ 
+                        fontSize: '13px', 
+                        color: log.anomaly_flag ? '#fecdd3' : 'rgba(255,255,255,0.5)',
+                        background: log.anomaly_flag ? 'rgba(239,68,68,0.1)' : 'transparent',
+                        padding: log.anomaly_flag ? '8px 12px' : '16px',
+                        borderRadius: log.anomaly_flag ? '8px' : '0'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {log.anomaly_flag && <ShieldCheck size={14} color="#ef4444" />}
+                          {log.details}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

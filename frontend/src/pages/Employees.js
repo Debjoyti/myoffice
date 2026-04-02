@@ -17,7 +17,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', department: '',
     designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '',
-    photo: '',
+    photo: '', emp_id: '', previous_emp_id: ''
   });
 
   useEffect(() => { fetchEmployees(); }, []);
@@ -38,7 +38,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
       await axios.post(`${API}/employees`, formData, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Employee added successfully');
       setShowModal(false);
-      setFormData({ name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '', photo: '' });
+      setFormData({ name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '', photo: '', emp_id: '', previous_emp_id: '' });
       fetchEmployees();
     } catch { toast.error('Failed to add employee'); }
   };
@@ -104,7 +104,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
           <table>
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Department</th><th>Designation</th><th>Status</th><th>Actions</th>
+                <th>Name</th><th>EMP ID</th><th>Prev EMP ID</th><th>Email</th><th>Department</th><th>Designation</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +122,8 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                       {emp.name}
                     </div>
                   </td>
+                  <td>{emp.emp_id || '-'}</td>
+                  <td>{emp.previous_emp_id || '-'}</td>
                   <td>{emp.email}</td>
                   <td>{emp.department}</td>
                   <td>{emp.designation}</td>
@@ -167,6 +169,8 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>Upload Photo</span>
               </div>
               {inp('name', 'Name *', 'text', 'employee-name-input')}
+              {inp('emp_id', 'Company EMP ID', 'text', 'employee-empid-input', 'PRSK-001')}
+              {inp('previous_emp_id', 'Previous Company EMP ID', 'text', 'employee-prevempid-input')}
               {inp('email', 'Email *', 'email', 'employee-email-input')}
               {inp('phone', 'Phone *', 'tel', 'employee-phone-input')}
               {inp('department', 'Department *', 'text', 'employee-department-input')}

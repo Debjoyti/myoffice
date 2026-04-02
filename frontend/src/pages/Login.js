@@ -190,7 +190,7 @@ const Login = ({ onLogin }) => {
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '14px', margin: 0 }}>
               {isRegister
                 ? 'Get started with a free account today'
-                : 'Sign in to your BizOps workspace'}
+                : 'Sign in to your PRSK workspace'}
             </p>
           </div>
 

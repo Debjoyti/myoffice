@@ -3,12 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
-import EmployeeManagement from './pages/EmployeeManagement';
+import HRMS from './pages/HRMS';
 import Projects from './pages/Projects';
 import CRM from './pages/CRM';
 import Expenses from './pages/Expenses';
 import BusinessOrders from './pages/BusinessOrders';
-import HRMS from './pages/HRMS';
 import TeamMembers from './pages/TeamMembers';
 import SaasAdmin from './pages/SaasAdmin';
 import Finance from './pages/Finance';
@@ -23,8 +22,10 @@ import AuditLogs from './pages/AuditLogs';
 import Subscription from './pages/Subscription';
 import CompanyOnboarding from './pages/CompanyOnboarding';
 import AccountantPortal from './pages/AccountantPortal';
-// import TravelTracker from './pages/TravelTracker';
-import '@/App.css';
+import TravelTracker from './pages/TravelTracker';
+import EmployeeManagement from './pages/EmployeeManagement';
+import AIAssistant from './components/AIAssistant';
+import './App.css'; // Fixed: was @/App.css which CRA doesn't support
 
 function App() {
   const [user, setUser] = useState(null);
@@ -64,13 +65,37 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mx-auto mb-4 flex items-center justify-center animate-pulse">
-            <span className="text-white font-bold text-2xl">B</span>
-          </div>
-          <p className="text-slate-600 font-medium">Loading...</p>
+      <div style={{
+        minHeight: '100vh',
+        background: '#05070f',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '20px',
+      }}>
+        <div style={{
+          width: '56px', height: '56px',
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          borderRadius: '16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+          animation: 'pulse-glow 2s ease-in-out infinite',
+        }}>
+          <span style={{ color: '#fff', fontWeight: 900, fontSize: '22px' }}>B</span>
         </div>
+        <div style={{
+          display: 'flex', gap: '6px', alignItems: 'center',
+        }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: '#6366f1',
+              animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+            }} />
+          ))}
+        </div>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', fontWeight: 500, margin: 0 }}>Loading BizOps...</p>
       </div>
     );
   }
@@ -115,8 +140,10 @@ function App() {
         <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/company-onboarding" element={user && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        {/* <Route path="/travel-tracker" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} /> */}
+        <Route path="/travel" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
       </Routes>
+      {/* Global AI Assistant — available on all authenticated pages */}
+      {user && !needsOnboarding && <AIAssistant user={user} />}
     </BrowserRouter>
   );
 }

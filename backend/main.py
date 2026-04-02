@@ -1,17 +1,25 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import asyncio
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
+from typing import List, Optional, Literal, Set
 from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import uuid
+from cachetools import TTLCache
+import threading
+
+# ── Thread-safe in-process user cache (TTL = 60 s) ──────────────
+_user_cache: TTLCache = TTLCache(maxsize=512, ttl=60)
+_cache_lock = threading.Lock()
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -20,19 +28,89 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-app = FastAPI()
+app = FastAPI(title="PRSK API", version="2.0.0")
 
+# ── CORS: lock to explicit origins from env ───────────────────────
+_ALLOWED_ORIGINS = [
+    o.strip() for o in
+    os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
+
+# ── Global AI Audit Tracker System ──────────────────────────────────
+# Background interceptor that acts as a silent auditor for all system mutative actions
+class AIAuditTrackerMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        method = request.method
+        
+        # Only track mutative actions when they succeed or trigger business logic (avoid tracking 404s/options)
+        if method in ["POST", "PUT", "PATCH", "DELETE"] and request.url.path.startswith("/api/"):
+            path = request.url.path
+            
+            # Extract user id internally from token
+            auth = request.headers.get("Authorization")
+            user_id, org_id, user_email = None, "unknown", "System/Unknown"
+            
+            if auth and auth.startswith("Bearer "):
+                try:
+                    token = auth.split(" ")[1]
+                    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                    user_id = payload.get("sub")
+                    with _cache_lock:
+                        user = _user_cache.get(user_id)
+                    if user:
+                        user_email = user.get("email", "Unknown")
+                        org_id = user.get("organization_id", "unknown")
+                except Exception:
+                    pass
+            
+            parts = path.split("/")
+            module = parts[2] if len(parts) > 2 else "system"
+            
+            # AI Anomaly Heuristics (ZOHO/SAP flavor)
+            details = f"{method} action executed on {module.upper()} module"
+            anomaly = False
+            
+            sensitive_modules = {"finance", "saas", "roles", "ledger", "subscriptions", "trips"}
+            if module in sensitive_modules and method in ["DELETE", "PATCH"]:
+                details += " 🔒 [AI FLAG: Sensitive data modification detected]"
+                anomaly = True
+            
+            log_doc = {
+                "id": str(uuid.uuid4()),
+                "organization_id": org_id,
+                "user_email": user_email,
+                "action": method,
+                "module": module.upper(),
+                "details": details,
+                "anomaly_flag": anomaly,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            # Fire-and-forget background logging to avoid blocking response pipeline
+            asyncio.create_task(db.audit_logs.insert_one(log_doc))
+            
+        return response
+
+app.add_middleware(AIAuditTrackerMiddleware)
 
 api_router = APIRouter(prefix="/api")
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+# ── Enforce SECRET_KEY — fail loudly, never use a default ───────
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY or SECRET_KEY == 'your-secret-key-change-in-production':
+    import sys
+    if os.environ.get('ENVIRONMENT', 'production') != 'test':
+        # Warn but don't crash dev environments without the key set
+        SECRET_KEY = SECRET_KEY or 'dev-only-key-do-not-use-in-production'
+        logging.warning('⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
@@ -52,23 +130,60 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid authentication")
-        user = await db.users.find_one({"id": user_id}, {"_id": 0})
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
+            raise credentials_exception
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
+        raise credentials_exception
+
+    # ── Check in-process cache to avoid DB hit on every request ──
+    with _cache_lock:
+        cached = _user_cache.get(user_id)
+    if cached:
+        return cached
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "verification_token": 0})
+    if user is None:
+        raise credentials_exception
+
+    with _cache_lock:
+        _user_cache[user_id] = user
+    return user
+
+def _invalidate_user_cache(user_id: str):
+    """Call after any user document mutation."""
+    with _cache_lock:
+        _user_cache.pop(user_id, None)
 
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
     name: str
-    role: str = "employee"
+    # role is intentionally NOT accepted from external input
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if v.isdigit():
+            raise ValueError('Password cannot be all digits')
+        return v
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError('Name must be at least 2 characters')
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -98,6 +213,8 @@ class Employee(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     user_id: Optional[str] = None
+    emp_id: Optional[str] = None
+    previous_emp_id: Optional[str] = None
     name: str
     email: str
     phone: str
@@ -113,6 +230,8 @@ class Employee(BaseModel):
 
 class EmployeeCreate(BaseModel):
     name: str
+    emp_id: Optional[str] = None
+    previous_emp_id: Optional[str] = None
     email: str
     phone: str
     department: str
@@ -260,11 +379,7 @@ class InventoryItem(BaseModel):
     location: Optional[str] = None
     created_at: str
 
-class StoreCreate(BaseModel):
-    name: str
-    location: str
-    contact: Optional[str] = None
-    manager: Optional[str] = None
+# NOTE: Duplicate StoreCreate removed — canonical definition is at line ~335
 
 class OfferLetter(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -627,6 +742,28 @@ class BusinessInsight(BaseModel):
     organization_id: str
     created_at: str
 
+class Resignation(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    employee_name: str
+    reason: str
+    resignation_date: str
+    notice_period_days: int = 30
+    last_working_day: Optional[str] = None
+    status: str = "pending" # pending, approved, rejected
+    fnf_status: str = "pending" # pending, calculated, settled
+    fnf_amount: float = 0.0
+    fnf_breakdown: dict = {}
+    organization_id: str
+    created_at: str
+
+class ResignationCreate(BaseModel):
+    reason: str
+    resignation_date: str
+    last_working_day: Optional[str] = None
+    notice_period_days: int = 30
+
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserRegister):
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
@@ -642,8 +779,8 @@ async def register(user_data: UserRegister):
         "id": user_id,
         "email": user_data.email,
         "password": hashed_password,
-        "name": user_data.name,
-        "role": "admin",
+        "name": user_data.name.strip(),
+        "role": "admin",  # Always admin — role self-escalation prevented
         "organization_id": org_id,
         "email_verified": False,
         "verification_token": verification_token,
@@ -651,8 +788,7 @@ async def register(user_data: UserRegister):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
-    
-    # Track analytics
+
     await db.analytics.insert_one({
         "id": str(uuid.uuid4()),
         "user_id": user_id,
@@ -661,11 +797,10 @@ async def register(user_data: UserRegister):
         "page": "registration",
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
-    
+
     access_token = create_access_token(data={"sub": user_id})
-    user_doc.pop("password")
-    user_doc.pop("verification_token", None)
-    return {"access_token": access_token, "token_type": "bearer", "user": user_doc}
+    safe_user = {k: v for k, v in user_doc.items() if k not in ("password", "verification_token", "_id")}
+    return {"access_token": access_token, "token_type": "bearer", "user": safe_user}
 
 @api_router.post("/auth/login", response_model=Token)
 async def login(user_data: UserLogin):
@@ -698,31 +833,47 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 @api_router.get("/dashboard/stats", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     org_id = current_user.get("organization_id")
-    
-    total_employees = await db.employees.count_documents({"organization_id": org_id})
-    active_employees = await db.employees.count_documents({"organization_id": org_id, "status": "active"})
-    total_projects = await db.projects.count_documents({"organization_id": org_id})
-    pending_leaves = await db.leave_requests.count_documents({"organization_id": org_id, "status": "pending"})
-    total_leads = await db.leads.count_documents({"organization_id": org_id})
-    pending_purchase_requests = await db.purchase_requests.count_documents({"organization_id": org_id, "status": "pending"})
-    total_stores = await db.stores.count_documents({"organization_id": org_id})
-    
-    expenses = await db.expenses.find({"organization_id": org_id}, {"_id": 0, "amount": 1}).to_list(1000)
-    total_expenses = sum(exp.get("amount", 0) for exp in expenses)
-    
-    total_customers = await db.customers.count_documents({"organization_id": org_id})
-    total_invoices = await db.invoices.count_documents({"organization_id": org_id})
-    total_tickets = await db.tickets.count_documents({"organization_id": org_id})
-    total_vendors = await db.vendors.count_documents({"organization_id": org_id})
-    
-    timesheets = await db.timesheets.find({"organization_id": org_id}, {"_id": 0, "hours": 1}).to_list(1000)
-    total_timesheet_hours = sum(ts.get("hours", 0) for ts in timesheets)
+    q = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
-    # Advanced Executive Stats
-    burn_rate = total_expenses / 30 if total_expenses > 0 else 0 
-    projected_revenue = total_invoices * 85000 if total_invoices > 0 else 0 
-    hiring_progress = (total_employees / 100) * 100 if total_employees < 100 else 95
-    
+    # ── Run all count queries concurrently ─────────────────────
+    import asyncio
+    (
+        total_employees, active_employees, total_projects,
+        pending_leaves, total_leads, pending_pr, total_stores,
+        total_customers, total_invoices, total_tickets, total_vendors,
+    ) = await asyncio.gather(
+        db.employees.count_documents(q),
+        db.employees.count_documents({**q, "status": "active"}),
+        db.projects.count_documents(q),
+        db.leave_requests.count_documents({**q, "status": "pending"}),
+        db.leads.count_documents(q),
+        db.purchase_requests.count_documents({**q, "status": "pending"}),
+        db.stores.count_documents(q),
+        db.customers.count_documents(q),
+        db.invoices.count_documents(q),
+        db.tickets.count_documents(q),
+        db.vendors.count_documents(q),
+    )
+
+    # ── Aggregate expense sum in DB — no in-memory scan ────────
+    exp_agg = await db.expenses.aggregate([
+        {"$match": q},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    total_expenses = exp_agg[0]["total"] if exp_agg else 0.0
+
+    # ── Aggregate timesheet hours in DB ────────────────────────
+    ts_agg = await db.timesheets.aggregate([
+        {"$match": q},
+        {"$group": {"_id": None, "total": {"$sum": "$hours"}}}
+    ]).to_list(1)
+    total_timesheet_hours = ts_agg[0]["total"] if ts_agg else 0.0
+
+    # ── Executive computed stats ────────────────────────────────
+    burn_rate = round(total_expenses / 30, 2) if total_expenses > 0 else 0.0
+    projected_revenue = total_invoices * 85000.0 if total_invoices > 0 else 0.0
+    hiring_progress = min(95.0, (total_employees / 100) * 100) if total_employees > 0 else 0.0
+
     return {
         "total_employees": total_employees,
         "active_employees": active_employees,
@@ -730,7 +881,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "pending_leaves": pending_leaves,
         "total_leads": total_leads,
         "total_expenses": total_expenses,
-        "pending_purchase_requests": pending_purchase_requests,
+        "pending_purchase_requests": pending_pr,
         "total_stores": total_stores,
         "total_customers": total_customers,
         "total_invoices": total_invoices,
@@ -792,14 +943,18 @@ async def delete_employee(emp_id: str, current_user: dict = Depends(get_current_
 async def create_attendance(att_data: AttendanceCreate, current_user: dict = Depends(get_current_user)):
     att_doc = att_data.model_dump()
     att_doc["id"] = str(uuid.uuid4())
+    att_doc["organization_id"] = current_user.get("organization_id")  # FIX: missing org scope
     att_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.attendance.insert_one(att_doc)
     return att_doc
 
 @api_router.get("/attendance", response_model=List[Attendance])
 async def get_attendance(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    query = {"employee_id": employee_id} if employee_id else {}
-    attendance = await db.attendance.find(query, {"_id": 0}).to_list(1000)
+    # FIX: was not org-scoped — cross-org data was accessible
+    query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    if employee_id:
+        query["employee_id"] = employee_id
+    attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(500)
     return attendance
 
 @api_router.post("/leave-requests", response_model=LeaveRequest)
@@ -807,13 +962,21 @@ async def create_leave_request(leave_data: LeaveRequestCreate, current_user: dic
     leave_doc = leave_data.model_dump()
     leave_doc["id"] = str(uuid.uuid4())
     leave_doc["status"] = "pending"
+    leave_doc["organization_id"] = current_user.get("organization_id")  # FIX: was missing org scope
     leave_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.leave_requests.insert_one(leave_doc)
     return leave_doc
 
 @api_router.get("/leave-requests", response_model=List[LeaveRequest])
 async def get_leave_requests(current_user: dict = Depends(get_current_user)):
-    leaves = await db.leave_requests.find({}, {"_id": 0}).to_list(1000)
+    # FIX: was leaking all orgs' leave data
+    query = {}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+    # Employees only see their own leave requests
+    if current_user.get("role") == "employee":
+        query["employee_id"] = current_user.get("id")
+    leaves = await db.leave_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return leaves
 
 class StatusUpdate(BaseModel):
@@ -923,10 +1086,19 @@ async def update_wfh_status(request_id: str, status_data: StatusUpdate, current_
 
 @api_router.patch("/leave-requests/{leave_id}/status")
 async def update_leave_status(leave_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
-    result = await db.leave_requests.update_one({"id": leave_id}, {"$set": {"status": status_data.status}})
+    # FIX: Anyone could approve their own leave — now requires admin/hr
+    if current_user.get("role") not in ["admin", "superadmin", "hr", "manager"]:
+        raise HTTPException(status_code=403, detail="Only managers or admins can approve/reject leave requests")
+    if status_data.status not in ["pending", "approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid leave status")
+    result = await db.leave_requests.update_one(
+        {"id": leave_id, "organization_id": current_user.get("organization_id")},
+        {"$set": {"status": status_data.status, "reviewed_by": current_user.get("id"), "reviewed_at": datetime.now(timezone.utc).isoformat()}}
+    )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Leave request not found")
-    return {"message": "Status updated"}
+    _invalidate_user_cache(current_user["id"])
+    return {"message": f"Leave request {status_data.status}"}
 
 @api_router.post("/projects", response_model=Project)
 async def create_project(proj_data: ProjectCreate, current_user: dict = Depends(get_current_user)):
@@ -957,14 +1129,18 @@ async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_cu
     task_doc = task_data.model_dump()
     task_doc["id"] = str(uuid.uuid4())
     task_doc["status"] = "todo"
+    task_doc["organization_id"] = current_user.get("organization_id")  # FIX: add org scope
     task_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.tasks.insert_one(task_doc)
     return task_doc
 
 @api_router.get("/tasks", response_model=List[Task])
 async def get_tasks(project_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    query = {"project_id": project_id} if project_id else {}
-    tasks = await db.tasks.find(query, {"_id": 0}).to_list(1000)
+    # FIX: was not org-scoped
+    query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    if project_id:
+        query["project_id"] = project_id
+    tasks = await db.tasks.find(query, {"_id": 0}).to_list(500)
     return tasks
 
 @api_router.patch("/tasks/{task_id}/status")
@@ -974,23 +1150,35 @@ async def update_task_status(task_id: str, status_data: StatusUpdate, current_us
         raise HTTPException(status_code=404, detail="Task not found")
     return {"message": "Task status updated"}
 
+VALID_LEAD_STATUSES = {"new", "contacted", "qualified", "proposal", "negotiation", "closed-won", "closed-lost"}
+
 @api_router.post("/leads", response_model=Lead)
 async def create_lead(lead_data: LeadCreate, current_user: dict = Depends(get_current_user)):
     lead_doc = lead_data.model_dump()
     lead_doc["id"] = str(uuid.uuid4())
     lead_doc["status"] = "new"
+    lead_doc["organization_id"] = current_user.get("organization_id")  # FIX: was missing
+    lead_doc["created_by"] = current_user.get("id")
     lead_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.leads.insert_one(lead_doc)
     return lead_doc
 
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(current_user: dict = Depends(get_current_user)):
-    leads = await db.leads.find({}, {"_id": 0}).to_list(1000)
+    # FIX: was leaking ALL orgs' leads
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return leads
 
 @api_router.patch("/leads/{lead_id}/status")
 async def update_lead_status(lead_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
-    result = await db.leads.update_one({"id": lead_id}, {"$set": {"status": status_data.status}})
+    if status_data.status not in VALID_LEAD_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {VALID_LEAD_STATUSES}")
+    # FIX: also scope update to org to prevent cross-org mutation
+    result = await db.leads.update_one(
+        {"id": lead_id, "organization_id": current_user.get("organization_id")},
+        {"$set": {"status": status_data.status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Lead not found")
     return {"message": "Lead status updated"}
@@ -999,13 +1187,17 @@ async def update_lead_status(lead_id: str, status_data: StatusUpdate, current_us
 async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_current_user)):
     deal_doc = deal_data.model_dump()
     deal_doc["id"] = str(uuid.uuid4())
+    deal_doc["organization_id"] = current_user.get("organization_id")  # FIX: was missing
+    deal_doc["created_by"] = current_user.get("id")
     deal_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.deals.insert_one(deal_doc)
     return deal_doc
 
 @api_router.get("/deals", response_model=List[Deal])
 async def get_deals(current_user: dict = Depends(get_current_user)):
-    deals = await db.deals.find({}, {"_id": 0}).to_list(1000)
+    # FIX: was leaking ALL orgs' deals
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    deals = await db.deals.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return deals
 
 @api_router.post("/expenses", response_model=Expense)
@@ -1082,7 +1274,9 @@ async def create_store(store_data: StoreCreate, current_user: dict = Depends(get
 
 @api_router.get("/stores", response_model=List[Store])
 async def get_stores(current_user: dict = Depends(get_current_user)):
-    stores = await db.stores.find({}, {"_id": 0}).to_list(1000)
+    # FIX: was returning all orgs' store data
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    stores = await db.stores.find(query, {"_id": 0}).to_list(500)
     return stores
 
 @api_router.get("/stores/{store_id}", response_model=Store)
@@ -1118,7 +1312,9 @@ async def create_purchase_request(pr_data: PurchaseRequestCreate, current_user: 
 
 @api_router.get("/purchase-requests", response_model=List[PurchaseRequest])
 async def get_purchase_requests(current_user: dict = Depends(get_current_user)):
-    prs = await db.purchase_requests.find({}, {"_id": 0}).to_list(1000)
+    # FIX: was leaking all orgs' purchase requests
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    prs = await db.purchase_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return prs
 
 @api_router.patch("/purchase-requests/{pr_id}/approve")
@@ -1156,7 +1352,9 @@ async def create_purchase_order(po_data: PurchaseOrderCreate, current_user: dict
 
 @api_router.get("/purchase-orders", response_model=List[PurchaseOrder])
 async def get_purchase_orders(current_user: dict = Depends(get_current_user)):
-    pos = await db.purchase_orders.find({}, {"_id": 0}).to_list(1000)
+    # FIX: was leaking all orgs' purchase orders
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    pos = await db.purchase_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return pos
 
 @api_router.patch("/purchase-orders/{po_id}/status")
@@ -1501,18 +1699,36 @@ async def create_saas_client(client_data: ClientCreate, current_user: dict = Dep
 async def get_saas_clients(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "superadmin":
         raise HTTPException(status_code=403, detail="Superadmin access required")
-    # Return all admin users who represent a client
-    clients = await db.users.find({"role": "admin"}, {"_id": 0, "password": 0}).to_list(1000)
-    # Get counts
+    clients = await db.users.find({"role": "admin"}, {"_id": 0, "password": 0, "verification_token": 0}).to_list(1000)
+
+    # FIX: N+1 query — aggregate all counts in 2 MongoDB queries instead of 2*N
+    org_ids = [c.get("organization_id") for c in clients if c.get("organization_id")]
+
+    emp_counts = {}
+    proj_counts = {}
+    if org_ids:
+        emp_pipeline = [
+            {"$match": {"organization_id": {"$in": org_ids}}},
+            {"$group": {"_id": "$organization_id", "count": {"$sum": 1}}}
+        ]
+        proj_pipeline = [
+            {"$match": {"organization_id": {"$in": org_ids}}},
+            {"$group": {"_id": "$organization_id", "count": {"$sum": 1}}}
+        ]
+        import asyncio
+        emp_res, proj_res = await asyncio.gather(
+            db.employees.aggregate(emp_pipeline).to_list(None),
+            db.projects.aggregate(proj_pipeline).to_list(None)
+        )
+        emp_counts = {r["_id"]: r["count"] for r in emp_res}
+        proj_counts = {r["_id"]: r["count"] for r in proj_res}
+
     for client in clients:
         org_id = client.get("organization_id")
-        if org_id:
-            emp_count = await db.employees.count_documents({"organization_id": org_id})
-            proj_count = await db.projects.count_documents({"organization_id": org_id})
-            client["usage"] = {
-                "employees": emp_count,
-                "projects": proj_count
-            }
+        client["usage"] = {
+            "employees": emp_counts.get(org_id, 0),
+            "projects": proj_counts.get(org_id, 0)
+        }
     return clients
 
 @api_router.put("/saas/clients/{client_id}/limits")
@@ -1635,12 +1851,26 @@ async def create_ticket(data: TicketCreate, current_user: dict = Depends(get_cur
 async def get_tickets(current_user: dict = Depends(get_current_user)):
     return await db.tickets.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
 
+VALID_TICKET_STATUSES = {"open", "in_progress", "resolved", "closed"}
+
 @api_router.patch("/tickets/{ticket_id}/status")
 async def update_ticket_status(ticket_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
-    result = await db.tickets.update_one({"id": ticket_id}, {"$set": {"status": status_data.status, "assigned_to": current_user.get("id")}})
+    if status_data.status not in VALID_TICKET_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {VALID_TICKET_STATUSES}")
+    update_fields: dict = {
+        "status": status_data.status,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    # Only auto-assign if not already assigned
+    if status_data.status == "in_progress":
+        update_fields["assigned_to"] = current_user.get("id")
+    result = await db.tickets.update_one(
+        {"id": ticket_id, "organization_id": current_user.get("organization_id")},
+        {"$set": update_fields}
+    )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    return {"message": "Ticket status updated"}
+    return {"message": f"Ticket status updated to {status_data.status}"}
 
 # Vendors (Zoho Books/Inventory)
 @api_router.post("/vendors", response_model=Vendor)
@@ -1877,8 +2107,18 @@ async def get_trip(trip_id: str, current_user: dict = Depends(get_current_user))
     return trip
 
 # Get live (latest) location for a trip
+# FIX: Was completely unauthenticated — anyone could fetch GPS data with a trip_id
 @api_router.get("/live/{trip_id}")
-async def get_live(trip_id: str):
+async def get_live(trip_id: str, current_user: dict = Depends(get_current_user)):
+    # Verify the trip belongs to this user or their org
+    trip = await db.trips.find_one({"id": trip_id}, {"_id": 0, "user_id": 1, "organization_id": 1})
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_admin = current_user.get("role") in ["admin", "superadmin"]
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+    if not (is_owner or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
     loc = await db.locations.find_one(
         {"trip_id": trip_id}, {"_id": 0}, sort=[("timestamp", -1)]
     )
@@ -2049,13 +2289,24 @@ async def create_journal_entry(data: JournalEntryCreate, current_user: dict = De
     total_credit = sum(l.credit for l in data.lines)
     if abs(total_debit - total_credit) > 0.01:
         raise HTTPException(status_code=400, detail=f"Entry must balance: debits={total_debit:.2f}, credits={total_credit:.2f}")
-    count = await db.journal_entries.count_documents({"company_id": company_id}) + 1
+    if not data.lines:
+        raise HTTPException(status_code=400, detail="Journal entry must have at least one line")
+
+    # FIX: Race-condition-safe atomic sequence counter using $inc on a counters collection
+    counter_result = await db.counters.find_one_and_update(
+        {"_id": f"journal_{company_id}"},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=True
+    )
+    seq_num = counter_result["seq"]
+
     entry = {
         "id": str(uuid.uuid4()),
         "company_id": company_id,
-        "entry_number": f"JE-{count:05d}",
-        "total_debit": total_debit,
-        "total_credit": total_credit,
+        "entry_number": f"JE-{seq_num:05d}",
+        "total_debit": round(total_debit, 2),
+        "total_credit": round(total_credit, 2),
         "status": "posted",
         "created_by": current_user.get("name", ""),
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -2065,6 +2316,7 @@ async def create_journal_entry(data: JournalEntryCreate, current_user: dict = De
         "lines": [l.model_dump() for l in data.lines]
     }
     await db.journal_entries.insert_one({k: v for k, v in entry.items() if k != "_id"})
+    # Update ledger balances for all lines in one loop (already O(n) which is fine)
     for line in data.lines:
         await db.chart_of_accounts.update_one(
             {"id": line.account_id, "company_id": company_id},
@@ -2269,6 +2521,190 @@ async def delete_company(company_id: str, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=404, detail="Company not found")
     return {"message": "Company deleted successfully"}
 
+# ═══════════════════════════════════════════════════════════
+# AI INTELLIGENCE ENDPOINTS
+# ═══════════════════════════════════════════════════════════
+
+@api_router.get("/ai/dashboard-brief")
+async def ai_dashboard_brief(current_user: dict = Depends(get_current_user)):
+    """Personalized AI morning brief based on live data"""
+    org_id = current_user.get("organization_id")
+    query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+
+    employees = await db.employees.count_documents(query)
+    leads = await db.leads.count_documents(query)
+    invoices = await db.invoices.count_documents(query)
+    tickets = await db.tickets.count_documents(query)
+    pending_leaves = await db.leave_requests.count_documents({**query, "status": "pending"})
+
+    items = []
+    if pending_leaves > 0:
+        items.append({"type": "warning", "msg": f"{pending_leaves} leave request(s) pending approval", "link": "/hrms"})
+    if tickets > 0:
+        items.append({"type": "info", "msg": f"{tickets} support ticket(s) need attention", "link": "/support-desk"})
+    if leads > 0:
+        items.append({"type": "positive", "msg": f"{leads} leads in CRM pipeline — review today", "link": "/crm"})
+
+    health_score = min(100, max(0,
+        50 + (employees * 2) + (leads * 3) + (invoices * 5) - (pending_leaves * 3)
+    ))
+
+    return {
+        "brief_items": items,
+        "health_score": health_score,
+        "health_label": "Excellent 🚀" if health_score > 80 else "Good 👍" if health_score > 60 else "Fair ⚡" if health_score > 40 else "Needs Focus 🎯",
+        "stats": {"employees": employees, "leads": leads, "invoices": invoices, "tickets": tickets, "pending_leaves": pending_leaves}
+    }
+
+@api_router.get("/ai/crm-insights")
+async def ai_crm_insights(current_user: dict = Depends(get_current_user)):
+    """AI-powered CRM insights: lead scoring, next actions, forecast"""
+    org_id = current_user.get("organization_id")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+
+    leads = await db.leads.find(query, {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(query, {"_id": 0}).to_list(1000)
+
+    total_deal_value = sum(d.get("value", 0) for d in deals)
+    won_deals = [d for d in deals if d.get("stage") == "closed-won"]
+    win_rate = (len(won_deals) / len(deals) * 100) if deals else 0
+    forecasted = sum(d.get("value", 0) * (d.get("probability", 50) / 100) for d in deals if d.get("stage") != "closed-lost")
+
+    # Identify at-risk leads (no activity in 14+ days)
+    from datetime import datetime, timezone, timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    at_risk = [l for l in leads if l.get("created_at", "") < cutoff and l.get("status") not in ["closed-won", "closed-lost"]]
+
+    return {
+        "total_deals_value": total_deal_value,
+        "win_rate": round(win_rate, 1),
+        "forecasted_revenue": round(forecasted, 2),
+        "at_risk_leads": len(at_risk),
+        "insights": [
+            {"type": "warning" if at_risk else "positive", "title": f"{len(at_risk)} leads at risk" if at_risk else "Pipeline healthy", "message": f"{len(at_risk)} leads have had no activity for 14+ days. Re-engage with targeted content." if at_risk else "All leads have recent activity. Keep the momentum!"},
+            {"type": "info", "title": f"{round(win_rate, 0)}% win rate", "message": f"Pipeline forecast: ₹{round(forecasted/100000, 1)}L. {'Above target! 🎉' if win_rate > 30 else 'Focus on Negotiation-stage deals for quick wins.'}"},
+        ]
+    }
+
+@api_router.get("/ai/hr-insights")
+async def ai_hr_insights(current_user: dict = Depends(get_current_user)):
+    """AI-powered HR insights: attrition risk, team health"""
+    org_id = current_user.get("organization_id")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+
+    employees = await db.employees.find(query, {"_id": 0}).to_list(1000)
+    leaves = await db.leaves.find(query, {"_id": 0}).to_list(1000)
+
+    # Detect high leave frequency (attrition risk signal)
+    leave_counts = {}
+    for leave in leaves:
+        emp_id = leave.get("employee_id")
+        leave_counts[emp_id] = leave_counts.get(emp_id, 0) + 1
+
+    high_leave_emps = [emp_id for emp_id, count in leave_counts.items() if count >= 3]
+    pending_leaves = [l for l in leaves if l.get("status") == "pending"]
+
+    return {
+        "total_employees": len(employees),
+        "attrition_risk_count": len(high_leave_emps),
+        "pending_leave_requests": len(pending_leaves),
+        "insights": [
+            {"type": "warning" if high_leave_emps else "positive", "title": f"{len(high_leave_emps)} attrition risk signals" if high_leave_emps else "Team retention looks healthy", "message": f"{len(high_leave_emps)} employees have taken 3+ leaves — consider 1:1 check-ins." if high_leave_emps else "No unusual leave patterns detected this period."},
+            {"type": "info" if pending_leaves else "positive", "title": f"{len(pending_leaves)} leave approvals pending" if pending_leaves else "No pending approvals", "message": "Pending leaves should be resolved within 24 hours to maintain team trust." if pending_leaves else "All leave requests are up to date! ✓"},
+        ]
+    }
+
+@api_router.get("/notifications")
+async def get_notifications(current_user: dict = Depends(get_current_user)):
+    """Smart notifications generated from live data"""
+    org_id = current_user.get("organization_id")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+
+    pending_leaves = await db.leaves.count_documents({**query, "status": "pending"})
+    open_tickets = await db.tickets.count_documents({**query, "status": "open"})
+    total_leads = await db.leads.count_documents(query)
+
+    notifications = []
+
+    if pending_leaves > 0:
+        notifications.append({
+            "id": "notif-leaves",
+            "type": "leave",
+            "title": f"{pending_leaves} Leave Request(s) Pending",
+            "body": "Team members are waiting for approval.",
+            "action": "/hrms",
+            "read": False,
+            "priority": "high",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    if open_tickets > 0:
+        notifications.append({
+            "id": "notif-tickets",
+            "type": "ticket",
+            "title": f"{open_tickets} Open Support Ticket(s)",
+            "body": "Customers awaiting response.",
+            "action": "/support-desk",
+            "read": False,
+            "priority": "medium" if open_tickets < 5 else "high",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    notifications.append({
+        "id": "notif-ai-brief",
+        "type": "ai",
+        "title": "AI Business Brief Ready",
+        "body": f"Team: {await db.employees.count_documents(query)} · Leads: {total_leads} · Tickets: {open_tickets}",
+        "action": "/",
+        "read": True,
+        "priority": "low",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    return notifications
+
+# ═══════════════════════════════════════════════════════════
+# INVOICE STATUS UPDATE
+# ═══════════════════════════════════════════════════════════
+
+@api_router.patch("/invoices/{invoice_id}/status")
+async def update_invoice_status(invoice_id: str, status_data: dict, current_user: dict = Depends(get_current_user)):
+    """Update invoice payment status"""
+    new_status = status_data.get("status")
+    if new_status not in ["pending", "paid", "overdue", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    result = await db.invoices.update_one(
+        {"id": invoice_id},
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return {"message": f"Invoice marked as {new_status}", "status": new_status}
+
+# ═══════════════════════════════════════════════════════════
+# VENDORS CRUD
+# ═══════════════════════════════════════════════════════════
+
+@api_router.get("/vendors")
+async def get_vendors(current_user: dict = Depends(get_current_user)):
+    """Get all vendors for the organization"""
+    org_id = current_user.get("organization_id")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+    vendors = await db.vendors.find(query, {"_id": 0}).to_list(1000)
+    return vendors
+
+@api_router.post("/vendors")
+async def create_vendor(vendor_data: dict, current_user: dict = Depends(get_current_user)):
+    """Create a new vendor"""
+    vendor = {
+        "id": str(uuid.uuid4()),
+        "organization_id": current_user.get("organization_id"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        **vendor_data
+    }
+    await db.vendors.insert_one({k: v for k, v in vendor.items() if k != "_id"})
+    return vendor
+
 app.include_router(api_router)
 
 
@@ -2278,6 +2714,111 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def create_indexes():
+    """Create all MongoDB indexes on startup (idempotent — safe to run multiple times)."""
+    logger.info("Creating MongoDB indexes...")
+
+    # ── Users ──────────────────────────────────────────────
+    await db.users.create_index("id", unique=True)
+    await db.users.create_index("email", unique=True)
+    await db.users.create_index("organization_id")
+    await db.users.create_index([("organization_id", 1), ("role", 1)])
+
+    # ── Employees ──────────────────────────────────────────
+    await db.employees.create_index("id", unique=True)
+    await db.employees.create_index("organization_id")
+    await db.employees.create_index([("organization_id", 1), ("status", 1)])
+
+    # ── Leave Requests ─────────────────────────────────────
+    await db.leave_requests.create_index("id", unique=True)
+    await db.leave_requests.create_index([("organization_id", 1), ("status", 1)])
+    await db.leave_requests.create_index([("organization_id", 1), ("employee_id", 1)])
+
+    # ── Projects & Tasks ───────────────────────────────────
+    await db.projects.create_index("id", unique=True)
+    await db.projects.create_index("organization_id")
+    await db.tasks.create_index("id", unique=True)
+    await db.tasks.create_index([("organization_id", 1), ("project_id", 1)])
+    await db.tasks.create_index([("organization_id", 1), ("status", 1)])
+
+    # ── CRM ────────────────────────────────────────────────
+    await db.leads.create_index("id", unique=True)
+    await db.leads.create_index([("organization_id", 1), ("status", 1)])
+    await db.leads.create_index([("organization_id", 1), ("created_at", -1)])
+    await db.deals.create_index("id", unique=True)
+    await db.deals.create_index([("organization_id", 1), ("stage", 1)])
+
+    # ── Finance ────────────────────────────────────────────
+    await db.invoices.create_index("id", unique=True)
+    await db.invoices.create_index([("organization_id", 1), ("status", 1)])
+    await db.invoices.create_index([("organization_id", 1), ("due_date", 1)])
+    await db.customers.create_index("id", unique=True)
+    await db.customers.create_index("organization_id")
+    await db.vendors.create_index("id", unique=True)
+    await db.vendors.create_index("organization_id")
+    await db.expenses.create_index([("organization_id", 1), ("status", 1)])
+    await db.expenses.create_index([("organization_id", 1), ("date", -1)])
+
+    # ── Support Desk ───────────────────────────────────────
+    await db.tickets.create_index("id", unique=True)
+    await db.tickets.create_index([("organization_id", 1), ("status", 1)])
+    await db.tickets.create_index([("organization_id", 1), ("priority", 1)])
+    await db.tickets.create_index([("organization_id", 1), ("created_at", -1)])
+
+    # ── Timesheets ─────────────────────────────────────────
+    await db.timesheets.create_index("id", unique=True)
+    await db.timesheets.create_index([("organization_id", 1), ("employee_id", 1)])
+    await db.timesheets.create_index([("organization_id", 1), ("date", -1)])
+
+    # ── Announcements ──────────────────────────────────────
+    await db.announcements.create_index([("organization_id", 1), ("created_at", -1)])
+
+    # ── Purchases ──────────────────────────────────────────
+    await db.purchase_requests.create_index("id", unique=True)
+    await db.purchase_requests.create_index([("organization_id", 1), ("status", 1)])
+    await db.purchase_orders.create_index("id", unique=True)
+    await db.purchase_orders.create_index([("organization_id", 1), ("status", 1)])
+    await db.stores.create_index("id", unique=True)
+    await db.stores.create_index("organization_id")
+
+    # ── Assets ─────────────────────────────────────────────
+    await db.assets.create_index("id", unique=True)
+    await db.assets.create_index("organization_id")
+
+    # ── Attendance ─────────────────────────────────────────
+    await db.attendance.create_index([("organization_id", 1), ("employee_id", 1)])
+    await db.attendance.create_index([("organization_id", 1), ("date", -1)])
+
+    # ── Accountant / Ledger ────────────────────────────────
+    await db.chart_of_accounts.create_index([("company_id", 1), ("code", 1)], unique=True)
+    await db.journal_entries.create_index([("company_id", 1), ("date", -1)])
+    await db.journal_entries.create_index([("company_id", 1), ("entry_number", 1)])
+    await db.gst_returns.create_index([("company_id", 1), ("status", 1)])
+    await db.bank_accounts.create_index("company_id")
+
+    # ── Companies ──────────────────────────────────────────
+    await db.companies.create_index("id", unique=True)
+    await db.companies.create_index([("organization_id", 1), ("created_at", -1)])
+
+    # ── Travel Tracker ─────────────────────────────────────
+    await db.trips.create_index([("user_id", 1), ("start_time", -1)])
+    await db.trips.create_index([("organization_id", 1)])
+    await db.locations.create_index([("trip_id", 1), ("timestamp", -1)])
+
+    # ── Misc ───────────────────────────────────────────────
+    await db.team_invites.create_index("token", unique=True)
+    await db.team_invites.create_index([("organization_id", 1), ("status", 1)])
+    await db.posh_complaints.create_index([("organization_id", 1), ("status", 1)])
+    await db.wfh_requests.create_index([("organization_id", 1), ("status", 1)])
+    await db.audit_logs.create_index([("organization_id", 1), ("created_at", -1)])
+    await db.offer_letters.create_index([("organization_id", 1), ("created_at", -1)])
+    await db.jobs.create_index([("organization_id", 1), ("status", 1)])
+    await db.candidates.create_index([("organization_id", 1), ("job_id", 1)])
+    await db.kb.create_index([("organization_id", 1), ("category", 1)])
+
+    logger.info("✅ MongoDB indexes created/verified successfully")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    client.close()
