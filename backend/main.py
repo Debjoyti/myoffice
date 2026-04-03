@@ -16,6 +16,7 @@ from jose import JWTError, jwt
 import uuid
 from cachetools import TTLCache
 import threading
+from fallback_db import InMemoryDatabase
 
 # ── Thread-safe in-process user cache (TTL = 60 s) ──────────────
 _user_cache: TTLCache = TTLCache(maxsize=512, ttl=60)
@@ -24,9 +25,17 @@ _cache_lock = threading.Lock()
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+mongo_url = os.environ.get('MONGO_URL', '').strip()
+db_name = os.environ.get('DB_NAME', 'myoffice').strip() or 'myoffice'
+using_fallback_db = not bool(mongo_url)
+
+if using_fallback_db:
+    client = None
+    db = InMemoryDatabase()
+    logging.warning("MONGO_URL is missing. Using in-memory fallback database.")
+else:
+    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=2500)
+    db = client[db_name]
 
 app = FastAPI(title="PRSK API", version="2.0.0")
 
@@ -2864,7 +2873,22 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def create_indexes():
+    global db, client, using_fallback_db
     """Create all MongoDB indexes on startup (idempotent — safe to run multiple times)."""
+    if client is not None:
+        try:
+            await client.admin.command("ping")
+        except Exception as exc:
+            logger.exception("MongoDB ping failed. Falling back to in-memory DB: %s", exc)
+            client = None
+            db = InMemoryDatabase()
+            using_fallback_db = True
+
+    if using_fallback_db:
+        logger.warning("Running backend with in-memory fallback DB.")
+        await ensure_demo_users_seeded()
+        return
+
     logger.info("Creating MongoDB indexes...")
 
     # ── Users ──────────────────────────────────────────────
@@ -2966,7 +2990,9 @@ async def create_indexes():
     await db.kb.create_index([("organization_id", 1), ("category", 1)])
 
     logger.info("✅ MongoDB indexes created/verified successfully")
+    await ensure_demo_users_seeded()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if client is not None:
+        client.close()
