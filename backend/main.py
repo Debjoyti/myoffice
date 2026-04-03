@@ -3,7 +3,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import asyncio
 import logging
@@ -18,6 +17,11 @@ from cachetools import TTLCache
 import threading
 from fallback_db import InMemoryDatabase
 
+try:
+    from motor.motor_asyncio import AsyncIOMotorClient
+except Exception:
+    AsyncIOMotorClient = None
+
 # ── Thread-safe in-process user cache (TTL = 60 s) ──────────────
 _user_cache: TTLCache = TTLCache(maxsize=512, ttl=60)
 _cache_lock = threading.Lock()
@@ -29,10 +33,13 @@ mongo_url = os.environ.get('MONGO_URL', '').strip()
 db_name = os.environ.get('DB_NAME', 'myoffice').strip() or 'myoffice'
 using_fallback_db = not bool(mongo_url)
 
-if using_fallback_db:
+if using_fallback_db or AsyncIOMotorClient is None:
     client = None
     db = InMemoryDatabase()
-    logging.warning("MONGO_URL is missing. Using in-memory fallback database.")
+    if AsyncIOMotorClient is None:
+        logging.warning("motor/pymongo import failed. Using in-memory fallback database.")
+    else:
+        logging.warning("MONGO_URL is missing. Using in-memory fallback database.")
 else:
     client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=2500)
     db = client[db_name]
