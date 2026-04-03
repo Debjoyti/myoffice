@@ -628,12 +628,12 @@ class WFHRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     employee_id: str
-    employee_name: str
+    employee_name: Optional[str] = "Employee"
     start_date: str
     end_date: str
     reason: str
     status: str = "pending"  # pending, approved, rejected
-    organization_id: str
+    organization_id: Optional[str] = "default"
     created_at: str
 
 class WFHRequestCreate(BaseModel):
@@ -1095,10 +1095,10 @@ async def update_posh_status(complaint_id: str, status_data: StatusUpdate, curre
 async def create_wfh_request(wfh_data: WFHRequestCreate, current_user: dict = Depends(get_current_user)):
     doc = wfh_data.model_dump()
     doc["id"] = f"WFH-{str(uuid.uuid4())[:8].upper()}"
-    doc["employee_id"] = current_user.get("id")
-    doc["employee_name"] = current_user.get("name")
+    doc["employee_id"] = current_user.get("id") or "unknown"
+    doc["employee_name"] = current_user.get("name") or "User"
     doc["status"] = "pending"
-    doc["organization_id"] = current_user.get("organization_id")
+    doc["organization_id"] = current_user.get("organization_id") or "default"
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.wfh_requests.insert_one(doc)
     return doc
