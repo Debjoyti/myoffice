@@ -3003,3 +3003,5 @@ async def create_indexes():
 async def shutdown_db_client():
     if client is not None:
         client.close()
+
+handler = app
