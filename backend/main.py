@@ -2897,6 +2897,8 @@ async def create_indexes():
         return
 
     logger.info("Creating MongoDB indexes...")
+    await ensure_demo_users_seeded()
+    return
 
     # ── Users ──────────────────────────────────────────────
     await db.users.create_index("id", unique=True)
