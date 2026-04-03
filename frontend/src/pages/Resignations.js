@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { LogOut, ArrowRight, Calculator, Check, X } from 'lucide-react';
@@ -8,9 +9,10 @@ const API = `${BACKEND_URL}/api`;
 
 const Resignations = ({ user }) => {
     const [resignations, setResignations] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({ reason: '', resignation_date: '', last_working_day: '', notice_period_days: 30 });
+    const [formData, setFormData] = useState({ employee_id: '', reason: '', resignation_date: '', last_working_day: '', notice_period_days: 30 });
     
     const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
 
@@ -20,8 +22,12 @@ const Resignations = ({ user }) => {
 
     const fetchResignations = async () => {
         try {
-            const res = await axios.get(`${API}/resignations`, { headers: headers() });
-            setResignations(res.data);
+            const [resRes, empRes] = await Promise.all([
+                axios.get(`${API}/resignations`, { headers: headers() }),
+                axios.get(`${API}/employees`, { headers: headers() })
+            ]);
+            setResignations(resRes.data);
+            setEmployees(empRes.data);
         } catch (e) {
             console.error(e);
             toast.error('Failed to fetch resignations');
@@ -35,6 +41,7 @@ const Resignations = ({ user }) => {
             await axios.post(`${API}/resignations`, formData, { headers: headers() });
             toast.success('Resignation request submitted');
             setShowModal(false);
+            setFormData({ employee_id: '', reason: '', resignation_date: '', last_working_day: '', notice_period_days: 30 });
             fetchResignations();
         } catch {
             toast.error('Failed to submit resignation');
@@ -104,6 +111,15 @@ const Resignations = ({ user }) => {
                                         <div>
                                             <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#22d3ee' }}>₹{r.fnf_amount.toLocaleString()}</p>
                                             <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Calculated Settled Amount</p>
+                                            {r.fnf_breakdown && (
+                                                <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(34,211,238,0.05)', borderRadius: '6px', textAlign: 'left', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                                                    {Object.entries(r.fnf_breakdown).map(([k,v]) => (
+                                                        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                                            <span>{k}:</span><span style={{ color: v < 0 ? '#f43f5e' : '#34d399', fontWeight: 600 }}>₹{v.toLocaleString()}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <span style={{ fontSize: '12px', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', color: 'rgba(255,255,255,0.4)' }}>Pending Calculation</span>
@@ -132,11 +148,20 @@ const Resignations = ({ user }) => {
                 </div>
             )}
 
-            {showModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
-                    <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px' }}>
+            {showModal && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+                    <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', zIndex: 100000 }}>
                         <h3 style={{ marginTop: 0, color: '#fff', fontSize: '18px' }}>Apply for Resignation</h3>
                         <form onSubmit={handleApply} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Employee</label>
+                                <select required value={formData.employee_id} onChange={e => setFormData({...formData, employee_id: e.target.value})} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                                    <option value="" style={{ background: '#1e293b' }}>Select Employee</option>
+                                    {employees.map(emp => (
+                                        <option key={emp.id} value={emp.id} style={{ background: '#1e293b' }}>{emp.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Reason</label>
                                 <textarea required value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', outline: 'none' }} rows={3} placeholder="Reason for resignation..." />
@@ -155,7 +180,8 @@ const Resignations = ({ user }) => {
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

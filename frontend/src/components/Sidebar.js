@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   LogOut, Menu, X, LayoutDashboard, Users, Calendar, FolderKanban, Briefcase,
   TrendingUp, Package, Building2, FileText, ClipboardList, Settings, UserPlus,
@@ -11,7 +11,6 @@ import NotificationCenter from './NotificationCenter';
 const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, setIsSidebarOpen }) => {
   const [commandInput, setCommandInput] = useState('');
   const [commandFocused, setCommandFocused] = useState(false);
-  const [commandResults, setCommandResults] = useState([]);
   const commandInputRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -119,27 +118,21 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
   const currentActivePage = pathToId[location.pathname] || activePage;
 
   // Command palette search
-  const updateCommandResults = useCallback((query) => {
-    if (!query.trim()) { setCommandResults([]); return; }
-    const q = query.toLowerCase().trim();
-    const matches = flatMenuItems.filter(item =>
+  const commandResults = useMemo(() => {
+    if (!commandInput.trim()) return [];
+    const q = commandInput.toLowerCase().trim();
+    return flatMenuItems.filter(item =>
       item.label.toLowerCase().includes(q) ||
       item.tcode.toLowerCase().includes(q) ||
       item.id.toLowerCase().includes(q) ||
       (item.desc || '').toLowerCase().includes(q)
     ).slice(0, 6);
-    setCommandResults(matches);
-  }, [flatMenuItems]);
-
-  useEffect(() => {
-    updateCommandResults(commandInput);
-  }, [commandInput, updateCommandResults]);
+  }, [commandInput, flatMenuItems]);
 
   const handleCommandSelect = (item) => {
     setActivePage(item.id);
     navigate(item.path);
     setCommandInput('');
-    setCommandResults([]);
     setCommandFocused(false);
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
@@ -164,7 +157,6 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     }
     if (e.key === 'Escape') {
       setCommandInput('');
-      setCommandResults([]);
       setCommandFocused(false);
     }
   };

@@ -16,6 +16,7 @@ import Recruitment from './Recruitment';
 import POSH from './POSH';
 import WFHRequests from './WFHRequests';
 import Resignations from './Resignations';
+import PIP from './PIP';
 import Sidebar from '../components/Sidebar';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -117,6 +118,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     <button style={getTabStyle('hr-config')} onClick={() => setActiveTab('hr-config')}>Configuration</button>
                     <button style={getTabStyle('posh')} onClick={() => setActiveTab('posh')}>POSH Compliance</button>
                     <button style={getTabStyle('resignations')} onClick={() => setActiveTab('resignations')}>Exit / Resignations</button>
+                    <button style={getTabStyle('pip')} onClick={() => setActiveTab('pip')}>Performance (PIP)</button>
                 </div>
             </div>
 
@@ -231,6 +233,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'hr-config' && <HRConfig isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'resignations' && <Resignations isSubComponent={true} user={user} onLogout={onLogout} />}
+                    {activeTab === 'pip' && <PIP isSubComponent={true} user={user} onLogout={onLogout} />}
                 </div>
             </div>
         </>

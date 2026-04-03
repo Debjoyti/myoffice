@@ -95,7 +95,9 @@ class AIAuditTrackerMiddleware(BaseHTTPMiddleware):
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
             # Fire-and-forget background logging to avoid blocking response pipeline
-            asyncio.create_task(db.audit_logs.insert_one(log_doc))
+            async def _log():
+                await db.audit_logs.insert_one(log_doc)
+            asyncio.create_task(_log())
             
         return response
 
@@ -759,10 +761,33 @@ class Resignation(BaseModel):
     created_at: str
 
 class ResignationCreate(BaseModel):
+    employee_id: str
     reason: str
     resignation_date: str
     last_working_day: Optional[str] = None
     notice_period_days: int = 30
+
+class PerformancePlan(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    employee_name: str
+    reason: str
+    goals: str
+    duration_days: int = 30
+    start_date: str
+    end_date: str
+    status: str = "active"
+    organization_id: str
+    created_at: str
+
+class PerformancePlanCreate(BaseModel):
+    employee_id: str
+    reason: str
+    goals: str
+    duration_days: int = 30
+    start_date: str
+    end_date: str
 
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserRegister):
@@ -835,25 +860,17 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     org_id = current_user.get("organization_id")
     q = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
-    # ── Run all count queries concurrently ─────────────────────
-    import asyncio
-    (
-        total_employees, active_employees, total_projects,
-        pending_leaves, total_leads, pending_pr, total_stores,
-        total_customers, total_invoices, total_tickets, total_vendors,
-    ) = await asyncio.gather(
-        db.employees.count_documents(q),
-        db.employees.count_documents({**q, "status": "active"}),
-        db.projects.count_documents(q),
-        db.leave_requests.count_documents({**q, "status": "pending"}),
-        db.leads.count_documents(q),
-        db.purchase_requests.count_documents({**q, "status": "pending"}),
-        db.stores.count_documents(q),
-        db.customers.count_documents(q),
-        db.invoices.count_documents(q),
-        db.tickets.count_documents(q),
-        db.vendors.count_documents(q),
-    )
+    total_employees = await db.employees.count_documents(q)
+    active_employees = await db.employees.count_documents({**q, "status": "active"})
+    total_projects = await db.projects.count_documents(q)
+    pending_leaves = await db.leave_requests.count_documents({**q, "status": "pending"})
+    total_leads = await db.leads.count_documents(q)
+    pending_pr = await db.purchase_requests.count_documents({**q, "status": "pending"})
+    total_stores = await db.stores.count_documents(q)
+    total_customers = await db.customers.count_documents(q)
+    total_invoices = await db.invoices.count_documents(q)
+    total_tickets = await db.tickets.count_documents(q)
+    total_vendors = await db.vendors.count_documents(q)
 
     # ── Aggregate expense sum in DB — no in-memory scan ────────
     exp_agg = await db.expenses.aggregate([
@@ -2704,6 +2721,137 @@ async def create_vendor(vendor_data: dict, current_user: dict = Depends(get_curr
     }
     await db.vendors.insert_one({k: v for k, v in vendor.items() if k != "_id"})
     return vendor
+
+# ═══════════════════════════════════════════════════════════
+# OFFBOARDING: RESIGNATIONS & PIP
+# ═══════════════════════════════════════════════════════════
+
+@api_router.get("/resignations")
+async def get_resignations(current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+    res = await db.resignations.find(query, {"_id": 0}).to_list(1000)
+    return res
+
+@api_router.post("/resignations")
+async def create_resignation(data: ResignationCreate, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    try:
+        emp = await db.employees.find_one({"id": data.employee_id}, {"_id": 0, "name": 1})
+        emp_name = emp["name"] if emp else "Unknown"
+    except Exception:
+        emp_name = "Unknown"
+        
+    doc = {
+        "id": str(uuid.uuid4()),
+        "organization_id": org_id,
+        "employee_id": data.employee_id,
+        "employee_name": emp_name,
+        "reason": data.reason,
+        "resignation_date": data.resignation_date,
+        "last_working_day": data.last_working_day,
+        "notice_period_days": data.notice_period_days,
+        "status": "pending",
+        "fnf_status": "pending",
+        "fnf_amount": 0.0,
+        "fnf_breakdown": {},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.resignations.insert_one(doc)
+    return doc
+
+@api_router.patch("/resignations/{id}/status")
+async def update_resignation_status(id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    res = await db.resignations.update_one(
+        {"id": id, "organization_id": current_user.get("organization_id")},
+        {"$set": {"status": payload.get("status")}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Resignation not found")
+    return {"message": "Status updated"}
+
+@api_router.post("/resignations/{id}/calculate-fnf")
+async def calculate_fnf(id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    resig = await db.resignations.find_one({"id": id, "organization_id": org_id})
+    if not resig:
+        raise HTTPException(404, "Not found")
+    
+    emp = await db.employees.find_one({"id": resig.get("employee_id")})
+    ctc = 600000 # default 6 LPA heuristic
+    if emp and emp.get("email"):
+        offer = await db.offer_letters.find_one({"email": emp["email"]})
+        if offer and "ctc_yearly" in offer:
+            ctc = float(offer["ctc_yearly"])
+            
+    # Calculate daily run rate
+    monthly = ctc / 12
+    daily = monthly / 30
+    
+    # Approximate unutilized leaves logic (demo 15 days)
+    leave_encashment = 15 * daily
+    
+    # Notice period deficit/recovery (assuming 30 days standard vs what is entered)
+    notice_diff = max(0, 30 - resig.get("notice_period_days", 30))
+    notice_recovery = notice_diff * daily
+    
+    base_last_month = monthly
+    total = base_last_month + leave_encashment - notice_recovery
+    
+    breakdown = {
+        "Base Salary Pending (1M)": base_last_month,
+        "Leave Encashment (approx)": leave_encashment,
+        "Notice Period Deficit Recovery": -notice_recovery
+    }
+    
+    await db.resignations.update_one(
+        {"id": id},
+        {"$set": {
+            "fnf_status": "calculated",
+            "fnf_amount": round(total, 2),
+            "fnf_breakdown": breakdown
+        }}
+    )
+    return {"message": "FnF generated", "amount": total}
+
+@api_router.get("/pip")
+async def get_pips(current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
+    res = await db.performance_plans.find(query, {"_id": 0}).to_list(1000)
+    return res
+
+@api_router.post("/pip")
+async def create_pip(data: PerformancePlanCreate, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    emp = await db.employees.find_one({"id": data.employee_id})
+    emp_name = emp["name"] if emp else "Unknown"
+        
+    doc = {
+        "id": str(uuid.uuid4()),
+        "organization_id": org_id,
+        "employee_id": data.employee_id,
+        "employee_name": emp_name,
+        "reason": data.reason,
+        "goals": data.goals,
+        "duration_days": data.duration_days,
+        "start_date": data.start_date,
+        "end_date": data.end_date,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.performance_plans.insert_one(doc)
+    return doc
+
+@api_router.patch("/pip/{id}/status")
+async def update_pip_status(id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    res = await db.performance_plans.update_one(
+        {"id": id, "organization_id": current_user.get("organization_id")},
+        {"$set": {"status": payload.get("status")}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "PIP not found")
+    return {"message": "Status updated"}
 
 app.include_router(api_router)
 
