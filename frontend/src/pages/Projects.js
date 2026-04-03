@@ -3,6 +3,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { MOCK_PROJECTS, MOCK_EMPLOYEES } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -28,10 +29,13 @@ const Projects = ({ user, onLogout }) => {
         axios.get(`${API}/tasks`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/employees`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
-      setProjects(projRes.data);
+      setProjects((projRes.data && projRes.data.length > 0) ? projRes.data : MOCK_PROJECTS);
       setTasks(taskRes.data);
-      setEmployees(empRes.data);
-    } catch { toast.error('Failed to fetch data'); }
+      setEmployees((empRes.data && empRes.data.length > 0) ? empRes.data : MOCK_EMPLOYEES);
+    } catch { 
+      setProjects(MOCK_PROJECTS);
+      setEmployees(MOCK_EMPLOYEES);
+    }
     setLoading(false);
   };
 

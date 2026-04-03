@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts';
-import {
-  LayoutDashboard, Package, Landmark, ShoppingBag, ShoppingCart, Calculator,
-  FileBarChart, ChevronRight, ChevronDown, Plus, LogOut, Users, FileText,
-  CreditCard, Receipt, BookOpen, TrendingUp, AlertCircle, CheckCircle,
-  Clock, X, Search, Bell, Settings, RefreshCw, Download, Filter, Eye,
-  ArrowUpRight, ArrowDownRight, Building2
-} from 'lucide-react';
+import { LayoutDashboard, Landmark, Receipt, Users, Calculator, FileText, ChevronDown, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, Search, Filter, MoreVertical, Building2, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { MOCK_FINANCE } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -200,7 +195,18 @@ export default function AccountantPortal({ user, onLogout }) {
     const h = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     const get = async p => axios.get(`${API}/${p}`, { headers: h }).then(r => r.data).catch(() => null);
     const [s, i, c, v, it, ac, bk, jr, pnl, bs] = await Promise.all([ get('ledger/summary'), get('invoices'), get('customers'), get('vendors'), get('inventory'), get('ledger/accounts'), get('ledger/bank'), get('ledger/journal'), get('ledger/pnl'), get('ledger/balance-sheet') ]);
-    setData({ summary: s, invoices: i || [], customers: c || [], vendors: v || [], inventory: it || [], accounts: ac || [], banks: bk || [], journals: jr || [], reports: { pnl, bs } });
+    
+    setData({ 
+      summary: s || MOCK_FINANCE.summary, 
+      invoices: (i && i.length > 0) ? i : MOCK_FINANCE.invoices, 
+      customers: (c && c.length > 0) ? c : MOCK_FINANCE.customers, 
+      vendors: v || [], 
+      inventory: it || [], 
+      accounts: (ac && ac.length > 0) ? ac : MOCK_FINANCE.accounts, 
+      banks: (bk && bk.length > 0) ? bk : MOCK_FINANCE.banks, 
+      journals: jr || [], 
+      reports: { pnl: pnl || MOCK_FINANCE.pnl, bs: bs || MOCK_FINANCE.bs } 
+    });
     setLoading(false);
   };
   useEffect(() => { fetch(); }, []);

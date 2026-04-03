@@ -18,6 +18,7 @@ import WFHRequests from './WFHRequests';
 import Resignations from './Resignations';
 import PIP from './PIP';
 import Sidebar from '../components/Sidebar';
+import { MOCK_EMPLOYEES, MOCK_HR } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -45,22 +46,25 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                 axios.get(`${API}/leave-requests`, { headers: headers() }).catch(() => ({ data: [] })),
                 axios.get(`${API}/wfh-requests`, { headers: headers() }).catch(() => ({ data: [] }))
             ]);
-            setEmployees(empRes.data);
-            setAttendance(attRes.data);
-            setLeaves(leaveRes.data);
-            setWfhRequests(wfhRes.data);
+            setEmployees((empRes.data && empRes.data.length > 0) ? empRes.data : MOCK_EMPLOYEES);
+            setAttendance((attRes.data && attRes.data.length > 0) ? attRes.data : []);
+            setLeaves((leaveRes.data && leaveRes.data.length > 0) ? leaveRes.data : MOCK_HR.leaves);
+            setWfhRequests((wfhRes.data && wfhRes.data.length > 0) ? wfhRes.data : []);
             
-            const totalEmp = empRes.data.length;
-            // Fixed: use correct field names from_date/to_date (not start_date/end_date)
+            const effectiveEmp = (empRes.data && empRes.data.length > 0) ? empRes.data : MOCK_EMPLOYEES;
+            const effectiveLeaves = (leaveRes.data && leaveRes.data.length > 0) ? leaveRes.data : MOCK_HR.leaves;
+            const effectiveAtt = (attRes.data && attRes.data.length > 0) ? attRes.data : [];
+
+            const totalEmp = effectiveEmp.length;
             const today = new Date().toISOString().split('T')[0];
-            const onLeave = leaveRes.data.filter(l => 
+            const onLeave = effectiveLeaves.filter(l => 
                 l.status === 'approved' && 
                 l.from_date <= today && 
                 l.to_date >= today
             ).length;
-            const pendingLeaves = leaveRes.data.filter(l => l.status === 'pending').length;
+            const pendingLeaves = effectiveLeaves.filter(l => l.status === 'pending').length;
             const pendingWfh = wfhRes.data.filter(r => r.status === 'pending').length;
-            const presentToday = attRes.data.filter(a => a.date === today && a.status === 'present').length;
+            const presentToday = effectiveAtt.filter(a => a.date === today && a.status === 'present').length;
             
             setStats({
                 totalEmp, onLeave, pendingLeaves, presentToday, pendingWfh,

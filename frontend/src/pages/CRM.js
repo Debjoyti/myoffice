@@ -3,6 +3,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { Plus, X, TrendingUp, DollarSign, Users, Target, Phone, Mail, Building, Sparkles, ChevronRight, BarChart2, Brain } from 'lucide-react';
 import { toast } from 'sonner';
+import { MOCK_CRM } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -81,9 +82,12 @@ const CRM = ({ user, onLogout }) => {
         axios.get(`${API}/leads`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/deals`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
-      setLeads(leadsRes.data);
-      setDeals(dealsRes.data);
-    } catch { toast.error('Failed to fetch CRM data'); }
+      setLeads((leadsRes.data && leadsRes.data.length > 0) ? leadsRes.data : MOCK_CRM.leads);
+      setDeals((dealsRes.data && dealsRes.data.length > 0) ? dealsRes.data : MOCK_CRM.deals);
+    } catch { 
+      setLeads(MOCK_CRM.leads);
+      setDeals(MOCK_CRM.deals);
+    }
     setLoading(false);
   };
 

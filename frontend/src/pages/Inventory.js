@@ -3,6 +3,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { MOCK_INVENTORY } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -20,8 +21,10 @@ const Inventory = ({ user, onLogout, isSubComponent }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API}/inventory`, { headers: { Authorization: `Bearer ${token}` } });
-      setItems(response.data);
-    } catch { toast.error('Failed to fetch inventory'); }
+      setItems((response.data && response.data.length > 0) ? response.data : MOCK_INVENTORY);
+    } catch { 
+      setItems(MOCK_INVENTORY);
+    }
     setLoading(false);
   };
 

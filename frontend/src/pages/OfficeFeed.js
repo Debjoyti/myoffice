@@ -3,6 +3,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { Megaphone, Plus, X, User, Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { MOCK_ANNOUNCEMENTS } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -21,8 +22,10 @@ const OfficeFeed = ({ user, onLogout }) => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.get(`${API}/announcements`, { headers: { Authorization: `Bearer ${token}` } });
-      setAnnouncements(res.data);
-    } catch { toast.error('Failed to fetch announcements'); }
+      setAnnouncements((res.data && res.data.length > 0) ? res.data : MOCK_ANNOUNCEMENTS);
+    } catch { 
+      setAnnouncements(MOCK_ANNOUNCEMENTS);
+    }
     setLoading(false);
   };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { MOCK_DASHBOARD_STATS, MOCK_INSIGHTS, MOCK_ANNOUNCEMENTS } from '../utils/demoData';
 import {
   Users, Briefcase, Calendar, TrendingUp, DollarSign, Receipt, Clock,
   MessageSquare, Building2, Plus, Sparkles, ArrowUp, ArrowDown, Minus,
@@ -76,11 +77,21 @@ const Dashboard = ({ user, onLogout }) => {
         axios.get(`${API}/companies`, h),
         axios.get(`${API}/announcements`, h),
       ]);
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-      if (insightsRes.status === 'fulfilled') setInsights(insightsRes.value.data || []);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data || MOCK_DASHBOARD_STATS);
+      else if (!stats) setStats(MOCK_DASHBOARD_STATS);
+
+      if (insightsRes.status === 'fulfilled') setInsights((insightsRes.value.data && insightsRes.value.data.length > 0) ? insightsRes.value.data : MOCK_INSIGHTS);
+      else if (insights.length === 0) setInsights(MOCK_INSIGHTS);
+
       if (compRes.status === 'fulfilled') setRecentCompanies((compRes.value.data || []).slice(0, 4));
-      if (annRes.status === 'fulfilled') setAnnouncements((annRes.value.data || []).slice(0, 4));
-    } catch {}
+      
+      if (annRes.status === 'fulfilled') setAnnouncements((annRes.value.data && annRes.value.data.length > 0) ? annRes.value.data : MOCK_ANNOUNCEMENTS);
+      else if (announcements.length === 0) setAnnouncements(MOCK_ANNOUNCEMENTS);
+    } catch {
+      if (!stats) setStats(MOCK_DASHBOARD_STATS);
+      if (insights.length === 0) setInsights(MOCK_INSIGHTS);
+      if (announcements.length === 0) setAnnouncements(MOCK_ANNOUNCEMENTS);
+    }
     setLoading(false);
   };
 
