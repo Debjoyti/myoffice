@@ -104,25 +104,42 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
     const content = (
         <>
             <div style={{ padding: '0 32px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ padding: '24px 0 16px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '24px 0 12px', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff' }}>HR People Hub</h1>
+                        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff', letterSpacing: '-0.02em' }}>PRSK <span style={{ color: '#818cf8', fontWeight: 600 }}>People</span></h1>
                         <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>PA40</span>
                     </div>
-                    <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>Unified Zoho-Style HR Workspace</p>
                 </div>
-                <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', paddingBottom: '2px' }}>
-                    <button style={getTabStyle('dashboard')} onClick={() => setActiveTab('dashboard')}>Dashboard</button>
-                    <button style={getTabStyle('employees')} onClick={() => setActiveTab('employees')}>Employee Directory</button>
-                    <button style={getTabStyle('attendance')} onClick={() => setActiveTab('attendance')}>Attendance</button>
-                    <button style={getTabStyle('leave')} onClick={() => setActiveTab('leave')}>Leave Tracker</button>
-                    <button style={getTabStyle('wfh')} onClick={() => setActiveTab('wfh')}>Work From Home</button>
-                    <button style={getTabStyle('recruitment')} onClick={() => setActiveTab('recruitment')}>Recruitment (ATS)</button>
-                    <button style={getTabStyle('offer-letters')} onClick={() => setActiveTab('offer-letters')}>Offer Letters</button>
-                    <button style={getTabStyle('hr-config')} onClick={() => setActiveTab('hr-config')}>Configuration</button>
-                    <button style={getTabStyle('posh')} onClick={() => setActiveTab('posh')}>POSH Compliance</button>
-                    <button style={getTabStyle('resignations')} onClick={() => setActiveTab('resignations')}>Exit / Resignations</button>
-                    <button style={getTabStyle('pip')} onClick={() => setActiveTab('pip')}>Performance (PIP)</button>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '4px', 
+                    overflowX: 'auto', 
+                    paddingBottom: '12px',
+                    maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                }} className="hide-scrollbar">
+                    {[
+                        { id: 'dashboard', label: 'Overview' },
+                        { id: 'employees', label: 'Directory' },
+                        { id: 'attendance', label: 'Attendance' },
+                        { id: 'leave', label: 'Leaves' },
+                        { id: 'wfh', label: 'Remote' },
+                        { id: 'recruitment', label: 'ATS' },
+                        { id: 'offer-letters', label: 'Offers' },
+                        { id: 'posh', label: 'Compliance' },
+                        { id: 'resignations', label: 'Exits' },
+                        { id: 'pip', label: 'Performance' },
+                        { id: 'hr-config', label: 'Config' },
+                    ].map(tab => (
+                        <button 
+                            key={tab.id}
+                            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                            onClick={() => setActiveTab(tab.id)}
+                            style={{ padding: '6px 16px' }}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
