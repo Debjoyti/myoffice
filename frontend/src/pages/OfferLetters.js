@@ -35,33 +35,34 @@ const OfferLetters = ({ user, onLogout, isSubComponent }) => {
     const handleDownload = (offer) => {
         const printWindow = window.open('', '_blank');
         const details = offer.details || {};
-        const salary = details.salaryBreakdown || {};
+        const salary = Array.isArray(details.salaryBreakdown) ? details.salaryBreakdown : [];
         const html = `<!DOCTYPE html><html><head><title>Offer Letter - ${offer.name}</title>
             <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#333;line-height:1.6}
-            .header{text-align:center;border-bottom:2px solid #4f46e5;padding-bottom:20px;margin-bottom:30px}
-            .company-name{font-size:24px;font-weight:bold;color:#4f46e5}
-            .offer-title{text-align:center;font-size:20px;text-decoration:underline;margin-bottom:30px}
-            .section{margin-bottom:20px}.section-title{font-weight:bold;border-bottom:1px solid #eee;margin-bottom:10px}
-            table{width:100%;border-collapse:collapse;margin-top:10px}
-            th,td{border:1px solid #eee;padding:10px;text-align:left}th{background:#f9fafb}
+            .header{text-align:center;border-bottom:2px solid #10b981;padding-bottom:20px;margin-bottom:30px}
+            .company-name{font-size:24px;font-weight:bold;color:#065f46}
+            .offer-title{text-align:center;font-size:20px;text-decoration:underline;margin-bottom:30px;color:#111}
+            .section{margin-bottom:25px}.section-title{font-weight:bold;border-bottom:1px solid #10b981;margin-bottom:10px;color:#065f46;text-transform:uppercase;font-size:14px}
+            table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+            th,td{border:1px solid #eee;padding:12px;text-align:left}th{background:#f9fafb;font-weight:600}
+            .rules-text{white-space:pre-wrap;font-size:13px;color:#444;background:#fcfcfc;padding:20px;border-radius:8px;border:1px solid #f0f0f0}
             .footer{margin-top:50px;display:flex;justify-content:space-between}
-            .signature-box{border-top:1px solid #333;width:200px;text-align:center;padding-top:5px;margin-top:60px}
+            .signature-box{border-top:1px solid #333;width:200px;text-align:center;padding-top:8px;margin-top:80px;font-weight:600}
             </style></head><body>
             <div class="header"><div class="company-name">${details.company?.name || 'Your Company'}</div>
-            <div>${details.company?.address || 'Company Address'}</div></div>
-            <h2 class="offer-title">LETTER OF OFFER</h2>
+            <div style="font-size:12px">${details.company?.address || 'Company Address'}</div></div>
+            <h2 class="offer-title">LETTER OF APPOINTMENT</h2>
             <div class="section"><p>Date: ${new Date(offer.created_at).toLocaleDateString()}</p>
             <p>To,<br><strong>${offer.name}</strong><br>Email: ${offer.email}<br>Phone: ${offer.phone}</p></div>
             <div class="section"><p>Dear ${offer.name},</p>
-            <p>We are pleased to offer you the position of <strong>${offer.designation}</strong>. Your joining date is scheduled for ${details.timeline?.joiningDate || 'TBD'}.</p></div>
-            <div class="section"><div class="section-title">Salary Structure (CTC: ₹${offer.ctc_yearly.toLocaleString('en-IN')})</div>
-            <table><thead><tr><th>Component</th><th>Monthly (₹)</th><th>Yearly (₹)</th></tr></thead><tbody>
-            ${Object.entries(salary).map(([name, val]) => `<tr><td>${name}</td><td>${Math.round(val.monthly).toLocaleString('en-IN')}</td><td>${Math.round(val.yearly).toLocaleString('en-IN')}</td></tr>`).join('')}
+            <p>We are pleased to offer you the position of <strong>${offer.designation}</strong>. Your joining date is scheduled for ${details.timeline?.joiningDate || 'TBD'}. Your shift timings will be: <strong>${details.timeline?.shift || 'Flexible'}</strong>.</p></div>
+            <div class="section"><div class="section-title">Salary Breakdown (CTC: ₹${offer.ctc_yearly.toLocaleString('en-IN')})</div>
+            <table><thead><tr><th>Salary Component</th><th>Final Monthly (₹)</th><th>Annualized (₹)</th></tr></thead><tbody>
+            ${salary.map(comp => `<tr><td>${comp.name}</td><td>₹${Math.round(comp.final_value).toLocaleString('en-IN')}</td><td>₹${Math.round(comp.final_value * 12).toLocaleString('en-IN')}</td></tr>`).join('')}
             </tbody></table></div>
-            <div class="section"><div class="section-title">Responsibilities</div><ul>
-            ${(details.responsibilities || []).map(r => `<li>${r}</li>`).join('')}</ul></div>
+            <div class="section"><div class="section-title">Rules, Regulations & Policies</div>
+            <div class="rules-text">${details.rulesAndRegs || 'As per company norms.'}</div></div>
             <div class="footer"><div class="signature-box">For ${details.company?.name || 'Company'}</div>
-            <div class="signature-box">Candidate Acceptance</div></div>
+            <div class="signature-box">Candidate Signature</div></div>
             <script>window.onload=function(){window.print()}</script></body></html>`;
         printWindow.document.write(html);
         printWindow.document.close();

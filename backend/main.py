@@ -418,15 +418,9 @@ class OfferLetterCreate(BaseModel):
     phone: str
     designation: str
     ctc_yearly: float
-    is_metro: str
-    pf_applied: str
-    pf_cap: str
-    esi_applied: str
-    esi_state: str
-    insurance_co: bool
-    insurance_emp: bool
-    food_allowance: bool
-    details: dict # full breakdown and personal details
+    esi_enabled: bool
+    pf_enabled: bool
+    details: dict # contains salary_breakdown with hr inputs, rules, etc.
     status: str = "Generated"
 
 class InventoryItemCreate(BaseModel):

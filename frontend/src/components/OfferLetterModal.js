@@ -9,23 +9,20 @@ const API = `${BACKEND_URL}/api`;
 const OfferLetterModal = ({ show, onClose, onSave }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
-        // Step 1: Compensation
         yearlyCTC: 600000,
         isMetro: 'Yes',
-        pf: 'Yes',
+        pfApplied: true,
         pfCap: 'Yes',
         coInsurance: true,
         empInsurance: true,
         foodAllowance: true,
-        gender: 'Male',
-        disability: 'No',
-        workState: 'Maharashtra',
-        incomeTax: 'No',
-        gratuity: 'Yes',
-        esi: 'Yes',
+        esiApplied: true,
+        esiManualValue: 0,
         esiState: 'Maharashtra',
+        validationStart: '',
+        validationEnd: '',
 
-        // Step 3: Personal
+        // Personal
         companyName: 'BizOps Technologies Private Limited',
         companyAddress: '123, Tech Park, Hitech City, Hyderabad, Telangana - 500081',
         title: 'Mr',
@@ -35,83 +32,55 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
         phone: '',
         email: '',
         designation: '',
-        shiftStart: '09:00',
-        shiftEnd: '18:00',
         officeLocation: 'Mumbai',
         localAddress: '',
         permanentAddress: '',
         joiningDate: '',
         offerExpiryDate: '',
+        shiftDetails: 'General Shift: 09:30 AM to 06:30 PM', // Handled as free text in letter
 
-        // Step 4: Rules
-        responsibilities: [
-            'Developing product concepts',
-            'Preparing CAD designs',
-            'Coordinating with production teams',
-            'Conducting prototype analysis',
-            'Improving product designs',
-            'Material selection',
-            'Maintaining BOM records',
-            'Ensuring confidentiality'
-        ]
+        // Rules - Fully editable section at end
+        rulesAndRegs: `1. Employment Duties: Your duties will be defined by your reporting manager.\n2. Probation: You will be on probation for 6 months.\n3. Confidentiality: You shall maintain standard corporate confidentiality.\n4. Leave Policy: As per company norms.`
     });
 
-    const [salaryBreakdown, setSalaryBreakdown] = useState({});
+    const [salaryBreakdown, setSalaryBreakdown] = useState([]);
 
     // Calculation Logic
     useEffect(() => {
         const ctcYearly = parseFloat(formData.yearlyCTC) || 0;
-        const ctcMonthly = ctcYearly / 12;
-
-        const basic = ctcYearly * 0.60;
-        const da = basic * 0.10;
+        const basic = ctcYearly * 0.50;
         const hra = formData.isMetro === 'Yes' ? basic * 0.40 : basic * 0.30;
-
-        const pfEmployer = formData.pf === 'Yes'
-            ? (formData.pfCap === 'Yes' ? Math.min(15000 * 0.12 * 12, basic * 0.12) : basic * 0.12)
-            : 0;
-
-        const gratuity = formData.gratuity === 'Yes' ? basic * 0.0481 : 0;
-
-        // Fixed costs (stubs)
-        const insuranceCo = formData.coInsurance ? 5000 : 0; // Yearly
-        const foodAll = formData.foodAllowance ? 24000 : 0; // Yearly (2k per month)
-
-        // Estimated Gross for ESI
-        const estimatedGrossYearly = basic + da + hra + foodAll;
-        let isEsiApplicable = formData.esi === 'Yes' && ((estimatedGrossYearly / 12) <= 21000);
-
-        if (formData.esiState === 'Non-Implemented Area') {
-            isEsiApplicable = false;
+        const foodAll = formData.foodAllowance ? 24000 : 0;
+        const pfEmployer = formData.pfApplied ? Math.min(1800 * 12, basic * 0.12) : 0;
+        
+        let esiEmp = 0;
+        if (formData.esiApplied) {
+            // Rule: > 22000 gross monthly -> manual only
+            if ((ctcYearly / 12) <= 22000) {
+                esiEmp = (ctcYearly) * 0.0325;
+            } else {
+                esiEmp = formData.esiManualValue || 0;
+            }
         }
 
-        const esiEmployer = isEsiApplicable ? estimatedGrossYearly * 0.0325 : 0;
-        const esiEmployee = isEsiApplicable ? estimatedGrossYearly * 0.0075 : 0;
+        const calculatedComponents = [
+            { id: 1, name: 'Basic Pay', system_suggested: basic / 12, hr_input_1: basic / 12, hr_input_2: basic / 12, final_value: basic / 12 },
+            { id: 2, name: 'HRA', system_suggested: hra / 12, hr_input_1: hra / 12, hr_input_2: hra / 12, final_value: hra / 12 },
+            { id: 3, name: 'Food Allowance', system_suggested: foodAll / 12, hr_input_1: foodAll / 12, hr_input_2: foodAll / 12, final_value: foodAll / 12 },
+            { id: 4, name: 'PF Employer', system_suggested: pfEmployer / 12, hr_input_1: pfEmployer / 12, hr_input_2: pfEmployer / 12, final_value: pfEmployer / 12 },
+            { id: 5, name: 'ESI Employer', system_suggested: esiEmp / 12, hr_input_1: esiEmp / 12, hr_input_2: esiEmp / 12, final_value: esiEmp / 12 },
+        ];
 
-        const pfEmployee = pfEmployer; // Simplified for mockup
-
-        // Special Allowance = CTC - (all other employer costs)
-        const otherEmployerCosts = basic + da + hra + pfEmployer + gratuity + insuranceCo + foodAll + esiEmployer;
-        const specialAllowance = Math.max(0, ctcYearly - otherEmployerCosts);
-
-        const breakdown = {
-            'Basic Pay': { yearly: basic, monthly: basic / 12 },
-            'Dearness Allowance': { yearly: da, monthly: da / 12 },
-            'HRA': { yearly: hra, monthly: hra / 12 },
-            'Special Allowance': { yearly: specialAllowance, monthly: specialAllowance / 12 },
-            'PF Employer Share': { yearly: pfEmployer, monthly: pfEmployer / 12 },
-            'PF Employee Share': { yearly: pfEmployee, monthly: pfEmployee / 12 },
-            'Food Allowance': { yearly: foodAll, monthly: foodAll / 12 },
-            'Gratuity': { yearly: gratuity, monthly: gratuity / 12 },
-            'Insurance': { yearly: insuranceCo, monthly: insuranceCo / 12 },
-            'ESI Employer Share': { yearly: esiEmployer, monthly: esiEmployer / 12 },
-            'ESI Employee Share': { yearly: esiEmployee, monthly: esiEmployee / 12 },
-            'Professional Tax': { yearly: 2500, monthly: 200 }, // Stub
-            'Income Tax': { yearly: 0, monthly: 0 }, // Stub
-        };
-
-        setSalaryBreakdown(breakdown);
-    }, [formData]);
+        // Preservation of manual changes if already edited
+        if (salaryBreakdown.length > 0) {
+            setSalaryBreakdown(salaryBreakdown.map(comp => {
+                const updated = calculatedComponents.find(c => c.name === comp.name);
+                return updated ? { ...updated, hr_input_1: comp.hr_input_1, hr_input_2: comp.hr_input_2, final_value: comp.final_value } : comp;
+            }));
+        } else {
+            setSalaryBreakdown(calculatedComponents);
+        }
+    }, [formData.yearlyCTC, formData.isMetro, formData.pfApplied, formData.foodAllowance, formData.esiApplied]);
 
     if (!show) return null;
 
@@ -161,30 +130,20 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                 phone: formData.phone,
                 designation: formData.designation,
                 ctc_yearly: parseFloat(formData.yearlyCTC),
-                is_metro: formData.isMetro,
-                pf_applied: formData.pf,
-                pf_cap: formData.pfCap,
-                esi_applied: formData.esi,
-                esi_state: formData.esiState,
-                insurance_co: formData.coInsurance,
-                insurance_emp: formData.empInsurance,
-                food_allowance: formData.foodAllowance,
+                esi_enabled: formData.esiApplied,
+                pf_enabled: formData.pfApplied,
                 details: {
                     salaryBreakdown,
                     company: {
                         name: formData.companyName,
                         address: formData.companyAddress
                     },
-                    logistics: {
-                        shiftStart: formData.shiftStart,
-                        shiftEnd: formData.shiftEnd,
-                        location: formData.officeLocation
-                    },
                     timeline: {
                         joiningDate: formData.joiningDate,
-                        offerExpiry: formData.offerExpiryDate
+                        offerExpiry: formData.offerExpiryDate,
+                        shift: formData.shiftDetails
                     },
-                    responsibilities: formData.responsibilities
+                    rulesAndRegs: formData.rulesAndRegs
                 }
             };
 
@@ -195,8 +154,7 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
             onSave && onSave(response.data);
             onClose();
         } catch (error) {
-            console.error('Error generating offer letter:', error);
-            toast.error('Failed to generate offer letter. Please check the fields.');
+            toast.error('Failed to generate offer letter.');
         }
     };
 
@@ -232,44 +190,33 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="dark-label">Is this a Metro City? (HRA Rule)</label>
-                                        <select className="dark-input" value={formData.isMetro} onChange={e => setFormData({ ...formData, isMetro: e.target.value })}>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                    </div>
-                                    <div>
                                         <label className="dark-label">Provident Fund (PF)</label>
-                                        <select className="dark-input" value={formData.pf} onChange={e => setFormData({ ...formData, pf: e.target.value })}>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
+                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                            <span className="text-white text-sm font-medium">Enable PF Share?</span>
+                                            <button onClick={() => setFormData({ ...formData, pfApplied: !formData.pfApplied })} 
+                                               className={`w-10 h-5 rounded-full transition-colors ${formData.pfApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.pfApplied ? 'translate-x-5' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
                                     </div>
                                     <div>
-                                        <label className="dark-label">PF Cap at 1800?</label>
-                                        <select className="dark-input" value={formData.pfCap} onChange={e => setFormData({ ...formData, pfCap: e.target.value })}>
-                                            <option value="Yes">Yes (12% of ₹15,000)</option>
-                                            <option value="No">No (Full Basic)</option>
-                                        </select>
+                                        <label className="dark-label">ESI Status</label>
+                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                                            <span className="text-white text-sm font-medium">Enable ESI Deduction?</span>
+                                            <button onClick={() => setFormData({ ...formData, esiApplied: !formData.esiApplied })} 
+                                               className={`w-10 h-5 rounded-full transition-colors ${formData.esiApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.esiApplied ? 'translate-x-5' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="dark-label">Employee State Insurance (ESI)</label>
-                                        <select className="dark-input" value={formData.esi} onChange={e => setFormData({ ...formData, esi: e.target.value })}>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                    </div>
-                                    {formData.esi === 'Yes' && (
+                                    {(formData.esiApplied && (formData.yearlyCTC / 12) > 22000) && (
                                         <div>
-                                            <label className="dark-label">ESI State/Region</label>
-                                            <select className="dark-input" value={formData.esiState} onChange={e => setFormData({ ...formData, esiState: e.target.value })}>
-                                                <option value="Maharashtra">Maharashtra (Fully Implemented)</option>
-                                                <option value="Delhi">Delhi (Fully Implemented)</option>
-                                                <option value="Karnataka">Karnataka (Fully Implemented)</option>
-                                                <option value="Tamil Nadu">Tamil Nadu (Fully Implemented)</option>
-                                                <option value="Telangana">Telangana (Fully Implemented)</option>
-                                                <option value="Non-Implemented Area">Non-Implemented Area (0%)</option>
-                                            </select>
+                                            <label className="dark-label">Manual ESI Yearly (Amount)</label>
+                                            <input type="number" className="dark-input border-emerald-500/30" 
+                                               placeholder="Enter annual ESI contribution" 
+                                               value={formData.esiManualValue} 
+                                               onChange={e => setFormData({ ...formData, esiManualValue: parseFloat(e.target.value) })} />
+                                            <p className="text-[10px] text-emerald-400 mt-1">* Manual HR Input required for Monthly Gross &gt; 22,000</p>
                                         </div>
                                     )}
                                 </div>
@@ -300,33 +247,50 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                     {/* Step 2: Salary Breakdown */}
                     {step === 2 && (
                         <div className="fade-in">
-                            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Salary Breakdown</h3>
+                            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Final Salary Breakdown (HR Override)</h3>
                             <div className="dark-table-wrap" style={{ maxHeight: 'none' }}>
-                                <table style={{ fontSize: '13px' }}>
+                                <table style={{ fontSize: '12px' }}>
                                     <thead>
                                         <tr>
                                             <th>Component</th>
-                                            <th style={{ textAlign: 'right' }}>Monthly (₹)</th>
-                                            <th style={{ textAlign: 'right' }}>Yearly (₹)</th>
+                                            <th style={{ textAlign: 'right' }}>Suggestion (M)</th>
+                                            <th style={{ textAlign: 'right' }}>HR Input 1</th>
+                                            <th style={{ textAlign: 'right' }}>HR Input 2</th>
+                                            <th style={{ textAlign: 'right' }}>Final (M)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {Object.entries(salaryBreakdown).map(([name, values]) => (
-                                            <tr key={name}>
-                                                <td style={{ color: 'rgba(255,255,255,0.7)' }}>{name}</td>
-                                                <td style={{ textAlign: 'right', color: '#fff', fontWeight: 500 }}>{Math.round(values.monthly).toLocaleString('en-IN')}</td>
-                                                <td style={{ textAlign: 'right', color: '#fff', fontWeight: 500 }}>{Math.round(values.yearly).toLocaleString('en-IN')}</td>
+                                        {salaryBreakdown.map((row, idx) => (
+                                            <tr key={idx}>
+                                                <td style={{ color: 'rgba(255,255,255,0.7)' }}>{row.name}</td>
+                                                <td style={{ textAlign: 'right', color: 'rgba(255,255,255,0.3)' }}>{Math.round(row.system_suggested).toLocaleString('en-IN')}</td>
+                                                <td><input type="number" className="table-input" value={row.hr_input_1} onChange={e => {
+                                                    const newB = [...salaryBreakdown];
+                                                    newB[idx].hr_input_1 = parseFloat(e.target.value);
+                                                    setSalaryBreakdown(newB);
+                                                }} /></td>
+                                                <td><input type="number" className="table-input" value={row.hr_input_2} onChange={e => {
+                                                    const newB = [...salaryBreakdown];
+                                                    newB[idx].hr_input_2 = parseFloat(e.target.value);
+                                                    setSalaryBreakdown(newB);
+                                                }} /></td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <input type="number" className="table-input-final" value={row.final_value} onChange={e => {
+                                                        const newB = [...salaryBreakdown];
+                                                        newB[idx].final_value = parseFloat(e.target.value);
+                                                        setSalaryBreakdown(newB);
+                                                    }} />
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
-                                    <tfoot>
-                                        <tr style={{ borderTop: '2px solid rgba(255,255,255,0.1)' }}>
-                                            <td style={{ color: '#fff', fontWeight: 700 }}>Total Cost To Company</td>
-                                            <td style={{ textAlign: 'right', color: '#10b981', fontWeight: 700 }}>{Math.round(formData.yearlyCTC / 12).toLocaleString('en-IN')}</td>
-                                            <td style={{ textAlign: 'right', color: '#10b981', fontWeight: 700 }}>{Math.round(formData.yearlyCTC).toLocaleString('en-IN')}</td>
-                                        </tr>
-                                    </tfoot>
                                 </table>
+                                <button
+                                    onClick={() => setSalaryBreakdown([...salaryBreakdown, { id: Date.now(), name: 'Custom Allowance', system_suggested: 0, hr_input_1: 0, hr_input_2: 0, final_value: 0 }])}
+                                    className="mt-4 flex items-center gap-2 text-emerald-500 text-sm font-semibold p-2"
+                                >
+                                    <Plus size={16} /> Add Custom Component
+                                </button>
                             </div>
                         </div>
                     )}
@@ -393,15 +357,10 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                                 <label className="dark-label">Designation</label>
                                                 <input className="dark-input" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="dark-label">Shift Start</label>
-                                                    <input type="time" className="dark-input" value={formData.shiftStart} onChange={e => setFormData({ ...formData, shiftStart: e.target.value })} />
-                                                </div>
-                                                <div>
-                                                    <label className="dark-label">Shift End</label>
-                                                    <input type="time" className="dark-input" value={formData.shiftEnd} onChange={e => setFormData({ ...formData, shiftEnd: e.target.value })} />
-                                                </div>
+                                            <div>
+                                                <label className="dark-label">Shift Details (Offer Wording)</label>
+                                                <input className="dark-input" placeholder="e.g. 9:00 AM to 6:00 PM (Monday to Friday)" 
+                                                   value={formData.shiftDetails} onChange={e => setFormData({ ...formData, shiftDetails: e.target.value })} />
                                             </div>
                                         </div>
                                     </section>
@@ -436,39 +395,18 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                     {step === 4 && (
                         <div className="fade-in">
                             <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
-                                <h3 className="text-white text-xl font-bold mb-4">Employment Responsibilities & Duties</h3>
+                                <h3 className="text-white text-xl font-bold mb-4">Rules, Regulations & Policies</h3>
                                 <div className="space-y-4">
-                                    {formData.responsibilities.map((resp, idx) => (
-                                        <div key={idx} className="flex items-center gap-4 group">
-                                            <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-xs font-bold">
-                                                {idx + 1}
-                                            </div>
-                                            <input
-                                                className="bg-transparent border-none text-white/80 focus:ring-0 flex-1 text-sm outline-none"
-                                                value={resp}
-                                                onChange={e => {
-                                                    const newResp = [...formData.responsibilities];
-                                                    newResp[idx] = e.target.value;
-                                                    setFormData({ ...formData, responsibilities: newResp });
-                                                }}
-                                            />
-                                        </div>
-                                    ))}
-                                    <button
-                                        onClick={() => setFormData({ ...formData, responsibilities: [...formData.responsibilities, ''] })}
-                                        className="mt-6 flex items-center gap-2 text-emerald-500 text-sm font-semibold hover:text-emerald-400 transition-colors"
-                                    >
-                                        <Plus size={16} /> Add Responsibility
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="mt-8 p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                                    <Hash size={20} className="text-amber-500" />
-                                </div>
-                                <div>
-                                    <p className="text-white text-sm font-bold mb-1">Confidentiality Note</p>
-                                    <p className="text-white/50 text-xs leading-relaxed">Generated offer letters are legal documents. Ensure all responsibilities align with organizational policies before finalizing.</p>
+                                    <textarea 
+                                        className="dark-input font-mono text-sm" 
+                                        style={{ minHeight: '300px', lineHeight: '1.6' }}
+                                        value={formData.rulesAndRegs}
+                                        onChange={e => setFormData({ ...formData, rulesAndRegs: e.target.value })}
+                                        placeholder="Type entire rules section here... HR has full control."
+                                    />
+                                    <p className="text-[11px] text-amber-500/80 mt-2">
+                                        * Note: This entire section will be printed as is at the end of the offer letter.
+                                    </p>
                                 </div>
                             </div>
                         </div>
