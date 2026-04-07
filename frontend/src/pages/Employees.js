@@ -16,8 +16,10 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', department: '',
-    designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '',
-    photo: '', emp_id: '', previous_emp_id: ''
+    designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', present_address: '', temp_address: '',
+    photo: '', emp_id: '', previous_emp_id: '', father_name: '', sex: 'Male', is_disabled: 'No',
+    emergency_contact: '', skill_category: 'skilled', senior_level_code: '', approval_gate_pass: '',
+    abha_number: '', driving_license: '', driving_expiry: '', esi_number: '', exit_reason: '', exit_date: ''
   });
 
   useEffect(() => { fetchEmployees(); }, []);
@@ -38,7 +40,13 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
       await axios.post(`${API}/employees`, formData, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Employee added successfully');
       setShowModal(false);
-      setFormData({ name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '', pan_number: '', aadhaar_number: '', address: '', photo: '', emp_id: '', previous_emp_id: '' });
+      setFormData({ 
+        name: '', email: '', phone: '', department: '', designation: '', 
+        date_of_joining: '', pan_number: '', aadhaar_number: '', present_address: '', temp_address: '',
+        photo: '', emp_id: '', previous_emp_id: '', father_name: '', sex: 'Male', is_disabled: 'No',
+        emergency_contact: '', skill_category: 'skilled', senior_level_code: '', approval_gate_pass: '',
+        abha_number: '', driving_license: '', driving_expiry: '', esi_number: ''
+      });
       fetchEmployees();
     } catch { toast.error('Failed to add employee'); }
   };
@@ -131,10 +139,21 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                     <span className={emp.status === 'active' ? 'badge-green' : 'badge-amber'}>{emp.status}</span>
                   </td>
                   <td>
-                    <button onClick={() => handleDelete(emp.id)} data-testid={`delete-employee-${emp.id}`}
-                      style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                      <Trash2 size={17} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => {
+                        const reason = window.prompt('Enter exit reason:');
+                        if (reason) {
+                          // In a real app, send this to backend
+                          toast.success(`Marked ${emp.name} as Exited: ${reason}`);
+                        }
+                      }} style={{ color: '#fbbf24', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', fontSize: '10px', gap: '4px' }}>
+                        <X size={14} /> Exit
+                      </button>
+                      <button onClick={() => handleDelete(emp.id)} data-testid={`delete-employee-${emp.id}`}
+                        style={{ color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                        <Trash2 size={17} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -151,7 +170,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                 <X size={22} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
               <div style={{ gridColumn: '1/-1', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
                 <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {formData.photo ? (
@@ -168,24 +187,79 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                 </div>
                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>Upload Photo</span>
               </div>
-              {inp('name', 'Name *', 'text', 'employee-name-input')}
-              {inp('emp_id', 'Company EMP ID', 'text', 'employee-empid-input', 'PRSK-001')}
-              {inp('previous_emp_id', 'Previous Company EMP ID', 'text', 'employee-prevempid-input')}
-              {inp('email', 'Email *', 'email', 'employee-email-input')}
-              {inp('phone', 'Phone *', 'tel', 'employee-phone-input')}
-              {inp('department', 'Department *', 'text', 'employee-department-input')}
-              {inp('designation', 'Designation *', 'text', 'employee-designation-input')}
-              {inp('date_of_joining', 'Date of Joining *', 'date', 'employee-doj-input')}
-              {inp('pan_number', 'PAN Number', 'text', 'employee-pan-input', 'ABCDE1234F')}
-              {inp('aadhaar_number', 'Aadhaar Number', 'text', 'employee-aadhaar-input', '1234 5678 9012')}
-              <div style={{ gridColumn: '1/-1' }}>
-                <label className="dark-label">Address</label>
-                <textarea data-testid="employee-address-input" rows="3" className="dark-input"
-                  value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+
+              {/* Personal Section */}
+              <div style={{ gridColumn: '1/-1', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '8px' }}>
+                <h3 style={{ color: '#818cf8', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Personal Information</h3>
               </div>
-              <div style={{ gridColumn: '1/-1', display: 'flex', gap: '12px' }}>
+              {inp('name', 'Full Name *', 'text', 'emp-name')}
+              {inp('father_name', "Father's Name", 'text', 'emp-father')}
+              <div>
+                <label className="dark-label">Sex</label>
+                <select className="dark-input" value={formData.sex} onChange={e => setFormData({...formData, sex: e.target.value})}>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              {inp('phone', 'Mobile No. *', 'tel', 'emp-phone')}
+              {inp('emergency_contact', 'Emergency Contact No.', 'tel', 'emp-emergency')}
+              <div>
+                <label className="dark-label">Disability Status</label>
+                <select className="dark-input" value={formData.is_disabled} onChange={e => setFormData({...formData, is_disabled: e.target.value})}>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+              </div>
+              {inp('email', 'Email Address *', 'email', 'emp-email')}
+
+              {/* Identity Section */}
+              <div style={{ gridColumn: '1/-1', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '8px', marginTop: '12px' }}>
+                <h3 style={{ color: '#818cf8', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Identity & Statutory</h3>
+              </div>
+              {inp('pan_number', 'PAN Card Number', 'text', 'emp-pan')}
+              {inp('aadhaar_number', 'Aadhaar Number', 'text', 'emp-aadhaar')}
+              {inp('abha_number', 'ABHA Number', 'text', 'emp-abha')}
+              {inp('driving_license', 'Driving Licence Number', 'text', 'emp-dl')}
+              {inp('driving_expiry', 'DL Expiry Date', 'date', 'emp-dl-ex')}
+              {inp('esi_number', 'ESI Number', 'text', 'emp-esi')}
+
+              {/* Employment Section */}
+              <div style={{ gridColumn: '1/-1', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '8px', marginTop: '12px' }}>
+                <h3 style={{ color: '#818cf8', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employment Details</h3>
+              </div>
+              {inp('emp_id', 'Company EMP ID', 'text', 'emp-id')}
+              {inp('previous_emp_id', 'Previous EMP ID', 'text', 'emp-prev')}
+              {inp('department', 'Department *', 'text', 'emp-dept')}
+              {inp('designation', 'Designation *', 'text', 'emp-desig')}
+              {inp('date_of_joining', 'Joining Date *', 'date', 'emp-doj')}
+              <div>
+                <label className="dark-label">Skill Category</label>
+                <select className="dark-input" value={formData.skill_category} onChange={e => setFormData({...formData, skill_category: e.target.value})}>
+                  <option value="unskilled">Unskilled</option>
+                  <option value="semiskilled">Semiskilled</option>
+                  <option value="skilled">Skilled</option>
+                </select>
+              </div>
+              {inp('senior_level_code', 'Senior Level (EMP CODE)', 'text', 'emp-senior')}
+              {inp('approval_gate_pass', 'Approval Code', 'text', 'emp-approve')}
+
+              {/* Addresses Section */}
+              <div style={{ gridColumn: '1/-1', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '8px', marginTop: '12px' }}>
+                <h3 style={{ color: '#818cf8', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Address Details</h3>
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label className="dark-label">Present Address</label>
+                <textarea rows="2" className="dark-input" value={formData.present_address} onChange={e => setFormData({ ...formData, present_address: e.target.value })} />
+              </div>
+              <div style={{ gridColumn: 'span 1' }}>
+                <label className="dark-label">Temp Address</label>
+                <textarea rows="2" className="dark-input" value={formData.temp_address} onChange={e => setFormData({ ...formData, temp_address: e.target.value })} />
+              </div>
+
+              <div style={{ gridColumn: '1/-1', display: 'flex', gap: '12px', marginTop: '16px' }}>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-dark-cancel" style={{ flex: 1 }}>Cancel</button>
-                <button type="submit" data-testid="submit-employee-btn" className="btn-dark-primary" style={{ flex: 1, justifyContent: 'center' }}>Add Employee</button>
+                <button type="submit" data-testid="submit-employee-btn" className="btn-dark-primary" style={{ flex: 1, justifyContent: 'center' }}>Save Employee Profile</button>
               </div>
             </form>
           </div>

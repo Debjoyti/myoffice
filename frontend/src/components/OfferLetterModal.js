@@ -21,6 +21,16 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
         esiState: 'Maharashtra',
         validationStart: '',
         validationEnd: '',
+        
+        // Screenshot 2 Additions
+        ptApplied: false,
+        itApplied: false,
+        gratuityApplied: false,
+        gratuityFormula: '4.81',
+        incrementAmount: 0,
+        incrementTillDate: '',
+        promotionLevel: '',
+        promotionTillDate: '',
 
         // Personal
         companyName: 'BizOps Technologies Private Limited',
@@ -31,6 +41,7 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
         lastName: '',
         phone: '',
         email: '',
+        aadhaarNumber: '',
         designation: '',
         officeLocation: 'Mumbai',
         localAddress: '',
@@ -71,16 +82,29 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
             { id: 5, name: 'ESI Employer', system_suggested: esiEmp / 12, hr_input_1: esiEmp / 12, hr_input_2: esiEmp / 12, final_value: esiEmp / 12 },
         ];
 
+        if (formData.ptApplied) {
+            calculatedComponents.push({ id: 6, name: 'Professional Tax', system_suggested: 200, hr_input_1: 200, hr_input_2: 200, final_value: 200 });
+        }
+        if (formData.itApplied) {
+            calculatedComponents.push({ id: 7, name: 'Income Tax (IT)', system_suggested: 0, hr_input_1: 0, hr_input_2: 0, final_value: 0 });
+        }
+
         // Preservation of manual changes if already edited
         if (salaryBreakdown.length > 0) {
             setSalaryBreakdown(salaryBreakdown.map(comp => {
                 const updated = calculatedComponents.find(c => c.name === comp.name);
                 return updated ? { ...updated, hr_input_1: comp.hr_input_1, hr_input_2: comp.hr_input_2, final_value: comp.final_value } : comp;
             }));
+            // Add any newly enabled components that weren't there
+            calculatedComponents.forEach(c => {
+                if (!salaryBreakdown.find(comp => comp.name === c.name)) {
+                    setSalaryBreakdown(prev => [...prev, c]);
+                }
+            });
         } else {
             setSalaryBreakdown(calculatedComponents);
         }
-    }, [formData.yearlyCTC, formData.isMetro, formData.pfApplied, formData.foodAllowance, formData.esiApplied]);
+    }, [formData.yearlyCTC, formData.isMetro, formData.pfApplied, formData.foodAllowance, formData.esiApplied, formData.ptApplied, formData.itApplied]);
 
     if (!show) return null;
 
@@ -132,19 +156,23 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                 ctc_yearly: parseFloat(formData.yearlyCTC),
                 esi_enabled: formData.esiApplied,
                 pf_enabled: formData.pfApplied,
-                details: {
-                    salaryBreakdown,
-                    company: {
-                        name: formData.companyName,
-                        address: formData.companyAddress
-                    },
-                    timeline: {
-                        joiningDate: formData.joiningDate,
-                        offerExpiry: formData.offerExpiryDate,
-                        shift: formData.shiftDetails
-                    },
-                    rulesAndRegs: formData.rulesAndRegs
-                }
+                    details: {
+                        salaryBreakdown,
+                        aadhaar: formData.aadhaarNumber,
+                        pan: formData.panNumber,
+                        fatherName: formData.fatherName,
+                        location: formData.officeLocation,
+                        company: {
+                            name: formData.companyName,
+                            address: formData.companyAddress
+                        },
+                        timeline: {
+                            joiningDate: formData.joiningDate,
+                            offerExpiry: formData.offerExpiryDate,
+                            shift: formData.shiftDetails
+                        },
+                        rulesAndRegs: formData.rulesAndRegs
+                    }
             };
 
             const response = await axios.post(`${API}/offer-letters`, payload, {
@@ -181,6 +209,7 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                         <div className="fade-in">
                             <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Compensation Details</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                {/* Left Column: Current Setup */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     <div>
                                         <label className="dark-label">Yearly CTC (₹) *</label>
@@ -190,55 +219,114 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="dark-label">Provident Fund (PF)</label>
-                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                            <span className="text-white text-sm font-medium">Enable PF Share?</span>
-                                            <button onClick={() => setFormData({ ...formData, pfApplied: !formData.pfApplied })} 
-                                               className={`w-10 h-5 rounded-full transition-colors ${formData.pfApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
-                                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.pfApplied ? 'translate-x-5' : 'translate-x-1'}`} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="dark-label">ESI Status</label>
-                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                            <span className="text-white text-sm font-medium">Enable ESI Deduction?</span>
-                                            <button onClick={() => setFormData({ ...formData, esiApplied: !formData.esiApplied })} 
-                                               className={`w-10 h-5 rounded-full transition-colors ${formData.esiApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
-                                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.esiApplied ? 'translate-x-5' : 'translate-x-1'}`} />
-                                            </button>
+                                        <label className="dark-label text-xs uppercase text-emerald-500 font-bold">Standard Deductions</label>
+                                        <div className="space-y-2 mt-2">
+                                            <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                <span className="text-white text-xs font-medium">Enable PF Contribution?</span>
+                                                <button onClick={() => setFormData({ ...formData, pfApplied: !formData.pfApplied })} 
+                                                   className={`w-8 h-4 rounded-full transition-colors ${formData.pfApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                    <div className={`w-3 h-3 bg-white rounded-full transition-transform ${formData.pfApplied ? 'translate-x-4' : 'translate-x-1'}`} />
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                <span className="text-white text-xs font-medium">Enable ESI Deduction?</span>
+                                                <button onClick={() => setFormData({ ...formData, esiApplied: !formData.esiApplied })} 
+                                                   className={`w-8 h-4 rounded-full transition-colors ${formData.esiApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                    <div className={`w-3 h-3 bg-white rounded-full transition-transform ${formData.esiApplied ? 'translate-x-4' : 'translate-x-1'}`} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                     {(formData.esiApplied && (formData.yearlyCTC / 12) > 22000) && (
-                                        <div>
-                                            <label className="dark-label">Manual ESI Yearly (Amount)</label>
-                                            <input type="number" className="dark-input border-emerald-500/30" 
-                                               placeholder="Enter annual ESI contribution" 
+                                        <div className="p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                                            <label className="dark-label text-[10px]">ESI Manual Yearly Amount</label>
+                                            <input type="number" className="dark-input h-8 text-xs mt-1" 
                                                value={formData.esiManualValue} 
                                                onChange={e => setFormData({ ...formData, esiManualValue: parseFloat(e.target.value) })} />
-                                            <p className="text-[10px] text-emerald-400 mt-1">* Manual HR Input required for Monthly Gross &gt; 22,000</p>
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Right Column: Statutory & Insurance */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                        <span className="text-white text-sm font-medium">Company Insurance</span>
-                                        <button onClick={() => setFormData({ ...formData, coInsurance: !formData.coInsurance })} className={`w-10 h-5 rounded-full transition-colors ${formData.coInsurance ? 'bg-emerald-500' : 'bg-white/20'}`}>
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.coInsurance ? 'translate-x-5' : 'translate-x-1'}`} />
+                                    <div>
+                                         <label className="dark-label text-xs uppercase text-emerald-500 font-bold">Enterprise Toggles (Statutory)</label>
+                                         <div className="grid grid-cols-2 gap-3 mt-2">
+                                             <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                 <span className="text-white text-[10px] font-medium">Prof. Tax</span>
+                                                 <button onClick={() => setFormData({ ...formData, ptApplied: !formData.ptApplied })} className={`w-8 h-4 rounded-full transition-colors ${formData.ptApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                     <div className={`w-3 h-3 bg-white rounded-full transition-transform ${formData.ptApplied ? 'translate-x-4' : 'translate-x-1'}`} />
+                                                 </button>
+                                             </div>
+                                             <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                 <span className="text-white text-[10px] font-medium">Income Tax</span>
+                                                 <button onClick={() => setFormData({ ...formData, itApplied: !formData.itApplied })} className={`w-8 h-4 rounded-full transition-colors ${formData.itApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                                     <div className={`w-3 h-3 bg-white rounded-full transition-transform ${formData.itApplied ? 'translate-x-4' : 'translate-x-1'}`} />
+                                                 </button>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <div>
+                                        <label className="dark-label text-xs uppercase text-emerald-500 font-bold">Insurance & Food</label>
+                                        <div className="grid grid-cols-3 gap-2 mt-2">
+                                            <button onClick={() => setFormData({ ...formData, coInsurance: !formData.coInsurance })} 
+                                                className={`p-2 rounded-lg border text-[10px] ${formData.coInsurance ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
+                                                Co. Ins.
+                                            </button>
+                                            <button onClick={() => setFormData({ ...formData, empInsurance: !formData.empInsurance })} 
+                                                className={`p-2 rounded-lg border text-[10px] ${formData.empInsurance ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
+                                                Emp. Ins.
+                                            </button>
+                                            <button onClick={() => setFormData({ ...formData, foodAllowance: !formData.foodAllowance })} 
+                                                className={`p-2 rounded-lg border text-[10px] ${formData.foodAllowance ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`}>
+                                                Food
+                                            </button>
+                                        </div>
+                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Section: SS-02 (Increment, Promotion, Gratuity) */}
+                            <div className="mt-8 pt-6 border-t border-white/5 grid grid-cols-2 gap-8">
+                                <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                                    <h4 className="text-emerald-500 text-xs uppercase font-bold tracking-widest mb-4">Increment & Promotion tracking</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="dark-label text-[10px]">Increment (Rupees)</label>
+                                            <input type="number" className="dark-input h-9 text-sm" value={formData.incrementAmount} onChange={e => setFormData({...formData, incrementAmount: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="dark-label text-[10px]">Till Date</label>
+                                            <input type="date" className="dark-input h-9 text-sm" value={formData.incrementTillDate} onChange={e => setFormData({...formData, incrementTillDate: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="dark-label text-[10px]">Promotion Level</label>
+                                            <input type="text" className="dark-input h-9 text-sm" placeholder="e.g. L2" value={formData.promotionLevel} onChange={e => setFormData({...formData, promotionLevel: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="dark-label text-[10px]">Till Date</label>
+                                            <input type="date" className="dark-input h-9 text-sm" value={formData.promotionTillDate} onChange={e => setFormData({...formData, promotionTillDate: e.target.value})} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-emerald-500 text-xs uppercase font-bold tracking-widest">Gratuity Settings</h4>
+                                        <button onClick={() => setFormData({ ...formData, gratuityApplied: !formData.gratuityApplied })} className={`w-8 h-4 rounded-full transition-colors ${formData.gratuityApplied ? 'bg-emerald-500' : 'bg-white/20'}`}>
+                                            <div className={`w-3 h-3 bg-white rounded-full transition-transform ${formData.gratuityApplied ? 'translate-x-4' : 'translate-x-1'}`} />
                                         </button>
                                     </div>
-                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                        <span className="text-white text-sm font-medium">Employee Insurance</span>
-                                        <button onClick={() => setFormData({ ...formData, empInsurance: !formData.empInsurance })} className={`w-10 h-5 rounded-full transition-colors ${formData.empInsurance ? 'bg-emerald-500' : 'bg-white/20'}`}>
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.empInsurance ? 'translate-x-5' : 'translate-x-1'}`} />
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                                        <span className="text-white text-sm font-medium">Food Allowance</span>
-                                        <button onClick={() => setFormData({ ...formData, foodAllowance: !formData.foodAllowance })} className={`w-10 h-5 rounded-full transition-colors ${formData.foodAllowance ? 'bg-emerald-500' : 'bg-white/20'}`}>
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.foodAllowance ? 'translate-x-5' : 'translate-x-1'}`} />
-                                        </button>
-                                    </div>
+                                    {formData.gratuityApplied && (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="dark-label text-[10px]">Formula in Percentage (%)</label>
+                                                <input type="text" className="dark-input h-9 text-sm" value={formData.gratuityFormula} onChange={e => setFormData({...formData, gratuityFormula: e.target.value})} />
+                                            </div>
+                                            <p className="text-[10px] text-white/40 italic">* Calculated till date after increment change.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -347,6 +435,10 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                                 <input className="dark-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                                             </div>
                                         </div>
+                                        <div className="mt-4">
+                                            <label className="dark-label">Aadhaar Number</label>
+                                            <input className="dark-input" placeholder="XXXX XXXX XXXX" value={formData.aadhaarNumber} onChange={e => setFormData({ ...formData, aadhaarNumber: e.target.value })} />
+                                        </div>
                                     </section>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -356,6 +448,11 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                             <div>
                                                 <label className="dark-label">Designation</label>
                                                 <input className="dark-input" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label className="dark-label">Office Location (Place of Joining)</label>
+                                                <input className="dark-input" placeholder="e.g. Noida, Mumbai" 
+                                                   value={formData.officeLocation} onChange={e => setFormData({ ...formData, officeLocation: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label className="dark-label">Shift Details (Offer Wording)</label>

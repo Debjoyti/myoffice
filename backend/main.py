@@ -239,9 +239,36 @@ class Employee(BaseModel):
     department: str
     designation: str
     date_of_joining: Optional[str] = None
+    # Identity & Personal
+    father_name: Optional[str] = None
+    sex: Optional[str] = None # Male, female, other
+    is_disabled: Optional[str] = "No"
+    present_address: Optional[str] = None
+    temp_address: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    
+    # Statutory & Identity
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
-    address: Optional[str] = None
+    abha_number: Optional[str] = None
+    driving_license: Optional[str] = None
+    driving_expiry: Optional[str] = None
+    
+    # HR & Payroll Metadata
+    skill_category: Optional[str] = "skilled" # unskilled, semiskilled, skilled
+    senior_level_code: Optional[str] = None # mapping from employee code
+    approval_gate_pass: Optional[str] = None # mapping from employee code
+    
+    # ESI & Insurance
+    esi_number: Optional[str] = None
+    esi_registration_date: Optional[str] = None
+    company_insurance_no: Optional[str] = None
+    company_insurance_reg_date: Optional[str] = None
+    company_insurance_expiry: Optional[str] = None
+    employee_insurance_no: Optional[str] = None
+    employee_insurance_reg_date: Optional[str] = None
+    employee_insurance_expiry: Optional[str] = None
+    
     photo: Optional[str] = None
     status: str = "active"
     created_at: Optional[str] = None
@@ -257,7 +284,18 @@ class EmployeeCreate(BaseModel):
     date_of_joining: Optional[str] = None
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
-    address: Optional[str] = None
+    present_address: Optional[str] = None
+    temp_address: Optional[str] = None
+    father_name: Optional[str] = None
+    sex: Optional[str] = None
+    is_disabled: Optional[str] = "No"
+    skill_category: Optional[str] = None
+    senior_level_code: Optional[str] = None
+    approval_gate_pass: Optional[str] = None
+    abha_number: Optional[str] = None
+    driving_license: Optional[str] = None
+    driving_expiry: Optional[str] = None
+    esi_number: Optional[str] = None
     photo: Optional[str] = None
 
 class Attendance(BaseModel):
@@ -420,7 +458,10 @@ class OfferLetterCreate(BaseModel):
     ctc_yearly: float
     esi_enabled: bool
     pf_enabled: bool
-    details: dict # contains salary_breakdown with hr inputs, rules, etc.
+    pt_enabled: Optional[bool] = False
+    it_enabled: Optional[bool] = False
+    gratuity_enabled: Optional[bool] = False
+    details: dict = {}
     status: str = "Generated"
 
 class InventoryItemCreate(BaseModel):
