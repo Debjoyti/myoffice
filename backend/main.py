@@ -47,14 +47,20 @@ else:
 app = FastAPI(title="PRSK API", version="2.0.0")
 
 # ── CORS: lock to explicit origins from env ───────────────────────
-_ALLOWED_ORIGINS = [
-    o.strip() for o in
-    os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
-    if o.strip()
-]
+_allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "").strip()
+if _allowed_origins_env:
+    _ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+else:
+    _ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://myoffice-saas.vercel.app",
+    ]
+_ALLOWED_ORIGIN_REGEX = os.environ.get("ALLOWED_ORIGIN_REGEX", r"https://.*\.vercel\.app")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=_ALLOWED_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
@@ -120,6 +126,9 @@ class AIAuditTrackerMiddleware(BaseHTTPMiddleware):
 app.add_middleware(AIAuditTrackerMiddleware)
 
 api_router = APIRouter(prefix="/api")
+@app.get("/")
+async def healthcheck():
+    return {"status": "ok", "service": "myoffice-backend"}
 
 # ── Enforce SECRET_KEY — fail loudly, never use a default ───────
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -131,6 +140,31 @@ if not SECRET_KEY or SECRET_KEY == 'your-secret-key-change-in-production':
         logging.warning('⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+DEFAULT_ORG_ID = "default"
+DEFAULT_COMPANY_ID = "demo-comp-1"
+DEFAULT_DEMO_PASSWORD = "password123"
+DEFAULT_ENABLED_SERVICES = [
+    "dashboard",
+    "employees",
+    "attendance",
+    "leaves",
+    "recruitment",
+    "projects",
+    "crm",
+    "inventory",
+    "finance",
+    "support",
+    "assets",
+    "announcements",
+    "kb",
+    "audit",
+    "insights",
+    "stores",
+    "procurement",
+    "travel",
+    "accounting",
+]
+DEFAULT_ACCOUNTING_SERVICES = ["ledger", "journal", "reports", "gst", "bank"]
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -2904,6 +2938,898 @@ async def update_pip_status(id: str, payload: dict, current_user: dict = Depends
         raise HTTPException(404, "PIP not found")
     return {"message": "Status updated"}
 
+async def _upsert_seed_document(collection_name: str, query: dict, doc: dict):
+    collection = getattr(db, collection_name)
+    existing = await collection.find_one(query, {"_id": 0})
+    if existing:
+        await collection.update_one(query, {"$set": doc})
+    else:
+        await collection.insert_one(doc)
+
+async def _upsert_seed_many(collection_name: str, docs: List[dict], key_field: str = "id"):
+    for doc in docs:
+        key_value = doc.get(key_field)
+        if key_value is None:
+            continue
+        await _upsert_seed_document(collection_name, {key_field: key_value}, doc)
+
+async def ensure_demo_users_seeded():
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    today = now.date()
+    today_iso = today.isoformat()
+    yesterday_iso = (today - timedelta(days=1)).isoformat()
+    three_days_ago_iso = (today - timedelta(days=3)).isoformat()
+    seven_days_ago_iso = (today - timedelta(days=7)).isoformat()
+    next_week_iso = (today + timedelta(days=7)).isoformat()
+    next_month_iso = (today + timedelta(days=30)).isoformat()
+    subscription_end_iso = (now + timedelta(days=365)).isoformat()
+
+    hashed_password = get_password_hash(DEFAULT_DEMO_PASSWORD)
+
+    demo_users = [
+        {
+            "id": "usr-superadmin",
+            "email": "superadmin@demo.com",
+            "password": hashed_password,
+            "name": "Demo SuperAdmin",
+            "role": "superadmin",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-admin",
+            "email": "admin@demo.com",
+            "password": hashed_password,
+            "name": "Demo Admin",
+            "role": "admin",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_limits": {"max_employees": 1000, "max_projects": 500},
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-employee",
+            "email": "employee@demo.com",
+            "password": hashed_password,
+            "name": "Demo Employee",
+            "role": "employee",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-accountant",
+            "email": "accountant@demo.com",
+            "password": hashed_password,
+            "name": "Demo Accountant",
+            "role": "accountant",
+            "company_id": DEFAULT_COMPANY_ID,
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "enabled_services": DEFAULT_ACCOUNTING_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-client",
+            "email": "client@demo.com",
+            "password": hashed_password,
+            "name": "Demo Client",
+            "role": "admin",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_limits": {"max_employees": 50, "max_projects": 20},
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+    ]
+    for user in demo_users:
+        await _upsert_seed_document("users", {"email": user["email"]}, user)
+
+    employees = [
+        {
+            "id": "emp-1001",
+            "user_id": "usr-employee",
+            "emp_id": "PRSK-1001",
+            "name": "Demo Employee",
+            "email": "employee@demo.com",
+            "phone": "+919876543210",
+            "department": "Engineering",
+            "designation": "Software Engineer",
+            "date_of_joining": "2024-01-10",
+            "status": "active",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "emp-1002",
+            "emp_id": "PRSK-1002",
+            "name": "Priya Sharma",
+            "email": "priya.sharma@demo.com",
+            "phone": "+919812345678",
+            "department": "Sales",
+            "designation": "Account Executive",
+            "date_of_joining": "2023-11-20",
+            "status": "active",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "emp-1003",
+            "emp_id": "PRSK-1003",
+            "name": "Rahul Verma",
+            "email": "rahul.verma@demo.com",
+            "phone": "+919801234567",
+            "department": "Finance",
+            "designation": "Finance Analyst",
+            "date_of_joining": "2022-08-15",
+            "status": "active",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("employees", employees)
+
+    leave_requests = [
+        {
+            "id": "leave-1001",
+            "employee_id": "emp-1001",
+            "leave_type": "Casual Leave",
+            "from_date": next_week_iso,
+            "to_date": next_week_iso,
+            "reason": "Personal appointment",
+            "status": "pending",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "leave-1002",
+            "employee_id": "emp-1002",
+            "leave_type": "Sick Leave",
+            "from_date": three_days_ago_iso,
+            "to_date": yesterday_iso,
+            "reason": "Seasonal fever",
+            "status": "approved",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("leave_requests", leave_requests)
+    await _upsert_seed_many("leaves", leave_requests)
+
+    attendance = [
+        {
+            "id": "att-1001",
+            "employee_id": "emp-1001",
+            "date": today_iso,
+            "check_in": "09:12",
+            "check_out": "18:34",
+            "status": "present",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "att-1002",
+            "employee_id": "emp-1002",
+            "date": today_iso,
+            "check_in": "09:05",
+            "check_out": "18:10",
+            "status": "present",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("attendance", attendance)
+
+    projects = [
+        {
+            "id": "proj-1001",
+            "name": "MyOffice SaaS Revamp",
+            "description": "Frontend and backend hardening for production rollout.",
+            "status": "active",
+            "start_date": seven_days_ago_iso,
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "proj-1002",
+            "name": "CRM Automation Suite",
+            "description": "Lead routing and follow-up orchestration.",
+            "status": "active",
+            "start_date": "2026-01-05",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("projects", projects)
+
+    tasks = [
+        {
+            "id": "task-1001",
+            "project_id": "proj-1001",
+            "title": "Finalize Vercel deployment config",
+            "assigned_to": "emp-1001",
+            "status": "in-progress",
+            "priority": "high",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "task-1002",
+            "project_id": "proj-1002",
+            "title": "Prepare CRM dashboard filters",
+            "assigned_to": "emp-1002",
+            "status": "todo",
+            "priority": "medium",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("tasks", tasks)
+
+    leads = [
+        {
+            "id": "lead-1001",
+            "name": "Ananya Mehta",
+            "email": "ananya@globex.com",
+            "phone": "+918888111222",
+            "company": "Globex Solutions",
+            "source": "Website",
+            "status": "qualified",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "lead-1002",
+            "name": "Saurav Gupta",
+            "email": "saurav@northwind.io",
+            "phone": "+919999222333",
+            "company": "Northwind Labs",
+            "source": "Referral",
+            "status": "new",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("leads", leads)
+
+    deals = [
+        {
+            "id": "deal-1001",
+            "lead_id": "lead-1001",
+            "title": "Globex Annual Subscription",
+            "value": 550000.0,
+            "stage": "negotiation",
+            "probability": 70,
+            "expected_close_date": next_month_iso,
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("deals", deals)
+
+    customers = [
+        {
+            "id": "cust-1001",
+            "name": "Globex Solutions",
+            "contact_person": "Ananya Mehta",
+            "email": "finance@globex.com",
+            "phone": "+918888000111",
+            "address": "Bangalore",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("customers", customers)
+
+    invoices = [
+        {
+            "id": "inv-1001",
+            "invoice_number": "INV-2026-1001",
+            "customer_id": "cust-1001",
+            "items": [{"description": "SaaS Annual Plan", "quantity": 1, "rate": 125000.0}],
+            "total_amount": 125000.0,
+            "status": "sent",
+            "due_date": next_month_iso,
+            "organization_id": DEFAULT_ORG_ID,
+            "company_id": DEFAULT_COMPANY_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("invoices", invoices)
+
+    expenses = [
+        {
+            "id": "exp-1001",
+            "employee_id": "emp-1003",
+            "category": "Travel",
+            "amount": 4500.0,
+            "description": "Client meeting commute",
+            "date": yesterday_iso,
+            "status": "approved",
+            "organization_id": DEFAULT_ORG_ID,
+            "company_id": DEFAULT_COMPANY_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "exp-1002",
+            "employee_id": "emp-1001",
+            "category": "Software",
+            "amount": 1800.0,
+            "description": "Design tool renewal",
+            "date": today_iso,
+            "status": "pending",
+            "organization_id": DEFAULT_ORG_ID,
+            "company_id": DEFAULT_COMPANY_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("expenses", expenses)
+
+    stores = [
+        {
+            "id": "store-1001",
+            "name": "Central Warehouse",
+            "location": "Bangalore",
+            "manager": "Rahul Verma",
+            "contact": "+918011112222",
+            "status": "active",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("stores", stores)
+
+    inventory_items = [
+        {
+            "id": "invitem-1001",
+            "name": "Dell 27-inch Monitor",
+            "category": "Hardware",
+            "quantity": 18,
+            "unit": "piece",
+            "price_per_unit": 22000.0,
+            "location": "Rack A1",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "invitem-1002",
+            "name": "Wireless Keyboard",
+            "category": "Accessories",
+            "quantity": 32,
+            "unit": "piece",
+            "price_per_unit": 2500.0,
+            "location": "Rack B2",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("inventory", inventory_items)
+
+    purchase_requests = [
+        {
+            "id": "pr-1001",
+            "store_id": "store-1001",
+            "requested_by": "emp-1003",
+            "items": [{"name": "HDMI Cable", "qty": 10, "price": 450.0}],
+            "total_amount": 4500.0,
+            "reason": "Office setup stock refill",
+            "status": "pending",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("purchase_requests", purchase_requests)
+
+    purchase_orders = [
+        {
+            "id": "po-1001",
+            "purchase_request_id": "pr-1001",
+            "store_id": "store-1001",
+            "supplier_name": "Tech Supply Pvt Ltd",
+            "supplier_contact": "+918055554444",
+            "items": [{"name": "HDMI Cable", "qty": 10, "price": 450.0}],
+            "total_amount": 4500.0,
+            "delivery_date": next_week_iso,
+            "status": "pending",
+            "created_by": "usr-admin",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("purchase_orders", purchase_orders)
+
+    timesheets = [
+        {
+            "id": "ts-1001",
+            "employee_id": "emp-1001",
+            "project_id": "proj-1001",
+            "task_id": "task-1001",
+            "hours": 7.5,
+            "date": today_iso,
+            "description": "Deployment bug fixes",
+            "status": "submitted",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+        {
+            "id": "ts-1002",
+            "employee_id": "emp-1002",
+            "project_id": "proj-1002",
+            "task_id": "task-1002",
+            "hours": 6.0,
+            "date": yesterday_iso,
+            "description": "Lead segmentation setup",
+            "status": "approved",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("timesheets", timesheets)
+
+    tickets = [
+        {
+            "id": "ticket-1001",
+            "subject": "Login page error for edge user",
+            "description": "Customer reported a login retry loop on Safari.",
+            "priority": "high",
+            "status": "open",
+            "contact_email": "support@globex.com",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("tickets", tickets)
+
+    vendors = [
+        {
+            "id": "vendor-1001",
+            "name": "Office Mart",
+            "email": "sales@officemart.com",
+            "phone": "+918077778888",
+            "category": "Supplies",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("vendors", vendors)
+
+    assets = [
+        {
+            "id": "asset-1001",
+            "name": "MacBook Pro 14",
+            "type": "Laptop",
+            "serial_number": "MBP14-2026-001",
+            "assigned_to": "emp-1001",
+            "status": "assigned",
+            "purchase_date": "2025-12-15",
+            "value": 185000.0,
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("assets", assets)
+
+    announcements = [
+        {
+            "id": "ann-1001",
+            "title": "Quarterly Planning Kickoff",
+            "content": "Team planning starts Monday at 10 AM IST in Conference Room A.",
+            "author_id": "usr-admin",
+            "author_name": "Demo Admin",
+            "priority": "high",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("announcements", announcements)
+
+    jobs = [
+        {
+            "id": "job-1001",
+            "title": "Senior Backend Engineer",
+            "department": "Engineering",
+            "location": "Bangalore",
+            "type": "Full-time",
+            "description": "Build and scale Python/FastAPI microservices.",
+            "status": "open",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("jobs", jobs)
+    await _upsert_seed_many("job_postings", jobs)
+
+    candidates = [
+        {
+            "id": "cand-1001",
+            "job_id": "job-1001",
+            "name": "Kunal Singh",
+            "email": "kunal.singh@candidate.com",
+            "resume_url": "https://example.com/resume/kunal-singh",
+            "status": "screening",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("candidates", candidates)
+
+    kb_articles = [
+        {
+            "id": "kb-1001",
+            "title": "How To Approve Leave Requests",
+            "content": "Go to HRMS > Leaves, review request details, and click Approve or Reject.",
+            "category": "HR",
+            "author_name": "Demo Admin",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("kb", kb_articles)
+
+    audit_logs = [
+        {
+            "id": "audit-1001",
+            "user_email": "admin@demo.com",
+            "action": "POST",
+            "module": "EMPLOYEES",
+            "details": "Seed employee records initialized",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("audit_logs", audit_logs)
+
+    insights = [
+        {
+            "id": "ins-1001",
+            "type": "opportunity",
+            "title": "High Value Deal Progress",
+            "message": "One deal above INR 5L is currently in negotiation stage.",
+            "impact": "medium",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("insights", insights)
+
+    posh_complaints = [
+        {
+            "id": "posh-1001",
+            "complainant_id": "usr-employee",
+            "incident_date": seven_days_ago_iso,
+            "description": "Inappropriate remarks in team chat.",
+            "accused_name": "Anonymous Staff",
+            "status": "Under Review",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("posh_complaints", posh_complaints)
+
+    wfh_requests = [
+        {
+            "id": "wfh-1001",
+            "employee_id": "emp-1001",
+            "employee_name": "Demo Employee",
+            "start_date": today_iso,
+            "end_date": next_week_iso,
+            "reason": "Home internet setup visit",
+            "status": "pending",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("wfh_requests", wfh_requests)
+
+    resignations = [
+        {
+            "id": "res-1001",
+            "employee_id": "emp-1002",
+            "employee_name": "Priya Sharma",
+            "reason": "Higher education",
+            "resignation_date": "2026-03-15",
+            "last_working_day": "2026-04-15",
+            "notice_period_days": 30,
+            "status": "pending",
+            "fnf_status": "pending",
+            "fnf_amount": 0.0,
+            "fnf_breakdown": {},
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("resignations", resignations)
+
+    performance_plans = [
+        {
+            "id": "pip-1001",
+            "employee_id": "emp-1003",
+            "employee_name": "Rahul Verma",
+            "reason": "Missed month-end deadlines",
+            "goals": "Close ledger on time and complete reconciliation checklist.",
+            "duration_days": 30,
+            "start_date": seven_days_ago_iso,
+            "end_date": next_month_iso,
+            "status": "active",
+            "organization_id": DEFAULT_ORG_ID,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("performance_plans", performance_plans)
+
+    offer_letters = [
+        {
+            "id": "offer-1001",
+            "organization_id": DEFAULT_ORG_ID,
+            "name": "Demo Employee",
+            "email": "employee@demo.com",
+            "phone": "+919876543210",
+            "designation": "Software Engineer",
+            "ctc_yearly": 960000.0,
+            "details": {"joining_bonus": 50000, "notes": "Demo offer letter for testing"},
+            "status": "Generated",
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("offer_letters", offer_letters)
+
+    companies = [
+        {
+            "id": DEFAULT_COMPANY_ID,
+            "organization_id": DEFAULT_ORG_ID,
+            "name": "Demo Finance Co",
+            "legal_name": "Demo Finance Company Private Limited",
+            "industry": "SaaS",
+            "email": "accounts@demo-company.com",
+            "phone": "+918012345678",
+            "website": "https://demo-company.example.com",
+            "address": "MG Road",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "country": "India",
+            "pincode": "560001",
+            "pan_number": "ABCDE1234F",
+            "gst_number": "29ABCDE1234F1Z5",
+            "cin_number": "U72900KA2020PTC123456",
+            "status": "active",
+            "onboarded_by": "Demo Admin",
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("companies", companies)
+
+    chart_of_accounts = [
+        {
+            "id": "coa-1001",
+            "company_id": DEFAULT_COMPANY_ID,
+            "code": "1000",
+            "name": "Cash in Hand",
+            "type": "Asset",
+            "sub_type": "Current",
+            "description": "Primary cash account",
+            "opening_balance": 250000.0,
+            "current_balance": 250000.0,
+            "is_bank": False,
+            "currency": "INR",
+            "created_at": now_iso,
+        },
+        {
+            "id": "coa-1002",
+            "company_id": DEFAULT_COMPANY_ID,
+            "code": "3000",
+            "name": "Sales Revenue",
+            "type": "Revenue",
+            "sub_type": "Operating",
+            "description": "Recurring revenue",
+            "opening_balance": -480000.0,
+            "current_balance": -480000.0,
+            "is_bank": False,
+            "currency": "INR",
+            "created_at": now_iso,
+        },
+        {
+            "id": "coa-1003",
+            "company_id": DEFAULT_COMPANY_ID,
+            "code": "4000",
+            "name": "Operating Expenses",
+            "type": "Expense",
+            "sub_type": "Operating",
+            "description": "General operating expenses",
+            "opening_balance": 125000.0,
+            "current_balance": 125000.0,
+            "is_bank": False,
+            "currency": "INR",
+            "created_at": now_iso,
+        },
+        {
+            "id": "coa-1004",
+            "company_id": DEFAULT_COMPANY_ID,
+            "code": "2000",
+            "name": "Accounts Payable",
+            "type": "Liability",
+            "sub_type": "Current",
+            "description": "Outstanding vendor payments",
+            "opening_balance": -95000.0,
+            "current_balance": -95000.0,
+            "is_bank": False,
+            "currency": "INR",
+            "created_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("chart_of_accounts", chart_of_accounts)
+
+    journal_entries = [
+        {
+            "id": "je-1001",
+            "company_id": DEFAULT_COMPANY_ID,
+            "entry_number": "JE-00015",
+            "total_debit": 50000.0,
+            "total_credit": 50000.0,
+            "status": "posted",
+            "created_by": "Demo Accountant",
+            "created_at": now_iso,
+            "date": today_iso,
+            "narration": "Sample booked revenue",
+            "reference": "SEED",
+            "lines": [
+                {"account_id": "coa-1001", "account_name": "Cash in Hand", "debit": 50000.0, "credit": 0.0},
+                {"account_id": "coa-1002", "account_name": "Sales Revenue", "debit": 0.0, "credit": 50000.0},
+            ],
+        }
+    ]
+    await _upsert_seed_many("journal_entries", journal_entries)
+
+    bank_accounts = [
+        {
+            "id": "bank-1001",
+            "company_id": DEFAULT_COMPANY_ID,
+            "account_name": "Operating Account",
+            "bank_name": "HDFC Bank",
+            "account_number": "009900112233",
+            "ifsc": "HDFC0001234",
+            "balance": 325000.0,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("bank_accounts", bank_accounts)
+
+    gst_returns = [
+        {
+            "id": "gst-1001",
+            "company_id": DEFAULT_COMPANY_ID,
+            "period": "2026-03",
+            "return_type": "GSTR-3B",
+            "taxable_value": 450000.0,
+            "igst": 0.0,
+            "cgst": 40500.0,
+            "sgst": 40500.0,
+            "status": "draft",
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("gst_returns", gst_returns)
+
+    await _upsert_seed_document("counters", {"_id": f"journal_{DEFAULT_COMPANY_ID}"}, {"_id": f"journal_{DEFAULT_COMPANY_ID}", "seq": 15})
+
+    subscriptions = [
+        {
+            "id": "sub-1001",
+            "user_id": "usr-admin",
+            "plan": "enterprise",
+            "status": "active",
+            "amount": 9999.0,
+            "currency": "INR",
+            "billing_cycle": "monthly",
+            "starts_at": now_iso,
+            "ends_at": subscription_end_iso,
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("subscriptions", subscriptions)
+
+    analytics_events = [
+        {"id": "ana-1001", "user_id": "usr-admin", "event_type": "user_registered", "event_data": {"source": "seed"}, "page": "register", "timestamp": now_iso},
+        {"id": "ana-1002", "user_id": "usr-admin", "event_type": "email_verified", "event_data": {"source": "seed"}, "page": "verify", "timestamp": now_iso},
+        {"id": "ana-1003", "user_id": "usr-admin", "event_type": "subscription_created", "event_data": {"plan": "enterprise"}, "page": "billing", "timestamp": now_iso},
+        {"id": "ana-1004", "user_id": "usr-admin", "event_type": "team_invite_sent", "event_data": {"role": "employee"}, "page": "team", "timestamp": now_iso},
+    ]
+    await _upsert_seed_many("analytics", analytics_events)
+
+    team_invites = [
+        {
+            "id": "invite-1001",
+            "email": "newhire@demo.com",
+            "invited_by": "usr-admin",
+            "organization_id": DEFAULT_ORG_ID,
+            "role": "employee",
+            "status": "pending",
+            "token": "token-seed-1001",
+            "expires_at": (now + timedelta(days=3)).isoformat(),
+            "created_at": now_iso,
+        }
+    ]
+    await _upsert_seed_many("team_invites", team_invites)
+
+    trips = [
+        {
+            "id": "trip-1001",
+            "user_id": "usr-employee",
+            "organization_id": DEFAULT_ORG_ID,
+            "status": "ended",
+            "start_time": (now - timedelta(hours=4)).isoformat(),
+            "end_time": (now - timedelta(hours=2)).isoformat(),
+            "distance_km": 12.4,
+            "duration_sec": 7200,
+            "current_lat": 12.9716,
+            "current_lng": 77.5946,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+        },
+        {
+            "id": "trip-1002",
+            "user_id": "usr-admin",
+            "organization_id": DEFAULT_ORG_ID,
+            "status": "ended",
+            "start_time": (now - timedelta(hours=2)).isoformat(),
+            "end_time": (now - timedelta(hours=1)).isoformat(),
+            "distance_km": 6.8,
+            "duration_sec": 3600,
+            "current_lat": 12.9352,
+            "current_lng": 77.6245,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+        },
+    ]
+    await _upsert_seed_many("trips", trips)
+
+    locations = [
+        {
+            "id": "loc-1001",
+            "trip_id": "trip-1001",
+            "user_id": "usr-employee",
+            "timestamp": (now - timedelta(hours=3, minutes=30)).isoformat(),
+            "lat": 12.9701,
+            "lng": 77.5900,
+            "speed": 38.5,
+            "address": "MG Road, Bangalore",
+        },
+        {
+            "id": "loc-1002",
+            "trip_id": "trip-1001",
+            "user_id": "usr-employee",
+            "timestamp": (now - timedelta(hours=2, minutes=30)).isoformat(),
+            "lat": 12.9750,
+            "lng": 77.6020,
+            "speed": 42.0,
+            "address": "Indiranagar, Bangalore",
+        },
+        {
+            "id": "loc-1003",
+            "trip_id": "trip-1002",
+            "user_id": "usr-admin",
+            "timestamp": (now - timedelta(hours=1, minutes=20)).isoformat(),
+            "lat": 12.9400,
+            "lng": 77.6200,
+            "speed": 28.0,
+            "address": "Koramangala, Bangalore",
+        },
+    ]
+    await _upsert_seed_many("locations", locations)
+
+    logger.info("Demo seed bootstrap completed for org '%s'", DEFAULT_ORG_ID)
+
 app.include_router(api_router)
 
 
@@ -2932,8 +3858,6 @@ async def create_indexes():
         return
 
     logger.info("Creating MongoDB indexes...")
-    await ensure_demo_users_seeded()
-    return
 
     # ── Users ──────────────────────────────────────────────
     await db.users.create_index("id", unique=True)
