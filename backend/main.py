@@ -3081,6 +3081,43 @@ async def ensure_demo_users_seeded():
     ]
     await _upsert_seed_many("employees", employees)
 
+    # Bulk UAT employee dataset:
+    # Target total employees = 120 (100 active, 10 resigned, 10 terminated)
+    bulk_first_names = [
+        "Aarav", "Priya", "Rahul", "Sneha", "Vikram", "Pooja", "Ankit", "Neha",
+        "Rohan", "Kavya", "Aditya", "Isha", "Varun", "Meera", "Karan", "Nisha",
+    ]
+    bulk_last_names = [
+        "Sharma", "Verma", "Patel", "Gupta", "Reddy", "Kumar", "Nair", "Singh",
+        "Desai", "Joshi", "Bose", "Kapoor", "Malhotra", "Iyer", "Yadav", "Mehta",
+    ]
+    bulk_departments = ["Engineering", "Sales", "Finance", "Marketing", "HR", "Operations", "Support"]
+    bulk_designations = [
+        "Software Engineer", "Senior Engineer", "Account Executive", "Financial Analyst",
+        "HR Specialist", "Marketing Associate", "Operations Executive", "Support Associate",
+    ]
+    bulk_employees: List[dict] = []
+    for i in range(1, 118):
+        status = "active" if i <= 97 else ("resigned" if i <= 107 else "terminated")
+        first = bulk_first_names[(i - 1) % len(bulk_first_names)]
+        last = bulk_last_names[(i - 1) % len(bulk_last_names)]
+        bulk_employees.append(
+            {
+                "id": f"emp-bulk-{i:03d}",
+                "emp_id": f"PRSK-{2000 + i}",
+                "name": f"{first} {last} {i}",
+                "email": f"{first.lower()}.{last.lower()}.{i}@demo.com",
+                "phone": f"+9198{10000000 + i:08d}",
+                "department": bulk_departments[(i - 1) % len(bulk_departments)],
+                "designation": bulk_designations[(i - 1) % len(bulk_designations)],
+                "date_of_joining": (today - timedelta(days=180 + (i * 5))).isoformat(),
+                "status": status,
+                "organization_id": DEFAULT_ORG_ID,
+                "created_at": (now - timedelta(days=i)).isoformat(),
+            }
+        )
+    await _upsert_seed_many("employees", bulk_employees)
+
     leave_requests = [
         {
             "id": "leave-1001",
@@ -3108,6 +3145,31 @@ async def ensure_demo_users_seeded():
     await _upsert_seed_many("leave_requests", leave_requests)
     await _upsert_seed_many("leaves", leave_requests)
 
+    # Additional leave data for QA filtering/states
+    bulk_leave_requests: List[dict] = []
+    all_employee_records = employees + bulk_employees
+    leave_statuses = ["pending", "approved", "rejected"]
+    leave_types = ["Casual Leave", "Sick Leave", "Earned Leave", "WFH"]
+    for i in range(1, 61):
+        employee = all_employee_records[(i - 1) % len(all_employee_records)]
+        from_date = (today - timedelta(days=(i % 40))).isoformat()
+        to_date = (today - timedelta(days=max((i % 40) - 1, 0))).isoformat()
+        bulk_leave_requests.append(
+            {
+                "id": f"leave-bulk-{i:03d}",
+                "employee_id": employee["id"],
+                "leave_type": leave_types[(i - 1) % len(leave_types)],
+                "from_date": from_date,
+                "to_date": to_date,
+                "reason": f"Seeded leave request {i}",
+                "status": leave_statuses[(i - 1) % len(leave_statuses)],
+                "organization_id": DEFAULT_ORG_ID,
+                "created_at": (now - timedelta(days=i)).isoformat(),
+            }
+        )
+    await _upsert_seed_many("leave_requests", bulk_leave_requests)
+    await _upsert_seed_many("leaves", bulk_leave_requests)
+
     attendance = [
         {
             "id": "att-1001",
@@ -3131,6 +3193,27 @@ async def ensure_demo_users_seeded():
         },
     ]
     await _upsert_seed_many("attendance", attendance)
+
+    # Additional attendance records for dashboard/trends
+    bulk_attendance: List[dict] = []
+    active_employee_ids = [e["id"] for e in (employees + bulk_employees) if e.get("status") == "active"]
+    for day_offset in range(0, 7):
+        att_date = (today - timedelta(days=day_offset)).isoformat()
+        for idx, emp_id in enumerate(active_employee_ids[:60], start=1):
+            att_status = "wfh" if (idx + day_offset) % 11 == 0 else "present"
+            bulk_attendance.append(
+                {
+                    "id": f"att-bulk-{day_offset:02d}-{idx:03d}",
+                    "employee_id": emp_id,
+                    "date": att_date,
+                    "check_in": f"09:{(idx + day_offset) % 60:02d}",
+                    "check_out": f"18:{(idx + day_offset + 10) % 60:02d}",
+                    "status": att_status,
+                    "organization_id": DEFAULT_ORG_ID,
+                    "created_at": now_iso,
+                }
+            )
+    await _upsert_seed_many("attendance", bulk_attendance)
 
     projects = [
         {
@@ -3451,6 +3534,29 @@ async def ensure_demo_users_seeded():
     await _upsert_seed_many("jobs", jobs)
     await _upsert_seed_many("job_postings", jobs)
 
+    # Bulk ATS jobs:
+    # Existing: 1 open, Additional: 49 => total 50 (35 open, 10 closed, 5 draft)
+    job_statuses = (["open"] * 34) + (["closed"] * 10) + (["draft"] * 5)
+    job_types = ["Full-time", "Contract", "Remote", "Hybrid"]
+    bulk_jobs: List[dict] = []
+    for i, status in enumerate(job_statuses, start=1):
+        dept = bulk_departments[(i - 1) % len(bulk_departments)]
+        bulk_jobs.append(
+            {
+                "id": f"job-bulk-{i:03d}",
+                "title": f"{dept} Specialist {i}",
+                "department": dept,
+                "location": "Bangalore" if i % 3 else "Remote",
+                "type": job_types[(i - 1) % len(job_types)],
+                "description": f"Seeded QA role #{i} for ATS stress testing.",
+                "status": status,
+                "organization_id": DEFAULT_ORG_ID,
+                "created_at": (now - timedelta(days=i)).isoformat(),
+            }
+        )
+    await _upsert_seed_many("jobs", bulk_jobs)
+    await _upsert_seed_many("job_postings", bulk_jobs)
+
     candidates = [
         {
             "id": "cand-1001",
@@ -3464,6 +3570,35 @@ async def ensure_demo_users_seeded():
         }
     ]
     await _upsert_seed_many("candidates", candidates)
+
+    # Bulk ATS candidates:
+    # Existing: 1 screening, Additional: 299 => total 300
+    candidate_statuses = (
+        (["applied"] * 80)
+        + (["screening"] * 70)
+        + (["interview"] * 60)
+        + (["offered"] * 35)
+        + (["hired"] * 24)
+        + (["rejected"] * 30)
+    )
+    all_job_ids = [j["id"] for j in (jobs + bulk_jobs)]
+    bulk_candidates: List[dict] = []
+    for i, status in enumerate(candidate_statuses, start=1):
+        first = bulk_first_names[(i - 1) % len(bulk_first_names)]
+        last = bulk_last_names[(i - 1) % len(bulk_last_names)]
+        bulk_candidates.append(
+            {
+                "id": f"cand-bulk-{i:03d}",
+                "job_id": all_job_ids[(i - 1) % len(all_job_ids)],
+                "name": f"{first} Candidate {i}",
+                "email": f"candidate.{first.lower()}.{i}@mailinator.com",
+                "resume_url": f"https://example.com/resume/candidate-{i}",
+                "status": status,
+                "organization_id": DEFAULT_ORG_ID,
+                "created_at": (now - timedelta(days=i)).isoformat(),
+            }
+        )
+    await _upsert_seed_many("candidates", bulk_candidates)
 
     kb_articles = [
         {
@@ -3584,6 +3719,28 @@ async def ensure_demo_users_seeded():
         }
     ]
     await _upsert_seed_many("offer_letters", offer_letters)
+
+    # Bulk offer letters:
+    # Existing: 1 Generated, Additional: 39 => total 40
+    offer_statuses = (["Generated"] * 9) + (["Sent"] * 10) + (["Accepted"] * 10) + (["Revoked"] * 10)
+    bulk_offers: List[dict] = []
+    for i, status in enumerate(offer_statuses, start=1):
+        employee = all_employee_records[(i - 1) % len(all_employee_records)]
+        bulk_offers.append(
+            {
+                "id": f"offer-bulk-{i:03d}",
+                "organization_id": DEFAULT_ORG_ID,
+                "name": employee["name"],
+                "email": f"offer.candidate.{i}@demo.com",
+                "phone": employee["phone"],
+                "designation": employee["designation"],
+                "ctc_yearly": float(550000 + (i * 12000)),
+                "details": {"batch": "bulk-seed", "employee_ref": employee["id"]},
+                "status": status,
+                "created_at": (now - timedelta(days=i)).isoformat(),
+            }
+        )
+    await _upsert_seed_many("offer_letters", bulk_offers)
 
     companies = [
         {
