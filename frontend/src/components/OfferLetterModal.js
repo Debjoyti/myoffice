@@ -147,44 +147,60 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
     const handleBack = () => setStep(step - 1);
 
     const handleGenerate = async () => {
+        // --- Client-side validation ---
+        const name = `${formData.firstName} ${formData.lastName}`.trim();
+        if (!name || name === '') { toast.error('Please enter the candidate name.'); return; }
+        if (!formData.email) { toast.error('Please enter the candidate email.'); return; }
+        if (!formData.phone) { toast.error('Please enter the candidate phone number.'); return; }
+        if (!formData.designation) { toast.error('Please enter the designation.'); return; }
+        const ctc = parseFloat(formData.yearlyCTC);
+        if (!ctc || isNaN(ctc) || ctc <= 0) { toast.error('Please enter a valid CTC amount.'); return; }
+
         try {
             const token = localStorage.getItem('token');
+            // --- Correctly structured flat payload ---
             const payload = {
-                name: `${formData.firstName} ${formData.lastName}`,
+                name,
                 email: formData.email,
                 phone: formData.phone,
                 designation: formData.designation,
-                ctc_yearly: parseFloat(formData.yearlyCTC),
-                esi_enabled: formData.esiApplied,
-                pf_enabled: formData.pfApplied,
-                    details: {
-                        salaryBreakdown,
-                        aadhaar: formData.aadhaarNumber,
-                        pan: formData.panNumber,
-                        fatherName: formData.fatherName,
-                        location: formData.officeLocation,
-                        company: {
-                            name: formData.companyName,
-                            address: formData.companyAddress
-                        },
-                        timeline: {
-                            joiningDate: formData.joiningDate,
-                            offerExpiry: formData.offerExpiryDate,
-                            shift: formData.shiftDetails,
-                            workMode: formData.workMode
-                        },
-                        rulesAndRegs: formData.rulesAndRegs
-                    }
+                ctc_yearly: ctc,
+                esi_enabled: formData.esiApplied || false,
+                pf_enabled: formData.pfApplied || false,
+                pt_enabled: formData.ptApplied || false,
+                it_enabled: formData.itApplied || false,
+                gratuity_enabled: formData.gratuityApplied || false,
+                details: {
+                    salaryBreakdown,
+                    aadhaar: formData.aadhaarNumber || '',
+                    pan: formData.panNumber || '',
+                    fatherName: formData.fatherName || '',
+                    location: formData.officeLocation || '',
+                    company: {
+                        name: formData.companyName,
+                        address: formData.companyAddress
+                    },
+                    timeline: {
+                        joiningDate: formData.joiningDate || '',
+                        offerExpiry: formData.offerExpiryDate || '',
+                        shift: formData.shiftDetails || '',
+                        workMode: formData.workMode || 'Work from Office'
+                    },
+                    rulesAndRegs: formData.rulesAndRegs || ''
+                }
             };
 
             const response = await axios.post(`${API}/offer-letters`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            toast.success('Offer letter generated successfully!');
             onSave && onSave(response.data);
             onClose();
         } catch (error) {
-            toast.error('Failed to generate offer letter.');
+            const msg = error?.response?.data?.detail || error?.message || 'Unknown error';
+            toast.error(`Failed to generate offer letter: ${msg}`);
+            console.error('Offer letter generation error:', error?.response?.data);
         }
     };
 

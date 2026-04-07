@@ -477,9 +477,11 @@ class OfferLetter(BaseModel):
     organization_id: str
     name: str
     email: str
-    phone: str
+    phone: Optional[str] = ''
     designation: str
     ctc_yearly: float
+    esi_enabled: Optional[bool] = False
+    pf_enabled: Optional[bool] = False
     details: dict = {}
     status: str = "Generated"
     created_at: str
@@ -487,11 +489,11 @@ class OfferLetter(BaseModel):
 class OfferLetterCreate(BaseModel):
     name: str
     email: str
-    phone: str
+    phone: Optional[str] = ''
     designation: str
     ctc_yearly: float
-    esi_enabled: bool
-    pf_enabled: bool
+    esi_enabled: Optional[bool] = False
+    pf_enabled: Optional[bool] = False
     pt_enabled: Optional[bool] = False
     it_enabled: Optional[bool] = False
     gratuity_enabled: Optional[bool] = False
