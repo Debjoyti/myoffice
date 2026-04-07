@@ -48,7 +48,8 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
         permanentAddress: '',
         joiningDate: '',
         offerExpiryDate: '',
-        shiftDetails: 'General Shift: 09:30 AM to 06:30 PM', // Handled as free text in letter
+        workMode: 'Work from Office', // Hybrid, Remote, Office
+        shiftDetails: 'General Shift: 09:30 AM to 06:30 PM',
 
         // Rules - Fully editable section at end
         rulesAndRegs: `1. Employment Duties: Your duties will be defined by your reporting manager.\n2. Probation: You will be on probation for 6 months.\n3. Confidentiality: You shall maintain standard corporate confidentiality.\n4. Leave Policy: As per company norms.`
@@ -169,7 +170,8 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                         timeline: {
                             joiningDate: formData.joiningDate,
                             offerExpiry: formData.offerExpiryDate,
-                            shift: formData.shiftDetails
+                            shift: formData.shiftDetails,
+                            workMode: formData.workMode
                         },
                         rulesAndRegs: formData.rulesAndRegs
                     }
@@ -268,6 +270,21 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                      </div>
 
                                      <div>
+                                        <label className="dark-label text-xs uppercase text-emerald-500 font-bold">Shift & Work Mode</label>
+                                        <div className="grid grid-cols-1 gap-3 mt-2">
+                                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                                                {['Work from Office', 'Hybrid', 'Remote'].map(mode => (
+                                                    <button key={mode} 
+                                                        onClick={() => setFormData({...formData, workMode: mode})}
+                                                        className={`flex-1 py-1.5 px-3 rounded-lg text-[9px] font-bold transition-all ${formData.workMode === mode ? 'bg-emerald-500 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                                                        {mode}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                     </div>
+
+                                     <div>
                                         <label className="dark-label text-xs uppercase text-emerald-500 font-bold">Insurance & Food</label>
                                         <div className="grid grid-cols-3 gap-2 mt-2">
                                             <button onClick={() => setFormData({ ...formData, coInsurance: !formData.coInsurance })} 
@@ -352,23 +369,35 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                             <tr key={idx}>
                                                 <td style={{ color: 'rgba(255,255,255,0.7)' }}>{row.name}</td>
                                                 <td style={{ textAlign: 'right', color: 'rgba(255,255,255,0.3)' }}>{Math.round(row.system_suggested).toLocaleString('en-IN')}</td>
-                                                <td><input type="number" className="table-input" value={row.hr_input_1} onChange={e => {
-                                                    const newB = [...salaryBreakdown];
-                                                    newB[idx].hr_input_1 = parseFloat(e.target.value);
-                                                    setSalaryBreakdown(newB);
-                                                }} /></td>
-                                                <td><input type="number" className="table-input" value={row.hr_input_2} onChange={e => {
-                                                    const newB = [...salaryBreakdown];
-                                                    newB[idx].hr_input_2 = parseFloat(e.target.value);
-                                                    setSalaryBreakdown(newB);
-                                                }} /></td>
                                                 <td style={{ textAlign: 'right' }}>
-                                                    <input type="number" className="table-input-final" value={row.final_value} onChange={e => {
-                                                        const newB = [...salaryBreakdown];
-                                                        newB[idx].final_value = parseFloat(e.target.value);
-                                                        setSalaryBreakdown(newB);
-                                                    }} />
-                                                </td>
+                                                     <input type="number" 
+                                                        className="dark-input h-8 text-xs text-right border-white/5 bg-white/5 focus:border-emerald-500/50" 
+                                                        value={row.hr_input_1} 
+                                                        onChange={e => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            const newB = [...salaryBreakdown];
+                                                            newB[idx].hr_input_1 = val;
+                                                            newB[idx].final_value = val || newB[idx].hr_input_2 || row.system_suggested;
+                                                            setSalaryBreakdown(newB);
+                                                        }} />
+                                                 </td>
+                                                 <td style={{ textAlign: 'right' }}>
+                                                     <input type="number" 
+                                                        className="dark-input h-8 text-xs text-right border-white/5 bg-white/5 focus:border-emerald-500/50" 
+                                                        value={row.hr_input_2} 
+                                                        onChange={e => {
+                                                            const val = parseFloat(e.target.value) || 0;
+                                                            const newB = [...salaryBreakdown];
+                                                            newB[idx].hr_input_2 = val;
+                                                            newB[idx].final_value = val || newB[idx].hr_input_1 || row.system_suggested;
+                                                            setSalaryBreakdown(newB);
+                                                        }} />
+                                                 </td>
+                                                 <td style={{ textAlign: 'right' }}>
+                                                     <div className="h-8 flex items-center justify-end px-3 rounded bg-emerald-500/10 text-emerald-400 font-bold text-xs ring-1 ring-emerald-500/20">
+                                                        ₹{Math.round(row.final_value).toLocaleString('en-IN')}
+                                                     </div>
+                                                 </td>
                                             </tr>
                                         ))}
                                     </tbody>

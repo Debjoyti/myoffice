@@ -104,7 +104,7 @@ const OfferLetters = ({ user, onLogout, isSubComponent }) => {
             </div>
 
             <div class="section">
-                <span class="section-num">2. Start Date</span>. Subject to fulfilment of any conditions imposed by this letter agreement, you will commence this new position with the Company on <span class="bold">${new Date(details.timeline?.joiningDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD'}</span>. Your place of joining will be <span class="bold">${details.location || 'Noida'}</span>.
+                <span class="section-num">2. Start Date & Mode</span>. Subject to fulfilment of any conditions imposed by this letter agreement, you will commence this new position with the Company on <span class="bold">${new Date(details.timeline?.joiningDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD'}</span>. Your place of joining will be <span class="bold">${details.location || 'Noida'}</span> and your work mode will be <span class="bold">${details.timeline?.workMode || 'Work from Office'}</span>.
             </div>
 
             <div class="section">

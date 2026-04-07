@@ -247,8 +247,40 @@ async def seed_all():
         })
     await db.assets.insert_many(assets)
 
+    # ────────────── ENTITY: OFFER LETTERS (50+) ──────────────
+    print("📜 Seeding Offer Letters...")
+    offers = []
+    for i in range(50):
+        fn, ln = random.choice(FIRST_NAMES), random.choice(LAST_NAMES)
+        ctc = random.randint(300000, 2500000)
+        offers.append({
+            "id": f"OFFER-{1000 + i}",
+            "name": f"{fn} {ln}",
+            "email": f"{fn.lower()}.{ln.lower()}.{i}@recruitment.com",
+            "phone": f"+91 {random.randint(7000000000, 9999999999)}",
+            "designation": random.choice(DESIGNATIONS),
+            "ctc_yearly": ctc,
+            "status": random.choice(["pending", "accepted", "rejected", "expired"]),
+            "organization_id": ORG_ID,
+            "details": {
+                "aadhaar": f"{random.randint(1000, 9999)} {random.randint(1000, 9999)} {random.randint(1000, 9999)}",
+                "location": random.choice(CITIES),
+                "timeline": {
+                    "joiningDate": (get_now() + timedelta(days=random.randint(7, 30))).strftime("%Y-%m-%d"),
+                    "workMode": random.choice(["Work from Office", "Hybrid", "Remote"])
+                },
+                "salaryBreakdown": [
+                    {"name": "Basic Salary", "final_value": ctc * 0.4 / 12},
+                    {"name": "HRA", "final_value": ctc * 0.2 / 12},
+                    {"name": "Special Allowance", "final_value": ctc * 0.4 / 12}
+                ]
+            },
+            "created_at": random_date(15)
+        })
+    await db.offer_letters.insert_many(offers)
+
     print("\n✅ PRODUCTION-GRADE SEEDING COMPLETE!")
-    print(f"Summary: 120 Employees, 1500+ Attendance records, 110 Leads, 60 Deals, 105 Invoices, 120 Expenses, 100 Inventory items, 55 Tickets.")
+    print(f"Summary: 120 Employees, 50 Offer Letters, 1500+ Attendance records, 110 Leads, 60 Deals, 105 Invoices, 120 Expenses.")
 
 if __name__ == "__main__":
     asyncio.run(seed_all())
