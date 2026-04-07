@@ -35,6 +35,27 @@ class UserRegister(BaseModel):
     name: str
 
 
+DEFAULT_ORG_ID = "default"
+DEFAULT_COMPANY_ID = "demo-comp-1"
+DEFAULT_SUBSCRIPTION_END = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
+DEFAULT_ENABLED_SERVICES = [
+    "dashboard",
+    "employees",
+    "attendance",
+    "leaves",
+    "recruitment",
+    "projects",
+    "crm",
+    "inventory",
+    "finance",
+    "support",
+    "assets",
+    "announcements",
+    "kb",
+    "audit",
+    "insights",
+]
+
 users = {
     "superadmin@demo.com": {
         "id": str(uuid.uuid4()),
@@ -42,11 +63,63 @@ users = {
         "password": "password123",
         "name": "Demo SuperAdmin",
         "role": "superadmin",
-        "organization_id": str(uuid.uuid4()),
+        "organization_id": DEFAULT_ORG_ID,
+        "email_verified": True,
+        "subscription_status": "active",
+        "subscription_end_date": DEFAULT_SUBSCRIPTION_END,
+        "enabled_services": DEFAULT_ENABLED_SERVICES,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    },
+    "admin@demo.com": {
+        "id": str(uuid.uuid4()),
+        "email": "admin@demo.com",
+        "password": "password123",
+        "name": "Demo Admin",
+        "role": "admin",
+        "organization_id": DEFAULT_ORG_ID,
+        "email_verified": True,
+        "subscription_status": "active",
+        "subscription_end_date": DEFAULT_SUBSCRIPTION_END,
+        "enabled_services": DEFAULT_ENABLED_SERVICES,
+        "subscription_limits": {"max_employees": 1000, "max_projects": 500},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    },
+    "client@demo.com": {
+        "id": str(uuid.uuid4()),
+        "email": "client@demo.com",
+        "password": "password123",
+        "name": "Demo Client",
+        "role": "admin",
+        "organization_id": DEFAULT_ORG_ID,
+        "email_verified": True,
+        "subscription_status": "active",
+        "subscription_limits": {"max_employees": 10, "max_projects": 5},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    },
+    "employee@demo.com": {
+        "id": str(uuid.uuid4()),
+        "email": "employee@demo.com",
+        "password": "password123",
+        "name": "Demo Employee",
+        "role": "employee",
+        "organization_id": DEFAULT_ORG_ID,
         "email_verified": True,
         "subscription_status": "active",
         "created_at": datetime.now(timezone.utc).isoformat(),
-    }
+    },
+    "accountant@demo.com": {
+        "id": str(uuid.uuid4()),
+        "email": "accountant@demo.com",
+        "password": "password123",
+        "name": "Demo Accountant",
+        "role": "accountant",
+        "company_id": DEFAULT_COMPANY_ID,
+        "organization_id": DEFAULT_ORG_ID,
+        "email_verified": True,
+        "subscription_status": "active",
+        "enabled_services": ["ledger", "journal", "reports", "gst", "bank"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    },
 }
 
 
