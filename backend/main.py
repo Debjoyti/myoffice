@@ -2557,6 +2557,11 @@ class CompanyProfile(BaseModel):
     pan_number: Optional[str] = None
     gst_number: Optional[str] = None
     cin_number: Optional[str] = None
+    esi_account_no: Optional[str] = None
+    uan_account_no: Optional[str] = None
+    eway_bill_account: Optional[str] = None
+    plant_code: Optional[str] = None
+    payment_barcode: Optional[str] = None
     logo: Optional[str] = None        # base64 data URI
     stamp: Optional[str] = None       # base64 data URI
     status: str = "active"
@@ -2578,6 +2583,11 @@ class CompanyProfileCreate(BaseModel):
     pan_number: Optional[str] = None
     gst_number: Optional[str] = None
     cin_number: Optional[str] = None
+    esi_account_no: Optional[str] = None
+    uan_account_no: Optional[str] = None
+    eway_bill_account: Optional[str] = None
+    plant_code: Optional[str] = None
+    payment_barcode: Optional[str] = None
     logo: Optional[str] = None
     stamp: Optional[str] = None
 

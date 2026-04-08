@@ -18,6 +18,7 @@ import WFHRequests from './WFHRequests';
 import Resignations from './Resignations';
 import PIP from './PIP';
 import Sidebar from '../components/Sidebar';
+import PayrollEngine from './PayrollEngine';
 import { MOCK_EMPLOYEES, MOCK_HR } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -121,6 +122,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {[
                         { id: 'dashboard', label: 'Overview' },
                         { id: 'employees', label: 'Directory' },
+                        { id: 'payroll', label: '⚙ Payroll' },
                         { id: 'attendance', label: 'Attendance' },
                         { id: 'leave', label: 'Leaves' },
                         { id: 'wfh', label: 'Remote' },
@@ -129,7 +131,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                         { id: 'posh', label: 'Compliance' },
                         { id: 'resignations', label: 'Exits' },
                         { id: 'pip', label: 'Performance' },
-                        { id: 'hr-config', label: 'Config' },
+                        { id: 'hr-config', label: 'HR Panel' },
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -251,6 +253,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'wfh' && <WFHRequests isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'recruitment' && <Recruitment isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'offer-letters' && <OfferLetters isSubComponent={true} user={user} onLogout={onLogout} />}
+                    {activeTab === 'payroll' && <PayrollEngine isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'hr-config' && <HRConfig isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'resignations' && <Resignations isSubComponent={true} user={user} onLogout={onLogout} />}

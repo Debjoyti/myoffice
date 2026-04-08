@@ -21,7 +21,8 @@ const STEPS = ['Basic Info', 'Contact & Address', 'Tax & Legal', 'Branding'];
 const EMPTY_FORM = {
   name: '', legal_name: '', industry: '', email: '', phone: '', website: '',
   address: '', city: '', state: '', country: 'India', pincode: '',
-  pan_number: '', gst_number: '', cin_number: '', logo: '', stamp: ''
+  pan_number: '', gst_number: '', cin_number: '', logo: '', stamp: '',
+  esi_account_no: '', uan_account_no: '', eway_bill_account: '', plant_code: '', payment_barcode: ''
 };
 
 function imageToBase64(file) {
@@ -304,6 +305,14 @@ const CompanyOnboarding = ({ user, onLogout }) => {
       </div>
       <FormField label="PAN Number" placeholder="ABCDE1234F" {...field('pan_number')} mono />
       <FormField label="GST Number" placeholder="22ABCDE1234F1Z5" {...field('gst_number')} mono />
+      <FormField label="Company ESI Account No." placeholder="ESI account number" {...field('esi_account_no')} mono />
+      <FormField label="Company UAN Account No." placeholder="UAN account number" {...field('uan_account_no')} mono />
+      <FormField label="Company E-Way Bill Account" placeholder="E-way bill account" {...field('eway_bill_account')} mono />
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1 }}>
+          <FormField label="Plant Code" placeholder="e.g. 1 Plant" {...field('plant_code')} />
+        </div>
+      </div>
       <div style={{ gridColumn: '1/-1' }}>
         <FormField label="CIN / LLPIN (optional)" placeholder="U12345MH2020PTC123456" {...field('cin_number')} mono />
       </div>
@@ -311,6 +320,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
     // Step 3: Branding
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <UploadBox label="Company Payment Bar Code" hint="Upload QR or Payment barcode" {...field('payment_barcode')} />
       <UploadBox label="Company Logo" hint="PNG or SVG recommended, max 2MB" {...field('logo')} />
       <UploadBox label="Company Stamp / Seal" hint="PNG with transparent background recommended" {...field('stamp')} />
     </div>
