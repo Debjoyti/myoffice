@@ -34,6 +34,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     'company-onboarding': 'dashboard',
     'settings': 'dashboard',
     'travel': 'assets',
+    'iatf-hub': 'employees',
   };
 
   const categorizedMenuItems = [
@@ -64,6 +65,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
       group: 'HR & Operations',
       items: [
         { id: 'hrms', label: 'HR People Hub', icon: Users, path: '/hrms', tcode: 'PA40', desc: 'Human resources' },
+        { id: 'iatf-hub', label: 'IATF Hub', icon: ShieldCheck, path: '/iatf-hub', tcode: 'IATF', desc: 'L&D & Compliance' },
         { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team', tcode: 'SU01', desc: 'User management' },
       ]
     },
@@ -113,7 +115,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
     '/timesheets': 'timesheets', '/support-desk': 'support-desk', '/feed': 'feed',
     '/assets': 'assets', '/recruitment': 'recruitment', '/kb': 'kb', '/audit': 'audit',
     '/settings': 'settings', '/subscription': 'subscription', '/company-onboarding': 'company-onboarding',
-    '/accountant': 'accountant', '/travel': 'travel',
+    '/accountant': 'accountant', '/travel': 'travel', '/iatf-hub': 'iatf-hub',
   };
   const currentActivePage = pathToId[location.pathname] || activePage;
 

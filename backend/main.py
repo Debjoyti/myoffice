@@ -876,6 +876,115 @@ class PerformancePlanCreate(BaseModel):
     start_date: str
     end_date: str
 
+# ─────────────────── IATF HR STANDARDS ───────────────────
+
+class IATFMetadata(BaseModel):
+    version: str = "1.0"
+    created_by: str
+    approved_by: Optional[str] = None
+    status: str = "draft" # draft, active, archived
+    company_id: str
+    created_at: str
+    updated_at: str
+
+class TurtleDiagram(BaseModel):
+    id: str
+    metadata: IATFMetadata
+    process_name: str
+    inputs: List[str]
+    outputs: List[str]
+    resources: List[str] # With What?
+    methods: List[str] # How?
+    personnel: List[str] # With Whom?
+    kpis: List[str] # How Many?
+
+class InductionProgram(BaseModel):
+    id: str
+    employee_id: str
+    metadata: IATFMetadata
+    checkpoints: List[dict] # {item: str, status: bool, date: str}
+    mentor_sign_off: bool = False
+
+class SatisfactionAssessment(BaseModel):
+    id: str
+    metadata: IATFMetadata
+    year: int
+    scores: dict # {category: score}
+    improvement_areas: List[str]
+
+class KaizenSuggestion(BaseModel):
+    id: str
+    employee_id: str
+    metadata: IATFMetadata
+    theme: str
+    problem_description: str
+    suggestion_details: str
+    status: str = "pending" # pending, approved, rejected, implemented
+    savings_estimated: float = 0.0
+
+class TrainingAttendance(BaseModel):
+    id: str
+    calendar_id: str
+    employee_id: str
+    metadata: IATFMetadata
+    attended: bool = True
+    feedback_score: Optional[int] = None
+    effectiveness_evaluation: Optional[str] = None
+
+class SkillLevel(BaseModel):
+    skill: str
+    level: int # 1, 2, 3, 4
+
+class SkillMatrix(BaseModel):
+    id: str
+    employee_id: str
+    metadata: IATFMetadata
+    skills: List[SkillLevel]
+
+class JobDescription(BaseModel):
+    id: str
+    metadata: IATFMetadata
+    role_name: str
+    responsibilities: List[str]
+    competence_req: List[dict] # {skill: str, min_level: int}
+
+class ResponsibilityMatrix(BaseModel):
+    id: str
+    metadata: IATFMetadata
+    clauses: List[dict] # {iatf_clause: str, responsibility: str, role: str}
+
+class OJTRecord(BaseModel):
+    id: str
+    employee_id: str
+    metadata: IATFMetadata
+    topic: str
+    trainer_id: str
+    start_date: str
+    end_date: str
+    hours_completed: float
+    supervisor_comment: str
+    status: str = "completed"
+
+class MotivationAction(BaseModel):
+    id: str
+    metadata: IATFMetadata
+    employee_id: Optional[str] = None # Can be dept wide
+    action_type: str # Reward, Recognition, Event, Training
+    description: str
+    budget_utilized: float
+    impact_assessment: Optional[str] = None
+
+class TrainingEffectivenessEvaluation(BaseModel):
+    id: str
+    attendance_id: str
+    metadata: IATFMetadata
+    evaluator_id: str
+    evaluation_date: str
+    score: int # 1-5
+    performance_change_observed: str
+    manager_comments: str
+    follow_up_required: bool = False
+
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserRegister):
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
@@ -2539,11 +2648,21 @@ async def get_accountant_summary(current_user: dict = Depends(require_accountant
 
 # ─────────────────── COMPANY ONBOARDING ───────────────────
 
+class PlantProfile(BaseModel):
+    id: str
+    company_id: str
+    plant_code: str
+    created_at: str
+
+class PlantProfileCreate(BaseModel):
+    plant_code: str
+
 class CompanyProfile(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     organization_id: str
     name: str
+    company_code: str
     legal_name: Optional[str] = None
     industry: Optional[str] = None
     email: Optional[str] = None
@@ -2560,16 +2679,19 @@ class CompanyProfile(BaseModel):
     esi_account_no: Optional[str] = None
     uan_account_no: Optional[str] = None
     eway_bill_account: Optional[str] = None
-    plant_code: Optional[str] = None
     payment_barcode: Optional[str] = None
-    logo: Optional[str] = None        # base64 data URI
-    stamp: Optional[str] = None       # base64 data URI
+    logo: Optional[str] = None
+    stamp: Optional[str] = None
+    plants: List[PlantProfile] = []
     status: str = "active"
     onboarded_by: Optional[str] = None
     created_at: str
+    updated_at: Optional[str] = None
+    deleted_at: Optional[str] = None
 
 class CompanyProfileCreate(BaseModel):
     name: str
+    company_code: Optional[str] = None
     legal_name: Optional[str] = None
     industry: Optional[str] = None
     email: Optional[str] = None
@@ -2586,31 +2708,61 @@ class CompanyProfileCreate(BaseModel):
     esi_account_no: Optional[str] = None
     uan_account_no: Optional[str] = None
     eway_bill_account: Optional[str] = None
-    plant_code: Optional[str] = None
+    plants: Optional[List[PlantProfileCreate]] = []
     payment_barcode: Optional[str] = None
     logo: Optional[str] = None
     stamp: Optional[str] = None
 
+@api_router.post("/company", response_model=CompanyProfile)
 @api_router.post("/companies", response_model=CompanyProfile)
 async def create_company(data: CompanyProfileCreate, current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    company_id = str(uuid.uuid4())
+    org_id = current_user.get("organization_id", "default")
+    
+    # Auto-generate company_code if not provided
+    comp_code = data.company_code or f"CMP-{str(uuid.uuid4())[:8].upper()}"
+    
+    # Process plants
+    plants_to_save = []
+    if data.plants:
+        for p in data.plants:
+            plants_to_save.append({
+                "id": str(uuid.uuid4()),
+                "company_id": company_id,
+                "plant_code": p.plant_code,
+                "created_at": now
+            })
+
     company = {
-        "id": str(uuid.uuid4()),
-        "organization_id": current_user.get("organization_id", "default"),
+        "id": company_id,
+        "organization_id": org_id,
         "onboarded_by": current_user.get("name", ""),
         "status": "active",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        **data.model_dump()
+        "company_code": comp_code,
+        "created_at": now,
+        "updated_at": now,
+        "deleted_at": None,
+        **data.model_dump(exclude={"plants"})
     }
+    company["plants"] = plants_to_save
+    
     await db.companies.insert_one({k: v for k, v in company.items() if k != "_id"})
     return CompanyProfile(**company)
 
+@api_router.get("/company")
 @api_router.get("/companies")
-async def list_companies(current_user: dict = Depends(get_current_user)):
+async def list_companies(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
     org = current_user.get("organization_id", "default")
-    query = {} if current_user.get("role") == "superadmin" else {"organization_id": org}
-    companies = await db.companies.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    query = {"organization_id": org} if current_user.get("role") != "superadmin" else {}
+    
+    if not include_deleted:
+        query["deleted_at"] = None
+        
+    companies = await db.companies.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return companies
 
+@api_router.get("/company/{company_id}", response_model=CompanyProfile)
 @api_router.get("/companies/{company_id}", response_model=CompanyProfile)
 async def get_company(company_id: str, current_user: dict = Depends(get_current_user)):
     company = await db.companies.find_one({"id": company_id}, {"_id": 0})
@@ -2618,22 +2770,41 @@ async def get_company(company_id: str, current_user: dict = Depends(get_current_
         raise HTTPException(status_code=404, detail="Company not found")
     return CompanyProfile(**company)
 
+@api_router.put("/company/{company_id}", response_model=CompanyProfile)
 @api_router.put("/companies/{company_id}", response_model=CompanyProfile)
 async def update_company(company_id: str, data: CompanyProfileCreate, current_user: dict = Depends(get_current_user)):
     company = await db.companies.find_one({"id": company_id}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
-    await db.companies.update_one({"id": company_id}, {"$set": update_fields})
+    
+    now = datetime.now(timezone.utc).isoformat()
+    update_data = data.model_dump(exclude={"plants"})
+    update_data["updated_at"] = now
+    
+    # Process plants update
+    if data.plants is not None:
+        plants_to_save = []
+        for p in data.plants:
+            plants_to_save.append({
+                "id": str(uuid.uuid4()),
+                "company_id": company_id,
+                "plant_code": p.plant_code,
+                "created_at": now
+            })
+        update_data["plants"] = plants_to_save
+
+    await db.companies.update_one({"id": company_id}, {"$set": update_data})
     updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
     return CompanyProfile(**updated)
 
+@api_router.delete("/company/{company_id}")
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.companies.delete_one({"id": company_id})
-    if result.deleted_count == 0:
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.companies.update_one({"id": company_id}, {"$set": {"deleted_at": now, "status": "deleted"}})
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Company not found")
-    return {"message": "Company deleted successfully"}
+    return {"message": "Company soft-deleted successfully"}
 
 # ═══════════════════════════════════════════════════════════
 # AI INTELLIGENCE ENDPOINTS
@@ -2822,6 +2993,113 @@ async def create_vendor(vendor_data: dict, current_user: dict = Depends(get_curr
 # ═══════════════════════════════════════════════════════════
 # OFFBOARDING: RESIGNATIONS & PIP
 # ═══════════════════════════════════════════════════════════
+
+# ─────────────────── IATF OPERATIONAL ENDPOINTS ───────────────────
+
+@api_router.get("/iatf/module/{module_name}")
+async def get_iatf_module_data(module_name: str, current_user: dict = Depends(get_current_user)):
+    """Generic endpoint to fetch data for any IATF module"""
+    org_id = current_user.get("organization_id")
+    # Check for both organization_id and company_id in metadata
+    res = await db[f"iatf_{module_name}"].find({"metadata.company_id": org_id}, {"_id": 0}).to_list(1000)
+    return res
+
+@api_router.post("/iatf/module/{module_name}")
+async def create_iatf_record(module_name: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Generic endpoint to create an IATF record with compliance metadata"""
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": data.get("id", str(uuid.uuid4())),
+        "metadata": {
+            "version": data.get("version", "1.0"),
+            "created_by": current_user.get("id"),
+            "company_id": current_user.get("organization_id"),
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now
+        },
+        **data
+    }
+    await db[f"iatf_{module_name}"].insert_one(doc)
+    return {"message": "Record created", "id": doc["id"]}
+
+@api_router.patch("/iatf/module/{module_name}/{record_id}/approve")
+async def approve_iatf_record(module_name: str, record_id: str, current_user: dict = Depends(get_current_user)):
+    """Approve a compliance document"""
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db[f"iatf_{module_name}"].update_one(
+        {"id": record_id},
+        {"$set": {
+            "metadata.approved_by": current_user.get("id"),
+            "metadata.status": "active",
+            "metadata.updated_at": now
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return {"message": "Document approved and activated"}
+
+@api_router.get("/iatf/gap-analysis")
+async def iatf_gap_analysis(current_user: dict = Depends(get_current_user)):
+    """Comprehensive gap analysis for IATF/ISO compliance"""
+    org_id = current_user.get("organization_id")
+    gaps = []
+
+    # 1. Competence Gaps (Clause 7.2)
+    all_users = await db.users.find({"organization_id": org_id, "role": "employee"}).to_list(1000)
+    for user in all_users:
+        matrix = await db.iatf_skill_matrix.find_one({"employee_id": user["id"]}, {"_id": 0})
+        if not matrix:
+            gaps.append({
+                "module": "Skill Matrix",
+                "employee": user["name"],
+                "employee_id": user["id"],
+                "gap_type": "MISSING_RECORD",
+                "severity": "High",
+                "description": "No skill matrix defined for this employee."
+            })
+
+    # 2. Motivation Gaps (Clause 7.3)
+    pending_kaizens = await db.iatf_kaizen_suggestion.find({
+        "metadata.company_id": org_id,
+        "status": "pending"
+    }).to_list(1000)
+    
+    now = datetime.now(timezone.utc)
+    for k in pending_kaizens:
+        created_at = datetime.fromisoformat(k["metadata"]["created_at"])
+        if (now - created_at).days > 15:
+            gaps.append({
+                "module": "Kaizen",
+                "record_id": k["id"],
+                "employee_id": k["employee_id"],
+                "gap_type": "SLA_BREACH",
+                "severity": "Medium",
+                "description": f"Kaizen pending for {(now - created_at).days} days."
+            })
+
+    # 3. Training Gaps
+    # Check if induction exists for new hires (last 30 days)
+    new_hires = [u for u in all_users if (now - datetime.fromisoformat(u["created_at"])).days < 30]
+    for nh in new_hires:
+        induction = await db.iatf_induction_program.find_one({"employee_id": nh["id"]})
+        if not induction:
+            gaps.append({
+                "module": "Induction",
+                "employee": nh["name"],
+                "gap_type": "MISSING_RECORD",
+                "severity": "CRITICAL",
+                "description": "New joiner missing mandatory induction program."
+            })
+
+    return {
+        "summary": {
+            "total_gaps": len(gaps),
+            "critical_count": len([g for g in gaps if g["severity"] == "CRITICAL"]),
+            "last_audit": now.isoformat()
+        },
+        "gaps": gaps
+    }
 
 @api_router.get("/resignations")
 async def get_resignations(current_user: dict = Depends(get_current_user)):

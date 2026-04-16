@@ -19,10 +19,10 @@ const INDUSTRIES = [
 const STEPS = ['Basic Info', 'Contact & Address', 'Tax & Legal', 'Branding'];
 
 const EMPTY_FORM = {
-  name: '', legal_name: '', industry: '', email: '', phone: '', website: '',
+  name: '', company_code: '', legal_name: '', industry: '', email: '', phone: '', website: '',
   address: '', city: '', state: '', country: 'India', pincode: '',
   pan_number: '', gst_number: '', cin_number: '', logo: '', stamp: '',
-  esi_account_no: '', uan_account_no: '', eway_bill_account: '', plant_code: '', payment_barcode: ''
+  esi_account_no: '', uan_account_no: '', eway_bill_account: '', plants: [], payment_barcode: ''
 };
 
 function imageToBase64(file) {
@@ -194,12 +194,52 @@ function SelectField({ label, value, onChange, options }) {
     <div>
       <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)} style={{
-        width: '100%', padding: '10px 14px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
+        width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '10px', color: value ? '#fff' : 'rgba(255,255,255,0.4)', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
       }}>
         <option value="">Select…</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
+    </div>
+  );
+}
+
+function PlantList({ plants, onChange }) {
+  const [input, setInput] = useState('');
+  const addPlant = () => {
+    if (!input.trim()) return;
+    onChange([...plants, { plant_code: input.trim() }]);
+    setInput('');
+  };
+  const removePlant = (idx) => {
+    onChange(plants.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
+      <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '12px' }}>Plant Codes</label>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <input
+          type="text"
+          value={input}
+          placeholder="e.g. Plant 1"
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addPlant()}
+          style={{ flex: 1, padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
+        />
+        <button onClick={addPlant} style={{ padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+          Add Plant
+        </button>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {plants.length === 0 && <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px', margin: 0 }}>No plants added yet</p>}
+        {plants.map((p, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px' }}>
+            <span style={{ color: '#818cf8', fontSize: '12px', fontWeight: 600 }}>{p.plant_code}</span>
+            <X size={14} color="#818cf8" style={{ cursor: 'pointer' }} onClick={() => removePlant(i)} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -225,7 +265,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
   const fetchCompanies = async () => {
     try {
-      const res = await axios.get(`${API}/companies`, { headers: authHeaders() });
+      const res = await axios.get(`${API}/company`, { headers: authHeaders() });
       setCompanies(res.data);
     } catch (err) {
       console.error(err);
@@ -245,7 +285,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
     if (!form.name.trim()) { showToast('Company name is required', 'error'); setStep(0); return; }
     setSaving(true);
     try {
-      await axios.post(`${API}/companies`, form, { headers: authHeaders() });
+      await axios.post(`${API}/company`, form, { headers: authHeaders() });
       showToast('Company onboarded successfully! 🎉');
       setShowForm(false);
       setForm(EMPTY_FORM);
@@ -261,7 +301,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to remove this company?')) return;
     try {
-      await axios.delete(`${API}/companies/${id}`, { headers: authHeaders() });
+      await axios.delete(`${API}/company/${id}`, { headers: authHeaders() });
       showToast('Company removed');
       fetchCompanies();
     } catch {
@@ -277,52 +317,50 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
   const stepContent = [
     // Step 0: Basic Info
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
       <div style={{ gridColumn: '1/-1' }}>
         <FormField label="Company Name *" placeholder="e.g. Acme Technologies Pvt Ltd" {...field('name')} />
       </div>
-      <FormField label="Legal / Registered Name" placeholder="Full legal name as per MCA" {...field('legal_name')} />
+      <FormField label="Company Code (Leave blank for auto)" placeholder="e.g. ACME-001" {...field('company_code')} mono />
       <SelectField label="Industry" options={INDUSTRIES} {...field('industry')} />
-    </div>,
-
-    // Step 1: Contact & Address
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <FormField label="Legal / Registered Name" placeholder="Full legal name as per MCA" {...field('legal_name')} />
       <FormField label="Email Address" type="email" placeholder="contact@company.com" {...field('email')} />
       <FormField label="Phone Number" placeholder="+91 98765 43210" {...field('phone')} />
       <FormField label="Website" placeholder="https://www.company.com" {...field('website')} />
-      <FormField label="City" placeholder="Mumbai" {...field('city')} />
-      <FormField label="State" placeholder="Maharashtra" {...field('state')} />
-      <FormField label="Pincode" placeholder="400001" {...field('pincode')} />
-      <div style={{ gridColumn: '1/-1' }}>
-        <FormField label="Full Address" placeholder="Building, Street, Area, City, State" {...field('address')} />
-      </div>
     </div>,
 
-    // Step 2: Tax & Legal
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+    // Step 1: Statutory Details (ESI/UAN/E-Way)
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
       <div style={{ padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)', gridColumn: '1/-1' }}>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: '0 0 4px' }}>🔒 Tax identifiers are stored securely and used only for document generation.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, margin: '0 0 4px' }}>Compliance & Statutory Identifiers</p>
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: 0 }}>These details are used for payroll and government portal integrations.</p>
       </div>
-      <FormField label="PAN Number" placeholder="ABCDE1234F" {...field('pan_number')} mono />
-      <FormField label="GST Number" placeholder="22ABCDE1234F1Z5" {...field('gst_number')} mono />
       <FormField label="Company ESI Account No." placeholder="ESI account number" {...field('esi_account_no')} mono />
       <FormField label="Company UAN Account No." placeholder="UAN account number" {...field('uan_account_no')} mono />
       <FormField label="Company E-Way Bill Account" placeholder="E-way bill account" {...field('eway_bill_account')} mono />
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-        <div style={{ flex: 1 }}>
-          <FormField label="Plant Code" placeholder="e.g. 1 Plant" {...field('plant_code')} />
-        </div>
-      </div>
-      <div style={{ gridColumn: '1/-1' }}>
-        <FormField label="CIN / LLPIN (optional)" placeholder="U12345MH2020PTC123456" {...field('cin_number')} mono />
+      <FormField label="PAN Number" placeholder="ABCDE1234F" {...field('pan_number')} mono />
+      <FormField label="GST Number" placeholder="22ABCDE1234F1Z5" {...field('gst_number')} mono />
+      <FormField label="CIN / LLPIN" placeholder="U12345MH2020PTC123456" {...field('cin_number')} mono />
+    </div>,
+
+    // Step 2: Plants & Locations
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <PlantList plants={form.plants} onChange={(v) => setForm(f => ({ ...f, plants: v }))} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <FormField label="Address" placeholder="Building, Street, Area" {...field('address')} />
+        <FormField label="City" placeholder="Mumbai" {...field('city')} />
+        <FormField label="State" placeholder="Maharashtra" {...field('state')} />
+        <FormField label="Pincode" placeholder="400001" {...field('pincode')} />
       </div>
     </div>,
 
-    // Step 3: Branding
+    // Step 3: Identification (Barcode & Branding)
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <UploadBox label="Company Payment Bar Code" hint="Upload QR or Payment barcode" {...field('payment_barcode')} />
-      <UploadBox label="Company Logo" hint="PNG or SVG recommended, max 2MB" {...field('logo')} />
-      <UploadBox label="Company Stamp / Seal" hint="PNG with transparent background recommended" {...field('stamp')} />
+      <UploadBox label="Company Payment Bar Code" hint="Upload QR or Payment barcode for invoices" {...field('payment_barcode')} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <UploadBox label="Company Logo" hint="PNG or SVG recommended" {...field('logo')} />
+        <UploadBox label="Company Stamp / Seal" hint="Transparent PNG recommended" {...field('stamp')} />
+      </div>
     </div>
   ];
 
@@ -443,7 +481,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
             {/* Modal Header */}
             <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 800, margin: 0 }}>Onboard New Company</h2>
+                <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 800, margin: 0 }}>Onboard Company - Basic Detail</h2>
                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: '4px 0 0' }}>Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
               </div>
               <button onClick={() => { setShowForm(false); setStep(0); }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}>
