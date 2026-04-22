@@ -79,6 +79,23 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
     link.click();
   };
 
+  const handleAddNewDocument = () => {
+    const newDoc = {
+      id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+      doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+      title: `New ${activeModule.replace('_', ' ')} Record`,
+      status: 'draft',
+      version: '1.0',
+      last_updated: new Date().toISOString(),
+      employee_id: 'EMP-001',
+      skill_name: 'New Skill Assessment',
+      gap_identified: false,
+      date_recorded: new Date().toISOString()
+    };
+    setData(prev => [newDoc, ...prev]);
+    showToast(`${activeModule.replace('_', ' ')} record drafted!`, 'success');
+  };
+
   const renderModuleContent = () => {
     const filteredData = data.filter(item => 
       JSON.stringify(item).toLowerCase().includes(searchTerm.toLowerCase())
@@ -555,7 +572,7 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
               <Download size={18} className="group-hover:translate-y-1 transition-transform" />
               <span className="text-xs font-black uppercase tracking-widest">Master Export</span>
             </button>
-            <button className="p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl border border-indigo-500/20 transition-all flex items-center gap-3 shadow-xl shadow-indigo-600/30">
+            <button onClick={handleAddNewDocument} className="p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl border border-indigo-500/20 transition-all flex items-center gap-3 shadow-xl shadow-indigo-600/30">
               <Plus size={18} />
               <span className="text-xs font-black uppercase tracking-widest">New Document</span>
             </button>
