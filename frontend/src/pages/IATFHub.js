@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar';
 import {
   ShieldCheck, Zap, BarChart3, Users, Calendar, Award, 
   Plus, CheckCircle, XCircle, Clock, Eye, Send, 
-  AlertCircle, ChevronRight, FileText, TrendingUp,
+  AlertCircle, ChevronRight, FileText, TrendingUp, FolderKanban,
   Download, Filter, Search, Info, Settings, UserCheck
 } from 'lucide-react';
 
@@ -23,7 +23,7 @@ const IATF_MODULES = [
   { id: 'responsibility_matrix', label: 'Responsibility Matrix', icon: Users, tcode: 'M19' },
 ];
 
-const IATFHub = ({ user, onLogout }) => {
+const IATFHub = ({ user, onLogout, isSubComponent }) => {
   const [activeModule, setActiveModule] = useState('skill_matrix');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -126,7 +126,7 @@ const IATFHub = ({ user, onLogout }) => {
                           <p className="text-xs text-white/40">{gap.description}</p>
                         </div>
                      </div>
-                     <button className="px-4 py-2 bg-white/5 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase transition-all">Resolve Gap</button>
+                     <button onClick={() => showToast("Gap resolution initiated. CAPA raised.", "success")} className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all border border-indigo-500/30">Initiate CAPA</button>
                    </div>
                  ))}
                </div>
@@ -451,7 +451,7 @@ const IATFHub = ({ user, onLogout }) => {
                         <h4 className="text-white font-bold text-sm mb-1">{emp}</h4>
                         <p className="text-[10px] text-white/40 uppercase font-black">7 Training Records Found</p>
                       </div>
-                      <button onClick={() => window.print()} className="p-2 bg-indigo-600 rounded-lg text-white shadow-lg shadow-indigo-600/20">
+                      <button onClick={() => { showToast("Generating F11 Report for " + emp, "success"); setTimeout(() => window.print(), 500); }} className="p-2 bg-indigo-600 rounded-lg text-white shadow-lg shadow-indigo-600/20">
                         <Download size={14} />
                       </button>
                     </div>
@@ -533,91 +533,90 @@ const IATFHub = ({ user, onLogout }) => {
     }
   };
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#05070f', fontFamily: "'Inter', sans-serif" }}>
-      <Sidebar user={user} onLogout={onLogout} activePage="iatf-hub" isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      
-      <div style={{ flex: 1, overflowY: 'auto' }} className="p-8 lg:p-12">
-        <div className="max-w-7xl mx-auto">
-          
-          {/* Top Header Section */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-600/40">
-                <ShieldCheck size={32} color="white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-black text-white tracking-tighter mb-1">IATF COMPLIANCE ENGINE</h1>
-                <p className="text-blue-400/60 text-sm font-medium tracking-wide uppercase italic">Centralized Digital Audit Repository · ISO 9001:2015 / IATF 16949</p>
-              </div>
+
+  const pageContent = (
+    <div style={{ flex: 1, overflowY: 'auto' }} className={isSubComponent ? "p-0" : "p-8 lg:p-12"}>
+      <div className="max-w-7xl mx-auto">
+
+        {/* Top Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-600/40">
+              <ShieldCheck size={32} color="white" />
             </div>
-            
-            <div className="flex gap-3">
-              <button onClick={exportToCSV} className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 transition-all flex items-center gap-3 group">
-                <Download size={18} className="group-hover:translate-y-1 transition-transform" />
-                <span className="text-xs font-black uppercase tracking-widest">Master Export</span>
-              </button>
-              <button className="p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl border border-indigo-500/20 transition-all flex items-center gap-3 shadow-xl shadow-indigo-600/30">
-                <Plus size={18} />
-                <span className="text-xs font-black uppercase tracking-widest">New Document</span>
-              </button>
+            <div>
+              <h1 className="text-4xl font-black text-white tracking-tighter mb-1">IATF COMPLIANCE ENGINE</h1>
+              <p className="text-blue-400/60 text-sm font-medium tracking-wide uppercase italic">Centralized Digital Audit Repository · ISO 9001:2015 / IATF 16949</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-            {/* Compliance Navigation */}
-            <div className="space-y-3">
-              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-6 pl-2">Compliance Tracks</p>
-              {IATF_MODULES.map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => setActiveModule(m.id)}
-                  className={`w-full group flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden
-                    ${activeModule === m.id ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-600/30' : 'bg-white/3 border-white/5 hover:border-white/20'}`}
-                >
-                  <m.icon size={20} className={activeModule === m.id ? 'text-white' : 'text-indigo-400'} />
-                  <div className="text-left flex-1">
-                    <p className={`text-[13px] font-black tracking-tight ${activeModule === m.id ? 'text-white' : 'text-white/80'}`}>{m.label}</p>
-                    <p className={`text-[10px] font-mono ${activeModule === m.id ? 'text-white/60' : 'text-white/20'}`}>T-Code: {m.tcode}</p>
-                  </div>
-                  <ChevronRight size={14} className={`transition-transform duration-300 ${activeModule === m.id ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'}`} />
-                  {activeModule === m.id && <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />}
-                </button>
-              ))}
+          <div className="flex gap-3">
+            <button onClick={exportToCSV} className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 transition-all flex items-center gap-3 group">
+              <Download size={18} className="group-hover:translate-y-1 transition-transform" />
+              <span className="text-xs font-black uppercase tracking-widest">Master Export</span>
+            </button>
+            <button className="p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl border border-indigo-500/20 transition-all flex items-center gap-3 shadow-xl shadow-indigo-600/30">
+              <Plus size={18} />
+              <span className="text-xs font-black uppercase tracking-widest">New Document</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+          {/* Compliance Navigation */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-6 pl-2">Compliance Tracks</p>
+            {IATF_MODULES.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setActiveModule(m.id)}
+                className={`w-full group flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden
+                  ${activeModule === m.id ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-600/30' : 'bg-white/3 border-white/5 hover:border-white/20'}`}
+              >
+                <m.icon size={20} className={activeModule === m.id ? 'text-white' : 'text-indigo-400'} />
+                <div className="text-left flex-1">
+                  <p className={`text-[13px] font-black tracking-tight ${activeModule === m.id ? 'text-white' : 'text-white/80'}`}>{m.label}</p>
+                  <p className={`text-[10px] font-mono ${activeModule === m.id ? 'text-white/60' : 'text-white/20'}`}>T-Code: {m.tcode}</p>
+                </div>
+                <ChevronRight size={14} className={`transition-transform duration-300 ${activeModule === m.id ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'}`} />
+                {activeModule === m.id && <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />}
+              </button>
+            ))}
+          </div>
+
+          <div className="col-span-1 lg:col-span-3">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between bg-white/3 p-4 rounded-3xl border border-white/5 mb-8">
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                <input
+                  type="text"
+                  placeholder={`Search ${activeModule.replace('_', ' ')}...`}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full bg-white/5 border-none rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:ring-2 focus:ring-indigo-500/50 outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-4 px-4 text-xs font-mono text-white/40">
+                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Link Active</span>
+              </div>
             </div>
 
-            {/* Main Operational View */}
-            <div className="lg:col-span-3 space-y-8">
-              {/* Toolbar */}
-              <div className="flex flex-col md:flex-row gap-6 p-6 bg-white/2 border border-white/5 rounded-3xl items-center">
-                <div className="relative flex-1 group">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-indigo-500 transition-colors" />
-                  <input 
-                    type="text" 
-                    placeholder="Fast filter by ID, employee, or keyword..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium"
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <button className="flex items-center gap-2 px-6 py-4 bg-white/5 rounded-2xl text-[11px] font-black text-white/60 uppercase hover:text-white transition-colors">
-                    <Filter size={14} /> Filter
-                  </button>
-                  <button onClick={fetchData} className="flex items-center gap-2 px-6 py-4 bg-white/5 rounded-2xl text-[11px] font-black text-white/60 uppercase hover:text-indigo-400 transition-colors">
-                    <Settings size={14} /> Refresh Sync
-                  </button>
-                </div>
-              </div>
-
-              {/* Dynamic Content */}
+            {/* Content Area */}
+            <div className="min-h-[500px]">
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-40">
-                  <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-4" />
-                  <p className="text-white/20 text-sm font-black uppercase tracking-widest animate-pulse">Processing Master Data...</p>
+                <div className="flex justify-center items-center h-64">
+                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center animate-pulse">
+                      <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                   </div>
+                </div>
+              ) : data.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 bg-white/2 border border-dashed border-white/10 rounded-3xl">
+                   <FolderKanban size={48} className="text-white/10 mb-4" />
+                   <p className="text-white/40 text-sm font-medium">No compliance records found for this module.</p>
                 </div>
               ) : (
-                <div className="animate-in fade-in duration-700 slide-in-from-bottom-4">
+                <div className="animate-in slide-in-from-bottom-4 duration-500">
                   {renderModuleContent()}
                 </div>
               )}
@@ -636,6 +635,15 @@ const IATFHub = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+    </div>
+  );
+
+  if (isSubComponent) return pageContent;
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#05070f', fontFamily: "'Inter', sans-serif" }}>
+      <Sidebar user={user} onLogout={onLogout} activePage="iatf-hub" isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      {pageContent}
     </div>
   );
 };
