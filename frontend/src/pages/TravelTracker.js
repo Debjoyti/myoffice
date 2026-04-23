@@ -10,6 +10,27 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
 
+const darkMapStyles = [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+    { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+];
+
 // ─────────────────── Google Maps Loader ───────────────────
 let googleMapsLoaded = false;
 let googleMapsCallbacks = [];
@@ -27,11 +48,12 @@ const loadGoogleMaps = (callback) => {
 };
 
 // ─────────────────── Map Component ───────────────────
-const TripMap = ({ locations = [], isLive = false }) => {
+const TripMap = ({ locations = [], isLive = false, destination = null }) => {
     const mapRef = useRef(null);
     const [mapInstance, setMapInstance] = useState(null);
     const polylineRef = useRef(null);
     const markerRef = useRef(null);
+    const directionsRendererRef = useRef(null);
 
     useEffect(() => {
         loadGoogleMaps(() => {
@@ -63,6 +85,36 @@ const TripMap = ({ locations = [], isLive = false }) => {
             strokeWeight: 4,
             map: mapInstance,
         });
+
+        // Calculate and display directions if a destination is set
+        if (destination && window.google.maps.DirectionsService) {
+            if (!directionsRendererRef.current) {
+                directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+                    map: mapInstance,
+                    suppressMarkers: false,
+                    polylineOptions: {
+                        strokeColor: '#a855f7',
+                        strokeOpacity: 0.6,
+                        strokeWeight: 5,
+                        strokePattern: 'dashed'
+                    }
+                });
+            }
+
+            const directionsService = new window.google.maps.DirectionsService();
+            const origin = locations[0]; // Start from the first tracked point
+            directionsService.route({
+                origin: origin,
+                destination: destination,
+                travelMode: window.google.maps.TravelMode.DRIVING
+            }, (response, status) => {
+                if (status === 'OK') {
+                    directionsRendererRef.current.setDirections(response);
+                } else {
+                    console.warn('Directions request failed due to ' + status);
+                }
+            });
+        }
 
         // Live marker at latest position
         const latest = locations[locations.length - 1];
@@ -115,6 +167,7 @@ const TravelTracker = ({ user, onLogout }) => {
     const [isLive, setIsLive] = useState(false);
     const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, ok, error
     const [newTripTitle, setNewTripTitle] = useState('');
+    const [newTripDestination, setNewTripDestination] = useState('');
     const [showNewTripModal, setShowNewTripModal] = useState(false);
     const watchIdRef = useRef(null);
     const pollRef = useRef(null);
@@ -137,14 +190,16 @@ const TravelTracker = ({ user, onLogout }) => {
     // ── Start a new trip
     const startTrip = async () => {
         const title = newTripTitle.trim() || 'My Trip';
+        const destination = newTripDestination.trim() || null;
         try {
-            const res = await axios.post(`${API}/trips`, { title }, { headers });
+            const res = await axios.post(`${API}/trips`, { title, destination }, { headers });
             setActiveTrip(res.data);
             setLiveLocations([// eslint-disable-next-line react-hooks/exhaustive-deps
 ]);
             setIsTracking(true);
             setShowNewTripModal(false);
             setNewTripTitle('');
+            setNewTripDestination('');
             fetchTrips();
             startWatching(res.data.id);
         } catch (e) { alert('Failed to start trip'); }
@@ -399,9 +454,9 @@ const TravelTracker = ({ user, onLogout }) => {
                     {/* Right: Map */}
                     <div style={{ flex: 1, position: 'relative', padding: '20px' }}>
                         {viewTrip ? (
-                            <TripMap locations={viewLocations} isLive={isLive} />
-                        ) : isTracking ? (
-                            <TripMap locations={liveLocations} isLive={true} />
+                            <TripMap locations={viewLocations} isLive={isLive} destination={viewTrip.destination} />
+                        ) : isTracking && activeTrip ? (
+                            <TripMap locations={liveLocations} isLive={true} destination={activeTrip.destination} />
                         ) : (
                             <div style={{
                                 height: '100%', display: 'flex', flexDirection: 'column',
@@ -438,6 +493,15 @@ const TravelTracker = ({ user, onLogout }) => {
                                 >
                                     <X size={14} /> Close
                                 </button>
+
+                                {viewTrip.ai_analysis && (
+                                    <div style={{ background: 'rgba(15,23,42,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '14px', padding: '16px', maxWidth: '300px', marginTop: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+                                        <p style={{ color: '#c084fc', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '4px' }}>✨ AI Route Insights</p>
+                                        <p style={{ color: '#f8fafc', fontSize: '13px', lineHeight: '1.5', margin: 0 }}>
+                                            {viewTrip.ai_analysis}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -463,8 +527,23 @@ const TravelTracker = ({ user, onLogout }) => {
                             autoFocus
                             value={newTripTitle}
                             onChange={e => setNewTripTitle(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && startTrip()}
+                            onKeyDown={e => e.key === 'Enter' && document.getElementById('dest-input')?.focus()}
                             placeholder="e.g. Road Trip to Manali"
+                            style={{
+                                display: 'block', width: '100%', marginTop: '8px', marginBottom: '16px',
+                                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                color: '#fff', padding: '12px 16px', borderRadius: '12px', fontSize: '15px',
+                                outline: 'none', boxSizing: 'border-box',
+                            }}
+                        />
+
+                        <label style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Destination (AI Route Suggestion)</label>
+                        <input
+                            id="dest-input"
+                            value={newTripDestination}
+                            onChange={e => setNewTripDestination(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && startTrip()}
+                            placeholder="e.g. Manali, Himachal Pradesh"
                             style={{
                                 display: 'block', width: '100%', marginTop: '8px', marginBottom: '24px',
                                 background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
