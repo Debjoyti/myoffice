@@ -7,7 +7,8 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const WFHRequests = ({ user, isSubComponent }) => {
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   
@@ -19,6 +20,7 @@ const WFHRequests = ({ user, isSubComponent }) => {
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'manager';
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {

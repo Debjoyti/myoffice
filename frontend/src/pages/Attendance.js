@@ -75,7 +75,7 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-table-wrap fade-in">
           <table>
             <thead>
-              <tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th></tr>
+              <tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Overtime (Hrs)</th></tr>
             </thead>
             <tbody>
               {attendance.map(att => (

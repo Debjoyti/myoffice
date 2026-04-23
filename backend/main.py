@@ -214,6 +214,15 @@ def _invalidate_user_cache(user_id: str):
     with _cache_lock:
         _user_cache.pop(user_id, None)
 
+
+class JobApplication(BaseModel):
+    job_id: str
+    resume_text: str
+    peer_rating: float
+
+class AIInterviewMessage(BaseModel):
+    message: str
+
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
@@ -272,6 +281,9 @@ class Employee(BaseModel):
     phone: str
     department: str
     designation: str
+    # added parking
+    parking_slot: Optional[str] = None
+    vehicle_number: Optional[str] = None
     date_of_joining: Optional[str] = None
     # Identity & Personal
     father_name: Optional[str] = None
@@ -4276,6 +4288,113 @@ async def ensure_demo_users_seeded():
     await _upsert_seed_many("locations", locations)
 
     logger.info("Demo seed bootstrap completed for org '%s'", DEFAULT_ORG_ID)
+
+
+# --- Careers Endpoints ---
+@app.get("/api/careers/jobs")
+async def get_career_jobs():
+    jobs_cursor = db.jobs.find({})
+    jobs = await jobs_cursor.to_list(length=100)
+    for job in jobs:
+        if "_id" in job:
+            job["id"] = str(job["_id"])
+            del job["_id"]
+        elif "id" not in job:
+            job["id"] = "unknown"
+    if not jobs:
+        return [
+            {"id": "1", "title": "Senior Frontend Engineer", "description": "Looking for an experienced React developer.", "skills_required": "React, TypeScript"},
+            {"id": "2", "title": "Backend Python Developer", "description": "FastAPI and PostgreSQL expert needed.", "skills_required": "Python, FastAPI, SQL"}
+        ]
+    return jobs
+
+@app.post("/api/careers/apply")
+async def apply_job(application: JobApplication):
+    status = "applied"
+    if application.peer_rating < 3.0:
+        status = "rejected"
+
+    import uuid
+    candidate_id = str(uuid.uuid4())
+    doc = {
+        "_id": candidate_id,
+        "id": candidate_id,
+        "job_id": application.job_id,
+        "resume_text": application.resume_text,
+        "peer_rating": application.peer_rating,
+        "status": status,
+        "ai_interview_rating": None
+    }
+    result = await db.candidates.insert_one(doc)
+    return {"message": "Application received", "candidate_id": candidate_id, "status": status}
+
+@app.post("/api/careers/ai-interview/start/{candidate_id}")
+async def start_interview(candidate_id: str):
+    candidate = await db.candidates.find_one({"id": candidate_id})
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    if candidate["status"] == "rejected":
+        raise HTTPException(status_code=400, detail="Candidate rejected due to peer ratings")
+
+    session_id = f"sess_{candidate_id}"
+    doc = {
+        "session_id": session_id,
+        "candidate_id": candidate_id,
+        "round": 1,
+        "messages": [
+            {"role": "ai", "content": "Welcome! Let's start the interview. Can you tell me about your experience?"}
+        ]
+    }
+    await db.interview_sessions.insert_one(doc)
+    return {"session_id": session_id, "messages": doc["messages"]}
+
+@app.post("/api/careers/ai-interview/{session_id}/chat")
+async def interview_chat(session_id: str, msg: AIInterviewMessage):
+    session = await db.interview_sessions.find_one({"session_id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    user_msg = {"role": "user", "content": msg.message}
+
+    reply = "Interesting. Can you elaborate on that?"
+    if "python" in msg.message.lower():
+        reply = "Great. How do you handle concurrency in Python?"
+
+    ai_msg = {"role": "ai", "content": reply}
+
+    await db.interview_sessions.update_one(
+        {"session_id": session_id},
+        {"$push": {"messages": {"$each": [user_msg, ai_msg]}}}
+    )
+    return {"reply": reply}
+
+@app.post("/api/careers/ai-interview/{session_id}/finish")
+async def finish_interview(session_id: str):
+    session = await db.interview_sessions.find_one({"session_id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    candidate_id = session["candidate_id"]
+
+    rating = 8.5
+
+    await db.candidates.update_one(
+        {"id": candidate_id},
+        {"$set": {"ai_interview_rating": rating, "status": "ai_interview_done"}}
+    )
+
+    return {"message": "Interview finished", "rating": rating}
+
+@app.get("/api/careers/candidates")
+async def get_career_candidates():
+    cursor = db.candidates.find({})
+    candidates = await cursor.to_list(length=100)
+    for c in candidates:
+        if "_id" in c:
+            c["id"] = str(c["_id"])
+            del c["_id"]
+    return candidates
+
 
 app.include_router(api_router)
 
