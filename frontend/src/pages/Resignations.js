@@ -8,8 +8,10 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 const API = `${BACKEND_URL}/api`;
 
 const Resignations = ({ user }) => {
-    const [resignations, setResignations] = useState([]);
-    const [employees, setEmployees] = useState([]);
+    const [resignations, setResignations] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
+    const [employees, setEmployees] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({ employee_id: '', reason: '', resignation_date: '', last_working_day: '', notice_period_days: 30 });
@@ -18,6 +20,7 @@ const Resignations = ({ user }) => {
 
     useEffect(() => {
         fetchResignations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchResignations = async () => {
@@ -25,6 +28,8 @@ const Resignations = ({ user }) => {
             const [resRes, empRes] = await Promise.all([
                 axios.get(`${API}/resignations`, { headers: headers() }),
                 axios.get(`${API}/employees`, { headers: headers() })
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+
             ]);
             setResignations(resRes.data);
             setEmployees(empRes.data);

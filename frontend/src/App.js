@@ -25,6 +25,7 @@ import AccountantPortal from './pages/AccountantPortal';
 import TravelTracker from './pages/TravelTracker';
 import EmployeeManagement from './pages/EmployeeManagement';
 import IATFHub from './pages/IATFHub';
+import Careers from './pages/Careers';
 import AIAssistant from './components/AIAssistant';
 import './App.css'; // Fixed: was @/App.css which CRA doesn't support
 
@@ -143,6 +144,7 @@ function App() {
         <Route path="/company-onboarding" element={user && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/travel" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/iatf-hub" element={user && !needsOnboarding ? <IATFHub user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/careers" element={user && !needsOnboarding ? <Careers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
       </Routes>
       {/* Global AI Assistant — available on all authenticated pages */}
       {user && !needsOnboarding && <AIAssistant user={user} />}

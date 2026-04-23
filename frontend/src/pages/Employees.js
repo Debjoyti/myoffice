@@ -19,7 +19,7 @@ const TABS = [
 ];
 
 const EMPTY_FORM = {
-  name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '',
+  name: '', email: '', phone: '', department: '', designation: '', date_of_joining: '', parking_slot: '', vehicle_number: '',
   pan_number: '', aadhaar_number: '', abha_number: '', driving_license: '', driving_expiry: '',
   esi_number: '', esi_registration_date: '',
   present_address: '', temp_address: '',
@@ -398,7 +398,9 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                   <InputField label="Company EMP ID" field="emp_id" formData={formData} setFormData={setFormData} placeholder="Auto-generate or enter" />
                   <InputField label="Previous EMP ID" field="previous_emp_id" formData={formData} setFormData={setFormData} />
                   <InputField label="Department *" field="department" formData={formData} setFormData={setFormData} required />
-                  <InputField label="Designation *" field="designation" formData={formData} setFormData={setFormData} required />
+                                    <InputField label="Designation *" field="designation" formData={formData} setFormData={setFormData} required />
+                  <InputField label="Parking Slot" field="parking_slot" formData={formData} setFormData={setFormData} placeholder="e.g. A-12" />
+                  <InputField label="Vehicle Number" field="vehicle_number" formData={formData} setFormData={setFormData} placeholder="e.g. MH12AB1234" />
                   <InputField label="Joining Date *" field="date_of_joining" formData={formData} setFormData={setFormData} type="date" required />
                   <Field label="Skill Category">
                     <select className="dark-input" style={{ fontSize: '13px' }} value={formData.skill_category} onChange={e => setFormData({ ...formData, skill_category: e.target.value })}>
