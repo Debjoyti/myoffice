@@ -1,32 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   BIZOPS GLASSMORPHISM DESIGN SYSTEM v2.0
-   Colors: Deep space dark with vibrant violet/cyan accents
+   BIZOPS DESIGN SYSTEM (Indian Context)
+   Colors: Corporate Indigo, Growth Green, Indian Gold
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg-base:       #05070f;
-  --bg-surface:    #0c1220;
-  --bg-elevated:   #111827;
-  --bg-card:       rgba(255,255,255,0.03);
-  --bg-card-hover: rgba(255,255,255,0.06);
-  --border:        rgba(255,255,255,0.07);
-  --border-hover:  rgba(255,255,255,0.14);
-  --brand-primary: #6366f1;
-  --brand-violet:  #8b5cf6;
-  --brand-cyan:    #22d3ee;
+  --bg-base:       #0f172a;
+  --bg-surface:    #1e293b;
+  --bg-elevated:   #334155;
+  --bg-card:       #1e293b;
+  --bg-card-hover: #334155;
+  --border:        #334155;
+  --border-hover:  #475569;
+  --brand-primary: #1e293b;
+  --brand-violet:  #4f46e5;
+  --brand-cyan:    #06b6d4;
   --brand-green:   #10b981;
-  --brand-rose:    #f43f5e;
+  --brand-rose:    #e11d48;
   --brand-amber:   #f59e0b;
-  --text-primary:  #f1f5f9;
-  --text-secondary:rgba(255,255,255,0.55);
-  --text-muted:    rgba(255,255,255,0.28);
-  --shadow-glow:   0 0 40px rgba(99,102,241,0.15);
+  --text-primary:  #f8fafc;
+  --text-secondary:#94a3b8;
+  --text-muted:    #64748b;
+  --shadow-glow:   0 0 20px rgba(30,41,59,0.5);
 }
 
 @layer base {
@@ -35,7 +35,7 @@
   body {
     background: var(--bg-base);
     color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
@@ -56,7 +56,7 @@
     display: none; /* Chrome, Safari and Opera */
   }
 
-  h1, h2, h3, h4, h5, h6 { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Manrope', sans-serif; letter-spacing: -0.025em; }
   ::selection { background: rgba(99,102,241,0.35); color: #fff; }
 }
 
