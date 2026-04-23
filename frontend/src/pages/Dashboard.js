@@ -198,13 +198,13 @@ const Dashboard = ({ user, onLogout }) => {
           )}
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
             <div>
-              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12.5px', margin: '0 0 6px', letterSpacing: '0.03em' }}>{today} · {getHour()},</p>
-              <h1 style={{ color: '#fff', fontSize: '30px', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>
+              <p className="text-slate-400 text-xs tracking-wider mb-1 uppercase font-medium">{today} · {getHour()}</p>
+              <h1 className="text-slate-100 text-3xl font-extrabold m-0 tracking-tight">
                 {user?.name || 'Founder'} 👋
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.45)', margin: '6px 0 0', fontSize: '14px' }}>
+              <p className="text-slate-500 mt-2 text-sm font-medium">
                 Here's your business intelligence overview
               </p>
             </div>
@@ -268,24 +268,27 @@ const Dashboard = ({ user, onLogout }) => {
 
           {/* Stat Cards */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '28px' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '28px' }} className="stagger fade-in">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stagger fade-in">
               {statCards.map((card, i) => {
                 const Icon = card.icon;
                 return (
-                  <div key={i} className="kpi-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <div style={{ width: '38px', height: '38px', borderRadius: '11px', background: `${card.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon size={18} color={card.color} />
-                      </div>
-                      <Sparkline data={card.sparkData} color={card.color} height={24} />
+                  <div key={i} className="bg-slate-800 border border-slate-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group cursor-default">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Icon size={64} color={card.color} />
                     </div>
-                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: '0 0 4px', fontWeight: 600 }}>{card.title}</p>
-                    <p style={{ color: '#fff', fontSize: '26px', fontWeight: 900, margin: '0 0 4px', letterSpacing: '-0.02em' }}>{card.value}</p>
-                    <p style={{ color: `${card.color}99`, fontSize: '11px', margin: 0, fontWeight: 600 }}>{card.trend}</p>
+                    <div className="flex justify-between items-start mb-4 relative z-10">
+                      <div className="w-10 h-10 rounded-md flex items-center justify-center" style={{ backgroundColor: `${card.color}20` }}>
+                        <Icon size={20} color={card.color} />
+                      </div>
+                      <Sparkline data={card.sparkData} color={card.color} height={28} />
+                    </div>
+                    <p className="text-slate-400 text-sm font-semibold mb-1 relative z-10">{card.title}</p>
+                    <p className="text-slate-100 text-3xl font-extrabold mb-1 tracking-tight relative z-10">{card.value}</p>
+                    <p className="text-xs font-semibold relative z-10" style={{ color: card.color }}>{card.trend}</p>
                   </div>
                 );
               })}
@@ -293,30 +296,23 @@ const Dashboard = ({ user, onLogout }) => {
           )}
 
           {/* Main Content Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+            <div className="xl:col-span-2 flex flex-col gap-8">
 
               {/* Quick Actions */}
-              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                  <Zap size={16} color="#f59e0b" />
-                  <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: 0 }}>Quick Actions</h2>
-                  <span className="ai-badge" style={{ marginLeft: 'auto' }}>AI Powered</span>
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-6">
+                  <Zap size={18} className="text-amber-500" />
+                  <h2 className="text-slate-100 text-lg font-bold m-0">Quick Actions</h2>
+                  <span className="ml-auto text-[10px] uppercase tracking-widest font-bold bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded">AI Powered</span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {quickActions.map((action, i) => (
-                    <a key={i} href={action.href} style={{
-                      textDecoration: 'none', background: `${action.color}0d`, border: `1px solid ${action.color}1a`,
-                      borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px',
-                      transition: 'all 0.2s ease',
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.background = `${action.color}18`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = `${action.color}0d`; e.currentTarget.style.transform = 'translateY(0)'; }}
-                    >
-                      <span style={{ fontSize: '20px' }}>{action.emoji}</span>
+                    <a key={i} href={action.href} className="group flex flex-col gap-3 p-4 rounded-md border transition-all duration-200 no-underline" style={{ backgroundColor: `${action.color}10`, borderColor: `${action.color}20` }}>
+                      <span className="text-2xl group-hover:scale-110 transition-transform origin-bottom-left">{action.emoji}</span>
                       <div>
-                        <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, margin: 0 }}>{action.label}</p>
-                        <p style={{ color: `${action.color}99`, fontSize: '10px', margin: 0, fontFamily: 'JetBrains Mono, monospace' }}>{action.sub}</p>
+                        <p className="text-slate-200 text-sm font-bold m-0">{action.label}</p>
+                        <p className="text-xs font-mono mt-1" style={{ color: `${action.color}99` }}>{action.sub}</p>
                       </div>
                     </a>
                   ))}
@@ -324,8 +320,8 @@ const Dashboard = ({ user, onLogout }) => {
               </div>
 
               {/* Executive Intelligence */}
-              <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '24px' }}>
-                <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 18px' }}>📈 Executive Intelligence</h2>
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 shadow-sm">
+                <h2 className="text-slate-100 text-lg font-bold m-0 mb-6">📈 Executive Intelligence</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                   {[
                     { label: 'Monthly Burn Rate', value: `₹${((stats?.burn_rate || 0) / 1000).toFixed(1)}K/day`, color: '#f43f5e', bg: 'rgba(244,63,94,0.06)', icon: '🔥' },

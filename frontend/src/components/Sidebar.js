@@ -167,11 +167,11 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
 
   // Group color accent
   const groupColors = {
-    'Personal & Work': '#22d3ee',
+    'Personal & Work': '#06b6d4',
     'Sales & Projects': '#10b981',
-    'HR & Operations': '#8b5cf6',
+    'HR & Operations': '#4f46e5',
     'Finance & Assets': '#f59e0b',
-    'Administration': '#f43f5e',
+    'Administration': '#e11d48',
   };
 
   return (
@@ -179,45 +179,27 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
       {/* Mobile toggle */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        style={{
-          position: 'fixed', top: '16px', left: '16px', zIndex: 50,
-          padding: '8px', background: 'rgba(6,9,20,0.9)', backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', cursor: 'pointer', display: 'none',
-        }}
-        className="lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-lg lg:hidden"
         data-testid="sidebar-toggle"
       >
-        {isSidebarOpen ? <X size={20} color="#fff" /> : <Menu size={20} color="#fff" />}
+        {isSidebarOpen ? <X size={20} className="text-slate-100" /> : <Menu size={20} className="text-slate-100" />}
       </button>
 
       {/* Sidebar panel */}
       <div
-        style={{
-          width: '248px', minWidth: '248px', height: '100vh',
-          background: '#060d1a',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-          display: 'flex', flexDirection: 'column',
-          position: 'sticky', top: 0, flexShrink: 0,
-        }}
-        className={`fixed lg:sticky top-0 left-0 z-40 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Logo */}
-        <div style={{ padding: '22px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '36px', height: '36px',
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                borderRadius: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(99,102,241,0.45)',
-                position: 'relative',
-              }}>
-                <span style={{ color: '#fff', fontWeight: 900, fontSize: '15px' }}>B</span>
-                <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', border: '2px solid #060d1a' }} />
+        <div className="p-6 border-b border-slate-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg relative">
+                <span className="text-white font-bold text-lg">B</span>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
               </div>
               <div>
-                <h1 style={{ color: '#fff', fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }} data-testid="sidebar-title">PRSK</h1>
-                <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '10px', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Enterprise AI</p>
+                <h1 className="text-slate-100 text-lg font-bold m-0 tracking-tight" data-testid="sidebar-title">PRSK</h1>
+                <p className="text-slate-400 text-xs m-0 tracking-wider uppercase font-medium">Enterprise AI</p>
               </div>
             </div>
             {/* Notification center in sidebar header */}
@@ -290,20 +272,16 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+        <nav className="flex-1 overflow-y-auto p-4">
           {visibleGroups.map((group, idx) => (
-            <div key={idx} style={{ marginBottom: '20px' }}>
+            <div key={idx} className="mb-6">
               {group.group && (
-                <div style={{
-                  padding: '6px 10px 5px', fontSize: '9.5px', fontWeight: 800,
-                  color: groupColors[group.group] || 'rgba(255,255,255,0.25)',
-                  textTransform: 'uppercase', letterSpacing: '0.09em',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                }}>
-                  <div style={{ width: '16px', height: '1px', background: groupColors[group.group] || 'rgba(255,255,255,0.1)', opacity: 0.5 }} />
+                <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: groupColors[group.group] || '#94a3b8' }}>
+                  <div className="w-4 h-px opacity-50" style={{ background: groupColors[group.group] || '#94a3b8' }} />
                   {group.group}
                 </div>
               )}
+              <div className="space-y-1 mt-2">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentActivePage === item.id;
@@ -312,89 +290,59 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
                     key={item.id}
                     to={item.path}
                     data-testid={`nav-${item.id}`}
-                    className={`sidebar-link ${isActive ? 'active' : ''}`}
-                    style={{
-                      marginBottom: '2px',
-                      paddingLeft: '10px',
-                    }}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${isActive ? 'bg-indigo-600/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
                     onClick={() => {
                       setActivePage(item.id);
                       if (window.innerWidth < 1024) setIsSidebarOpen(false);
                     }}
                   >
-                    <Icon size={15} style={{ color: isActive ? '#818cf8' : 'rgba(255,255,255,0.38)', flexShrink: 0 }} />
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minWidth: 0 }}>
-                      <span style={{ fontSize: '13px', fontWeight: isActive ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <Icon size={18} className={`shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                    <div className="flex items-center justify-between w-full min-w-0">
+                      <span className={`text-sm truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                         {item.label}
                       </span>
-                      <span style={{
-                        fontSize: '9px', color: isActive ? '#818cf8' : 'rgba(255,255,255,0.18)',
-                        fontWeight: 700, background: isActive ? 'rgba(129,140,248,0.15)' : 'transparent',
-                        padding: '2px 5px', borderRadius: '4px', flexShrink: 0,
-                        fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.03em',
-                      }}>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded tracking-wider shrink-0 ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>
                         {item.tcode}
                       </span>
                     </div>
                   </Link>
                 );
               })}
+              </div>
             </div>
           ))}
         </nav>
 
         {/* AI Insight strip */}
-        <div style={{ padding: '0 12px 10px' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.06))',
-            border: '1px solid rgba(99,102,241,0.15)',
-            borderRadius: '12px', padding: '10px 12px',
-            display: 'flex', alignItems: 'center', gap: '8px',
-          }}>
-            <Sparkles size={13} color="#818cf8" />
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', margin: 0, lineHeight: 1.4 }}>
-              <strong style={{ color: '#a5b4fc' }}>AI Assistant</strong> active — click ✨ to ask
+        <div className="px-4 pb-4">
+          <div className="bg-indigo-900/30 border border-indigo-500/20 rounded-lg p-3 flex items-center gap-3">
+            <Sparkles size={16} className="text-indigo-400" />
+            <p className="text-slate-300 text-xs m-0 leading-relaxed">
+              <strong className="text-indigo-300 font-semibold">AI Assistant</strong> active — click ✨ to ask
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 14px 16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '10px 12px', borderRadius: '12px',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
-            marginBottom: '10px',
-          }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 800, fontSize: '12px', flexShrink: 0,
-            }}>
+        <div className="p-4 border-t border-slate-800">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
               {getInitials(user?.name)}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ color: '#fff', fontSize: '12.5px', fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} data-testid="user-name">{user?.name}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981' }} />
-                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10.5px', margin: 0, textTransform: 'capitalize' }}>{user?.role}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-200 text-sm font-bold m-0 truncate" data-testid="user-name">{user?.name}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <p className="text-slate-400 text-xs m-0 capitalize">{user?.role}</p>
               </div>
             </div>
           </div>
           <button
             onClick={onLogout}
             data-testid="logout-btn"
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              padding: '9px 16px', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.18)',
-              borderRadius: '10px', color: '#f87171', fontSize: '13px', fontWeight: 600,
-              cursor: 'pointer', transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.18)'; e.currentTarget.style.borderColor = 'rgba(244,63,94,0.35)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; e.currentTarget.style.borderColor = 'rgba(244,63,94,0.18)'; }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-sm font-semibold transition-all hover:bg-rose-500/20 hover:border-rose-500/30"
           >
-            <LogOut size={14} />
+            <LogOut size={16} />
             <span>Sign Out</span>
           </button>
         </div>
@@ -403,8 +351,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
       {/* Mobile backdrop */}
       {isSidebarOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 30, backdropFilter: 'blur(6px)' }}
-          className="lg:hidden"
+          className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
