@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta
 
 class BizOpsPlatformTester:
-    def __init__(self, base_url="https://bizops-platform-5.preview.emergentagent.com/api"):
+    def __init__(self, base_url="http://localhost:8000/api"):
         self.base_url = base_url
         self.token = None
         self.user = None

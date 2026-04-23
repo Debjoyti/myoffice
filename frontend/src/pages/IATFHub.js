@@ -26,6 +26,8 @@ const IATF_MODULES = [
 const IATFHub = ({ user, onLogout, isSubComponent }) => {
   const [activeModule, setActiveModule] = useState('skill_matrix');
   const [data, setData] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -42,6 +44,8 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
     } catch (err) {
       console.error(err);
       setData([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
     } finally {
       setLoading(false);
@@ -50,10 +54,14 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
 
   useEffect(() => { 
     setData([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]); // Clear old data for new module
     fetchData(); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeModule// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
 
   const showToast = (msg, type = 'success') => {
