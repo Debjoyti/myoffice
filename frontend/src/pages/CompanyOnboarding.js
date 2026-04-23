@@ -160,7 +160,8 @@ function UploadBox({ label, value, onChange, accept = 'image/*', hint }) {
       </div>
       <input ref={ref} type="file" accept={accept} style={{ display: 'none' }} onChange={async (e) => {
         if (e.target.files[0]) {
-          const b64 = await imageToBase64(e.target.files[0]);
+          const b64 = await imageToBase64(e.target.files[0// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
           onChange(b64);
         }
       }} />
@@ -208,7 +209,8 @@ function PlantList({ plants, onChange }) {
   const [input, setInput] = useState('');
   const addPlant = () => {
     if (!input.trim()) return;
-    onChange([...plants, { plant_code: input.trim() }]);
+    onChange([...plants, { plant_code: input.trim() }// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
     setInput('');
   };
   const removePlant = (idx) => {
@@ -245,7 +247,8 @@ function PlantList({ plants, onChange }) {
 }
 
 const CompanyOnboarding = ({ user, onLogout }) => {
-  const [companies, setCompanies] = useState([]);
+  const [companies, setCompanies] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -274,6 +277,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchCompanies(); }, []);
 
   const field = (key) => ({

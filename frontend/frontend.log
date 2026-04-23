@@ -68,3 +68,149 @@ src/pages/WFHRequests.js
 
 webpack compiled with 1 warning
 (node:402911) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/pages/CompanyOnboarding.js
+  Line 280:42:  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Dashboard.js
+  Line 71:6:  React Hook useEffect has a missing dependency: 'fetchAll'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/HRMS.js
+  Line 44:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/IATFHub.js
+  Line 55:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/PIP.js
+  Line 32:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Resignations.js
+  Line 23:8:  React Hook useEffect has a missing dependency: 'fetchResignations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/TravelTracker.js
+  Line 50:8:   React Hook useEffect has a missing dependency: 'locations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 130:8:  React Hook useCallback has a missing dependency: 'headers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 208:8:  React Hook useEffect has a missing dependency: 'headers'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+src/pages/WFHRequests.js
+  Line 23:37:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/pages/CompanyOnboarding.js
+  Line 280:42:  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Dashboard.js
+  Line 71:6:  React Hook useEffect has a missing dependency: 'fetchAll'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/HRMS.js
+  Line 44:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/IATFHub.js
+  Line 55:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/PIP.js
+  Line 32:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Resignations.js
+  Line 23:8:  React Hook useEffect has a missing dependency: 'fetchResignations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/TravelTracker.js
+  Line 50:8:   React Hook useEffect has a missing dependency: 'locations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 130:8:  React Hook useCallback has a missing dependency: 'headers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 208:8:  React Hook useEffect has a missing dependency: 'headers'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+src/pages/WFHRequests.js
+  Line 23:37:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/pages/CompanyOnboarding.js
+  Line 280:42:  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Dashboard.js
+  Line 71:6:  React Hook useEffect has a missing dependency: 'fetchAll'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/HRMS.js
+  Line 44:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/IATFHub.js
+  Line 55:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/PIP.js
+  Line 32:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Resignations.js
+  Line 23:8:  React Hook useEffect has a missing dependency: 'fetchResignations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/TravelTracker.js
+  Line 50:8:   React Hook useEffect has a missing dependency: 'locations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 130:8:  React Hook useCallback has a missing dependency: 'headers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 208:8:  React Hook useEffect has a missing dependency: 'headers'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+src/pages/WFHRequests.js
+  Line 23:37:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/pages/CompanyOnboarding.js
+  Line 280:42:  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Dashboard.js
+  Line 71:6:  React Hook useEffect has a missing dependency: 'fetchAll'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/HRMS.js
+  Line 44:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/IATFHub.js
+  Line 55:6:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/PIP.js
+  Line 32:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Resignations.js
+  Line 23:8:  React Hook useEffect has a missing dependency: 'fetchResignations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/TravelTracker.js
+  Line 50:8:   React Hook useEffect has a missing dependency: 'locations'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 130:8:  React Hook useCallback has a missing dependency: 'headers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 208:8:  React Hook useEffect has a missing dependency: 'headers'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+src/pages/WFHRequests.js
+  Line 23:37:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/pages/CompanyOnboarding.js
+  Line 280:42:  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/WFHRequests.js
+  Line 23:37:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/pages/CompanyOnboarding.js
+  Line 280:42:  React Hook useEffect has a missing dependency: 'fetchCompanies'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/WFHRequests.js
+  Line 23:37:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+webpack compiled with 1 warning
+Compiling...
+Compiled successfully!
+webpack compiled successfully

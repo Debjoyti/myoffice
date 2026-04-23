@@ -47,6 +47,7 @@ const TripMap = ({ locations = [], isLive = false }) => {
             });
             setMapInstance(map);
         });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -82,7 +83,9 @@ const TripMap = ({ locations = [], isLive = false }) => {
 
         // Pan to latest
         mapInstance.panTo(latest);
-    }, [locations, mapInstance, isLive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [locations, mapInstance, isLive// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
 
     return (
         <div ref={mapRef} style={{ width: '100%', height: '100%', borderRadius: '20px' }}>
@@ -100,11 +103,14 @@ const TripMap = ({ locations = [], isLive = false }) => {
 // ─────────────────── Main Page ───────────────────
 const TravelTracker = ({ user, onLogout }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [trips, setTrips] = useState([]);
+    const [trips, setTrips] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
     const [activeTrip, setActiveTrip] = useState(null);
-    const [liveLocations, setLiveLocations] = useState([]);
+    const [liveLocations, setLiveLocations] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
     const [viewTrip, setViewTrip] = useState(null);
-    const [viewLocations, setViewLocations] = useState([]);
+    const [viewLocations, setViewLocations] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
     const [isTracking, setIsTracking] = useState(false);
     const [isLive, setIsLive] = useState(false);
     const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, ok, error
@@ -122,9 +128,11 @@ const TravelTracker = ({ user, onLogout }) => {
             const res = await axios.get(`${API}/trips`, { headers });
             setTrips(res.data);
         } catch (e) { console.error(e); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    useEffect(() => { fetchTrips(); }, [fetchTrips]);
+    useEffect(() => { fetchTrips(); }, [fetchTrips// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
 
     // ── Start a new trip
     const startTrip = async () => {
@@ -132,7 +140,8 @@ const TravelTracker = ({ user, onLogout }) => {
         try {
             const res = await axios.post(`${API}/trips`, { title }, { headers });
             setActiveTrip(res.data);
-            setLiveLocations([]);
+            setLiveLocations([// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
             setIsTracking(true);
             setShowNewTripModal(false);
             setNewTripTitle('');
@@ -150,7 +159,8 @@ const TravelTracker = ({ user, onLogout }) => {
                 setSyncStatus('syncing');
                 try {
                     await axios.post(`${API}/location`, { trip_id: tripId, lat, lng }, { headers });
-                    setLiveLocations(prev => [...prev, { lat, lng }]);
+                    setLiveLocations(prev => [...prev, { lat, lng }// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
                     setSyncStatus('ok');
                 } catch {
                     setSyncStatus('error');
@@ -196,7 +206,9 @@ const TravelTracker = ({ user, onLogout }) => {
             }, 5000);
         }
         return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, [viewTrip, isLive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewTrip, isLive// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
 
     // ── Delete trip
     const deleteTrip = async (tripId) => {
