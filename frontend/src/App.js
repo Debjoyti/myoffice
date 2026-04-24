@@ -11,6 +11,7 @@ import BusinessOrders from './pages/BusinessOrders';
 import TeamMembers from './pages/TeamMembers';
 import SaasAdmin from './pages/SaasAdmin';
 import Finance from './pages/Finance';
+import GoodsReceipts from './pages/GoodsReceipts';
 import Timesheets from './pages/Timesheets';
 import SupportDesk from './pages/SupportDesk';
 import OfficeFeed from './pages/OfficeFeed';
@@ -132,6 +133,7 @@ function App() {
         <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/saas-admin" element={user && user.role === 'superadmin' ? <SaasAdmin user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/finance" element={user && !needsOnboarding ? <Finance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/goods-receipts" element={user && !needsOnboarding ? <GoodsReceipts user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/timesheets" element={user && !needsOnboarding ? <Timesheets user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/support-desk" element={user && !needsOnboarding ? <SupportDesk user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/feed" element={user && !needsOnboarding ? <OfficeFeed user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
