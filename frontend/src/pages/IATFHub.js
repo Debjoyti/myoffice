@@ -39,7 +39,12 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/iatf/module/${activeModule}`, authHeader());
+      let res;
+      if (activeModule === 'audit_dashboard') {
+        res = await axios.get(`${API}/iatf/gap-analysis`, authHeader());
+      } else {
+        res = await axios.get(`${API}/iatf/module/${activeModule}`, authHeader());
+      }
       setData(res.data);
     } catch (err) {
       console.error(err);
