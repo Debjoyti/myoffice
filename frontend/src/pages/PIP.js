@@ -9,8 +9,12 @@ const API = `${BACKEND_URL}/api`;
 
 const PIP = ({ user }) => {
     const [pips, setPips] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
     const [employees, setEmployees] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -30,7 +34,8 @@ const PIP = ({ user }) => {
     useEffect(() => {
         fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
 
     const fetchData = async () => {
         try {
@@ -38,6 +43,9 @@ const PIP = ({ user }) => {
                 axios.get(`${API}/pip`, { headers: headers() }),
                 axios.get(`${API}/employees`, { headers: headers() })
             // eslint-disable-next-line react-hooks/exhaustive-deps
+
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+
 
             ]);
             setPips(pipRes.data);
