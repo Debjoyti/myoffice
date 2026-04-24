@@ -1535,6 +1535,25 @@ async def get_inventory(current_user: dict = Depends(get_current_user)):
     items = await db.inventory.find(query, {"_id": 0}).to_list(1000)
     return items
 
+@api_router.delete("/inventory/{item_id}")
+async def delete_inventory_item(item_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.inventory.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+    return {"message": "Inventory item deleted"}
+
+@api_router.put("/inventory/{item_id}", response_model=InventoryItem)
+async def update_inventory_item(item_id: str, item_data: InventoryItemCreate, current_user: dict = Depends(get_current_user)):
+    result = await db.inventory.update_one(
+        {"id": item_id},
+        {"$set": item_data.model_dump()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+
+    updated_item = await db.inventory.find_one({"id": item_id}, {"_id": 0})
+    return updated_item
+
 @api_router.post("/stores", response_model=Store)
 async def create_store(store_data: StoreCreate, current_user: dict = Depends(get_current_user)):
     store_doc = store_data.model_dump()
@@ -1603,6 +1622,13 @@ async def approve_purchase_request(pr_id: str, current_user: dict = Depends(get_
         raise HTTPException(status_code=404, detail="Purchase request not found")
     return {"message": "Purchase request approved"}
 
+@api_router.delete("/purchase-requests/{pr_id}")
+async def delete_purchase_request(pr_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.purchase_requests.delete_one({"id": pr_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Purchase request not found")
+    return {"message": "Purchase request deleted"}
+
 @api_router.patch("/purchase-requests/{pr_id}/reject")
 async def reject_purchase_request(pr_id: str, current_user: dict = Depends(get_current_user)):
     result = await db.purchase_requests.update_one(
@@ -1629,11 +1655,57 @@ async def get_purchase_orders(current_user: dict = Depends(get_current_user)):
     pos = await db.purchase_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return pos
 
+@api_router.delete("/purchase-orders/{po_id}")
+async def delete_purchase_order(po_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.purchase_orders.delete_one({"id": po_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+    return {"message": "Purchase order deleted"}
+
 @api_router.patch("/purchase-orders/{po_id}/status")
 async def update_purchase_order_status(po_id: str, status_data: StatusUpdate, current_user: dict = Depends(get_current_user)):
-    result = await db.purchase_orders.update_one({"id": po_id}, {"$set": {"status": status_data.status}})
-    if result.matched_count == 0:
+    po = await db.purchase_orders.find_one({"id": po_id})
+    if not po:
         raise HTTPException(status_code=404, detail="Purchase order not found")
+
+    result = await db.purchase_orders.update_one({"id": po_id}, {"$set": {"status": status_data.status}})
+
+    if status_data.status == "delivered" and po.get("status") != "delivered":
+        store = await db.stores.find_one({"id": po.get("store_id")})
+        location_name = store.get("name") if store else "Warehouse"
+
+        org_id = po.get("organization_id", current_user.get("organization_id"))
+
+        # update inventory
+        for item in po.get("items", []):
+            item_name = item.get("name")
+            qty_to_add = int(item.get("quantity", 0))
+
+            existing_item = await db.inventory.find_one({
+                "organization_id": org_id,
+                "name": item_name,
+                "location": location_name
+            })
+
+            if existing_item:
+                await db.inventory.update_one(
+                    {"id": existing_item["id"]},
+                    {"$inc": {"quantity": qty_to_add}}
+                )
+            else:
+                new_item = {
+                    "id": str(uuid.uuid4()),
+                    "organization_id": org_id,
+                    "name": item_name,
+                    "category": "supplies",
+                    "quantity": qty_to_add,
+                    "unit": item.get("unit", "pcs"),
+                    "price_per_unit": item.get("price", item.get("unit_price", 0)),
+                    "location": location_name,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.inventory.insert_one(new_item)
+
     return {"message": "Purchase order status updated"}
 
 @api_router.post("/hr-fields", response_model=HRField)

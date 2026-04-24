@@ -161,6 +161,8 @@ function UploadBox({ label, value, onChange, accept = 'image/*', hint }) {
       <input ref={ref} type="file" accept={accept} style={{ display: 'none' }} onChange={async (e) => {
         if (e.target.files[0]) {
           const b64 = await imageToBase64(e.target.files[0// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
           onChange(b64);
         }
@@ -210,6 +212,8 @@ function PlantList({ plants, onChange }) {
   const addPlant = () => {
     if (!input.trim()) return;
     onChange([...plants, { plant_code: input.trim() }// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
     setInput('');
   };
@@ -248,6 +252,8 @@ function PlantList({ plants, onChange }) {
 
 const CompanyOnboarding = ({ user, onLogout }) => {
   const [companies, setCompanies] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -278,7 +284,8 @@ const CompanyOnboarding = ({ user, onLogout }) => {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchCompanies(); }, []);
+  useEffect(() => { fetchCompanies(); }, [// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
 
   const field = (key) => ({
     value: form[key],

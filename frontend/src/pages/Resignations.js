@@ -9,8 +9,12 @@ const API = `${BACKEND_URL}/api`;
 
 const Resignations = ({ user }) => {
     const [resignations, setResignations] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
     const [employees, setEmployees] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
+// eslint-disable-next-line react-hooks/exhaustive-deps
+
 ]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -21,7 +25,8 @@ const Resignations = ({ user }) => {
     useEffect(() => {
         fetchResignations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [// eslint-disable-next-line react-hooks/exhaustive-deps
+]);
 
     const fetchResignations = async () => {
         try {
@@ -29,6 +34,9 @@ const Resignations = ({ user }) => {
                 axios.get(`${API}/resignations`, { headers: headers() }),
                 axios.get(`${API}/employees`, { headers: headers() })
             // eslint-disable-next-line react-hooks/exhaustive-deps
+
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+
 
             ]);
             setResignations(resRes.data);
