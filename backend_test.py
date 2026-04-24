@@ -64,7 +64,7 @@ class BizOpsPlatformTester:
 
     def test_login(self):
         """Test login with admin credentials"""
-        print("\n=== AUTHENTICATION TESTS ===")
+        print("\n\n=== AUTHENTICATION TESTS ===")
         
         # First try to register admin user
         register_success, register_response = self.run_test(
@@ -103,7 +103,7 @@ class BizOpsPlatformTester:
 
     def test_dashboard_stats(self):
         """Test enhanced dashboard with new stats"""
-        print("\n=== DASHBOARD TESTS ===")
+        print("\n\n=== DASHBOARD TESTS ===")
         success, response = self.run_test(
             "Enhanced Dashboard Stats",
             "GET",
@@ -127,7 +127,7 @@ class BizOpsPlatformTester:
 
     def test_store_management(self):
         """Test complete store CRUD operations"""
-        print("\n=== STORE MANAGEMENT TESTS ===")
+        print("\n\n=== STORE MANAGEMENT TESTS ===")
         
         # Create Main Warehouse
         store_data = {
@@ -216,13 +216,22 @@ class BizOpsPlatformTester:
         """Create test employees for purchase requests"""
         print("\n=== EMPLOYEE SETUP FOR TESTING ===")
         
+        # Create department
+        success, dept_res = self.run_test("Create Dept", "POST", "departments", 200, data={"name": "IT Setup Test"})
+        dept_id = dept_res.get("id") if success else "dummy"
+
+        # Create position
+        success, pos_res = self.run_test("Create Pos", "POST", "positions", 200, data={"title": "Test Engineer", "department_id": dept_id})
+        pos_id = pos_res.get("id") if success else "dummy"
+
         employee_data = {
             "name": "Test Employee",
             "email": "test.employee@company.com",
             "phone": "+91 98765 43212",
             "department": "IT",
             "designation": "Software Engineer",
-            "date_of_joining": "2024-01-15"
+            "date_of_joining": "2024-01-15",
+            "position_id": pos_id
         }
         success, response = self.run_test(
             "Create Test Employee",
@@ -239,16 +248,16 @@ class BizOpsPlatformTester:
 
     def test_purchase_request_system(self):
         """Test complete purchase request workflow"""
-        print("\n=== PURCHASE REQUEST SYSTEM TESTS ===")
+        print("\n\n=== PURCHASE REQUEST SYSTEM TESTS ===")
         
         # Ensure we have stores and employees
         if not self.created_resources['stores']:
-            print("❌ No stores available for testing")
+            print("\n❌ No stores available for testing")
             return False
             
         employee_id = self.test_employee_creation()
         if not employee_id:
-            print("❌ Failed to create test employee")
+            print("\n❌ Failed to create test employee")
             return False
 
         store_id = self.created_resources['stores'][0]
@@ -341,10 +350,10 @@ class BizOpsPlatformTester:
 
     def test_purchase_orders(self):
         """Test purchase order creation from approved requests"""
-        print("\n=== PURCHASE ORDER TESTS ===")
+        print("\n\n=== PURCHASE ORDER TESTS ===")
         
         if not self.created_resources['purchase_requests']:
-            print("❌ No purchase requests available for testing")
+            print("\n❌ No purchase requests available for testing")
             return False
 
         # Use the first (approved) purchase request
@@ -410,7 +419,7 @@ class BizOpsPlatformTester:
 
     def test_hr_configuration(self):
         """Test HR custom fields system"""
-        print("\n=== HR CONFIGURATION TESTS ===")
+        print("\n\n=== HR CONFIGURATION TESTS ===")
         
         # Create Blood Group field
         field_data1 = {
@@ -481,7 +490,7 @@ class BizOpsPlatformTester:
 
     def test_integration_workflow(self):
         """Test complete procurement workflow integration"""
-        print("\n=== INTEGRATION WORKFLOW TEST ===")
+        print("\n\n=== INTEGRATION WORKFLOW TEST ===")
         
         # Verify we have all required resources
         required_resources = ['stores', 'employees', 'purchase_requests', 'purchase_orders']
@@ -508,7 +517,7 @@ class BizOpsPlatformTester:
 
     def cleanup_test_data(self):
         """Clean up created test data"""
-        print("\n=== CLEANUP TEST DATA ===")
+        print("\n\n=== CLEANUP TEST DATA ===")
         
         # Delete HR fields
         for field_id in self.created_resources['hr_fields']:
@@ -524,58 +533,58 @@ class BizOpsPlatformTester:
 
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting BizOps Platform Backend Tests")
-        print("=" * 50)
+        print("\n🚀 Starting BizOps Platform Backend Tests")
+        print("\n=" * 50)
         
         # Authentication
         if not self.test_login():
-            print("❌ Authentication failed, stopping tests")
+            print("\n❌ Authentication failed, stopping tests")
             return False
 
         # Dashboard
         if not self.test_dashboard_stats():
-            print("❌ Dashboard tests failed")
+            print("\n❌ Dashboard tests failed")
             return False
 
         # Store Management
         if not self.test_store_management():
-            print("❌ Store management tests failed")
+            print("\n❌ Store management tests failed")
             return False
 
         # Purchase Request System
         if not self.test_purchase_request_system():
-            print("❌ Purchase request tests failed")
+            print("\n❌ Purchase request tests failed")
             return False
 
         # Purchase Orders
         if not self.test_purchase_orders():
-            print("❌ Purchase order tests failed")
+            print("\n❌ Purchase order tests failed")
             return False
 
         # HR Configuration
         if not self.test_hr_configuration():
-            print("❌ HR configuration tests failed")
+            print("\n❌ HR configuration tests failed")
             return False
 
         # Integration Test
         if not self.test_integration_workflow():
-            print("❌ Integration workflow test failed")
+            print("\n❌ Integration workflow test failed")
             return False
 
         # Cleanup
         self.cleanup_test_data()
 
         # Final Results
-        print("\n" + "=" * 50)
+        print("\n\n" + "=" * 50)
         print(f"📊 BACKEND TEST RESULTS")
         print(f"Tests passed: {self.tests_passed}/{self.tests_run}")
         print(f"Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 ALL BACKEND TESTS PASSED!")
+            print("\n🎉 ALL BACKEND TESTS PASSED!")
             return True
         else:
-            print("❌ Some backend tests failed")
+            print("\n❌ Some backend tests failed")
             return False
 
 def main():
