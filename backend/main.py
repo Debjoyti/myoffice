@@ -2296,8 +2296,7 @@ async def start_trip(data: TripCreate, current_user: dict = Depends(get_current_
         "status": "active",
         "start_time": datetime.now(timezone.utc).isoformat(),
         "end_time": None,
-        "locations": [],
-        "ai_analysis": None
+        "locations": []
     }
     await db.trips.insert_one(trip)
     trip.pop("_id", None)
@@ -2357,43 +2356,11 @@ async def get_live(trip_id: str, current_user: dict = Depends(get_current_user))
 # End a trip
 @api_router.post("/trip/{trip_id}/end")
 async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
-    trip = await db.trips.find_one({"id": trip_id, "user_id": current_user["id"]})
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-
-    end_time = datetime.now(timezone.utc)
-
-    # Calculate basic stats for mock AI Analysis
-    locations = trip.get("locations", [])
-    duration_str = "Unknown"
-    try:
-        start_time = datetime.fromisoformat(trip.get("start_time"))
-        delta = end_time - start_time
-        mins = int(delta.total_seconds() / 60)
-        duration_str = f"{mins} mins"
-    except Exception:
-        pass
-
-    point_count = len(locations)
-    dest = trip.get("destination", "your destination")
-
-    # Mock AI Analysis generator
-    ai_analysis = (
-        f"**AI Analysis:** The route to {dest} was completed in {duration_str} with {point_count} tracking points recorded. "
-        "The tracked path deviated slightly from the most direct route in the middle segment. "
-        "**Suggestion:** For future trips to this destination, consider taking the main highway to save approximately 5-10 minutes, "
-        "and avoid the downtown traffic choke points."
-    )
-
     await db.trips.update_one(
         {"id": trip_id, "user_id": current_user["id"]},
-        {"$set": {
-            "status": "completed",
-            "end_time": end_time.isoformat(),
-            "ai_analysis": ai_analysis
-        }}
+        {"$set": {"status": "completed", "end_time": datetime.now(timezone.utc).isoformat()}}
     )
-    return {"message": "Trip completed", "ai_analysis": ai_analysis}
+    return {"message": "Trip completed"}
 
 # List all trips for current user
 @api_router.get("/trips")
