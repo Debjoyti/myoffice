@@ -304,3 +304,6 @@ class InMemoryDatabase:
         if name not in self._collections:
             self._collections[name] = AsyncInMemoryCollection()
         return self._collections[name]
+
+    def __getitem__(self, name: str):
+        return self.__getattr__(name)

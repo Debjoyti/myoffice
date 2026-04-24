@@ -3721,7 +3721,7 @@ async def get_iatf_module_data(module_name: str, current_user: dict = Depends(ge
     """Generic endpoint to fetch data for any IATF module"""
     org_id = current_user.get("organization_id")
     # Check for both organization_id and company_id in metadata
-    res = await db[f"iatf_{module_name}"].find({"metadata.company_id": org_id}, {"_id": 0}).to_list(1000)
+    res = await getattr(db, f"iatf_{module_name}").find({"metadata.company_id": org_id}, {"_id": 0}).to_list(1000)
     return res
 
 @api_router.post("/iatf/module/{module_name}")
@@ -3740,14 +3740,14 @@ async def create_iatf_record(module_name: str, data: dict, current_user: dict = 
         },
         **data
     }
-    await db[f"iatf_{module_name}"].insert_one(doc)
+    await getattr(db, f"iatf_{module_name}").insert_one(doc)
     return {"message": "Record created", "id": doc["id"]}
 
 @api_router.patch("/iatf/module/{module_name}/{record_id}/approve")
 async def approve_iatf_record(module_name: str, record_id: str, current_user: dict = Depends(get_current_user)):
     """Approve a compliance document"""
     now = datetime.now(timezone.utc).isoformat()
-    result = await db[f"iatf_{module_name}"].update_one(
+    result = await getattr(db, f"iatf_{module_name}").update_one(
         {"id": record_id},
         {"$set": {
             "metadata.approved_by": current_user.get("id"),
@@ -5129,6 +5129,8 @@ async def create_indexes():
     if using_fallback_db:
         logger.warning("Running backend with in-memory fallback DB.")
         await ensure_demo_users_seeded()
+        from seed_iatf_compliance import seed_iatf_data
+        await seed_iatf_data()
         return
 
     logger.info("Creating MongoDB indexes...")
@@ -5233,6 +5235,8 @@ async def create_indexes():
 
     logger.info("✅ MongoDB indexes created/verified successfully")
     await ensure_demo_users_seeded()
+    from seed_iatf_compliance import seed_iatf_data
+    await seed_iatf_data()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
