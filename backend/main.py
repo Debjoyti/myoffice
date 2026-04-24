@@ -4639,3 +4639,80 @@ async def shutdown_db_client():
         client.close()
 
 handler = app
+
+# ==========================================
+# SAAS ERP API ENDPOINTS (MOCKUP)
+# ==========================================
+
+class ApprovalWorkflow(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    entity_type: str
+    entity_id: str
+    requester_id: str
+    approver_id: str
+    status: str = "pending"
+    comments: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class ApprovalWorkflowCreate(BaseModel):
+    company_id: str
+    entity_type: str
+    entity_id: str
+    requester_id: str
+    approver_id: str
+    comments: Optional[str] = None
+
+@api_router.post("/workflows")
+async def create_workflow(data: ApprovalWorkflowCreate, current_user: dict = Depends(get_current_user)):
+    doc = ApprovalWorkflow(**data.dict()).dict()
+    await db.approval_workflows.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/workflows")
+async def get_workflows(company_id: str, current_user: dict = Depends(get_current_user)):
+    workflows = await db.approval_workflows.find({"company_id": company_id}, {"_id": 0}).to_list(1000)
+    return workflows
+
+class Payment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    invoice_id: Optional[str] = None
+    amount: float
+    payment_date: str
+    payment_method: Optional[str] = None
+    reference: Optional[str] = None
+    journal_entry_id: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class PaymentCreate(BaseModel):
+    company_id: str
+    invoice_id: Optional[str] = None
+    amount: float
+    payment_date: str
+    payment_method: Optional[str] = None
+    reference: Optional[str] = None
+
+@api_router.post("/payments")
+async def create_payment(data: PaymentCreate, current_user: dict = Depends(get_current_user)):
+    doc = Payment(**data.dict()).dict()
+    await db.payments.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/payments")
+async def get_payments(company_id: str, current_user: dict = Depends(get_current_user)):
+    payments = await db.payments.find({"company_id": company_id}, {"_id": 0}).to_list(1000)
+    return payments
+
+@api_router.post("/payrolls/run")
+async def run_payroll(company_id: str, current_user: dict = Depends(get_current_user)):
+    return {"message": "Payroll run successfully triggered"}
+
+@api_router.post("/pr/{id}/approve")
+async def approve_pr(id: str, current_user: dict = Depends(get_current_user)):
+    return {"message": "Purchase Request approved"}
+
+@api_router.post("/assets/{id}/depreciate")
+async def depreciate_asset(id: str, current_user: dict = Depends(get_current_user)):
+    return {"message": "Asset depreciated successfully"}
