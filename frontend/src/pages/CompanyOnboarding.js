@@ -16,13 +16,13 @@ const INDUSTRIES = [
   'Media & Entertainment', 'Real Estate', 'Agriculture', 'Pharma', 'Government', 'Other'
 ];
 
-const STEPS = ['Basic Info', 'Contact & Address', 'Tax & Legal', 'Branding'];
+const STEPS = ['Basic Info', 'Contact & Address', 'Tax & Legal', 'Branding', 'Team Onboarding'];
 
 const EMPTY_FORM = {
   name: '', company_code: '', legal_name: '', industry: '', email: '', phone: '', website: '',
   address: '', city: '', state: '', country: 'India', pincode: '',
   pan_number: '', gst_number: '', cin_number: '', logo: '', stamp: '',
-  esi_account_no: '', uan_account_no: '', eway_bill_account: '', plants: [], payment_barcode: ''
+  esi_account_no: '', uan_account_no: '', eway_bill_account: '', plants: [], payment_barcode: '', employees: []
 };
 
 function imageToBase64(file) {
@@ -292,11 +292,77 @@ const CompanyOnboarding = ({ user, onLogout }) => {
     onChange: (v) => setForm(f => ({ ...f, [key]: v }))
   });
 
+
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [parsingAI, setParsingAI] = useState(false);
+
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setParsingAI(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await axios.post(`${API}/ai/upload-employees`, formData, {
+        headers: { ...authHeaders(), 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data && res.data.length > 0) {
+        setForm(f => ({ ...f, employees: [...f.employees, ...res.data] }));
+        showToast(`Successfully extracted ${res.data.length} employees from file`);
+      } else {
+        showToast('No employees could be extracted from the file', 'error');
+      }
+    } catch (err) {
+      showToast('File Parsing failed', 'error');
+    } finally {
+      setParsingAI(false);
+      e.target.value = null; // reset input
+    }
+  };
+
+  const handleParseAI = async () => {
+    if (!aiPrompt.trim()) return;
+    setParsingAI(true);
+    try {
+      const res = await axios.post(`${API}/ai/parse-employees`, { text: aiPrompt }, { headers: authHeaders() });
+      if (res.data && res.data.length > 0) {
+        setForm(f => ({ ...f, employees: [...f.employees, ...res.data] }));
+        setAiPrompt('');
+        showToast(`Successfully extracted ${res.data.length} employees`);
+      } else {
+        showToast('No employees could be extracted from the text', 'error');
+      }
+    } catch (err) {
+      showToast('AI Parsing failed', 'error');
+    } finally {
+      setParsingAI(false);
+    }
+  };
+
+  const removeParsedEmployee = (idx) => {
+    setForm(f => ({ ...f, employees: f.employees.filter((_, i) => i !== idx) }));
+  };
+
+  const updateParsedEmployee = (idx, field, val) => {
+    const newEmps = [...form.employees];
+    newEmps[idx][field] = val;
+    setForm(f => ({ ...f, employees: newEmps }));
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) { showToast('Company name is required', 'error'); setStep(0); return; }
     setSaving(true);
     try {
-      await axios.post(`${API}/company`, form, { headers: authHeaders() });
+      const companyRes = await axios.post(`${API}/company`, form, { headers: authHeaders() });
+      const createdCompanyId = companyRes.data.id;
+
+      if (form.employees && form.employees.length > 0) {
+        await axios.post(`${API}/companies/${createdCompanyId}/bulk-onboard`, { employees: form.employees }, { headers: authHeaders() });
+      }
+
       showToast('Company onboarded successfully! 🎉');
       setShowForm(false);
       setForm(EMPTY_FORM);
@@ -372,6 +438,83 @@ const CompanyOnboarding = ({ user, onLogout }) => {
         <UploadBox label="Company Logo" hint="PNG or SVG recommended" {...field('logo')} />
         <UploadBox label="Company Stamp / Seal" hint="Transparent PNG recommended" {...field('stamp')} />
       </div>
+    </div>,
+
+    // Step 4: Team Onboarding
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, margin: '0 0 4px' }}>Bulk AI Employee Onboarding</p>
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: '0 0 12px' }}>Paste any text containing employee names, emails, roles, etc. Our AI will extract and structure them.</p>
+        <textarea
+          value={aiPrompt}
+          onChange={e => setAiPrompt(e.target.value)}
+          placeholder="e.g. John Doe, john@example.com, Developer... \n Jane Smith, jane@example.com, HR"
+          style={{ width: '100%', minHeight: '100px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '12px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', resize: 'vertical' }}
+        />
+        <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+          <button
+            onClick={handleParseAI}
+            disabled={parsingAI}
+            style={{ padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: parsingAI ? 'not-allowed' : 'pointer' }}
+          >
+            {parsingAI ? 'Extracting...' : 'Extract from Text'}
+          </button>
+
+          <div style={{ position: 'relative' }}>
+            <input
+              type="file"
+              accept=".csv, .xlsx"
+              onChange={handleFileUpload}
+              disabled={parsingAI}
+              style={{ position: 'absolute', inset: 0, opacity: 0, cursor: parsingAI ? 'not-allowed' : 'pointer' }}
+            />
+            <button
+              disabled={parsingAI}
+              style={{ padding: '8px 16px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: parsingAI ? 'not-allowed' : 'pointer' }}
+            >
+              Upload CSV/Excel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {form.employees.length > 0 && (
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', overflowX: 'auto' }}>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, margin: '0 0 12px' }}>Extracted Employees ({form.employees.length})</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <thead>
+              <tr style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <th style={{ padding: '8px' }}>Name</th>
+                <th style={{ padding: '8px' }}>Email</th>
+                <th style={{ padding: '8px' }}>Department</th>
+                <th style={{ padding: '8px' }}>Designation</th>
+                <th style={{ padding: '8px' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {form.employees.map((emp, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{ padding: '4px' }}>
+                    <input type="text" value={emp.name} onChange={e => updateParsedEmployee(idx, 'name', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                  </td>
+                  <td style={{ padding: '4px' }}>
+                    <input type="text" value={emp.email} onChange={e => updateParsedEmployee(idx, 'email', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                  </td>
+                  <td style={{ padding: '4px' }}>
+                    <input type="text" value={emp.department} onChange={e => updateParsedEmployee(idx, 'department', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                  </td>
+                  <td style={{ padding: '4px' }}>
+                    <input type="text" value={emp.designation} onChange={e => updateParsedEmployee(idx, 'designation', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                  </td>
+                  <td style={{ padding: '4px' }}>
+                    <X size={14} color="#f87171" style={{ cursor: 'pointer' }} onClick={() => removeParsedEmployee(idx)} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   ];
 
