@@ -143,7 +143,7 @@ function App() {
         <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
-        <Route path="/company-onboarding" element={user && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/company-onboarding" element={user && user.role === 'admin' && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/travel" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/iatf-hub" element={user && !needsOnboarding ? <IATFHub user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/careers" element={user && !needsOnboarding ? <Careers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />

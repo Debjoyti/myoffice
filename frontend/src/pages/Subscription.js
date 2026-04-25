@@ -142,19 +142,28 @@ const Subscription = ({ user, onLogout }) => {
                                     <div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Employees</span>
-                                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{subData?.limits?.max_employees || 'Unlimited'}</span>
+                                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{subData?.usage?.employees || 0} / {subData?.limits?.max_employees || '∞'}</span>
                                         </div>
                                         <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <div style={{ width: '40%', height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', borderRadius: '4px' }} />
+                                            <div style={{ width: `${subData?.limits?.max_employees ? Math.min(100, ((subData?.usage?.employees || 0) / subData.limits.max_employees) * 100) : 100}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', borderRadius: '4px' }} />
                                         </div>
                                     </div>
                                     <div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Projects</span>
-                                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{subData?.limits?.max_projects || 'Unlimited'}</span>
+                                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{subData?.usage?.projects || 0} / {subData?.limits?.max_projects || '∞'}</span>
                                         </div>
                                         <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <div style={{ width: '25%', height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px' }} />
+                                            <div style={{ width: `${subData?.limits?.max_projects ? Math.min(100, ((subData?.usage?.projects || 0) / subData.limits.max_projects) * 100) : 100}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px' }} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Companies</span>
+                                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{subData?.usage?.companies || 0} / {subData?.limits?.max_companies || '∞'}</span>
+                                        </div>
+                                        <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${subData?.limits?.max_companies ? Math.min(100, ((subData?.usage?.companies || 0) / subData.limits.max_companies) * 100) : 100}%`, height: '100%', background: 'linear-gradient(90deg, #f59e0b, #fbbf24)', borderRadius: '4px' }} />
                                         </div>
                                     </div>
                                 </div>
