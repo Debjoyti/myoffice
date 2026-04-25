@@ -6,8 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 MONGO_URL = "mongodb://localhost:27017"
 DATABASE_NAME = "myoffice"
-client = AsyncIOMotorClient(MONGO_URL)
-db = client[DATABASE_NAME]
+from main import db
 
 async def seed_production_grade():
     print("STARTING PRODUCTION-GRADE IATF SEEDING (100+ RECORDS)...")
@@ -79,7 +78,7 @@ async def seed_production_grade():
     print(f"DONE: Seeded {len(actions)} Motivation Actions")
 
     print("\nSUCCESS: PRODUCTION-GRADE SEEDING COMPLETED!")
-    client.close()
+
 
 if __name__ == "__main__":
     asyncio.run(seed_production_grade())

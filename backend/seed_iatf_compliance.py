@@ -7,8 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 # MongoDB connection
 MONGO_URL = "mongodb://localhost:27017" # Update if different
 DATABASE_NAME = "myoffice"
-client = AsyncIOMotorClient(MONGO_URL)
-db = client[DATABASE_NAME]
+from main import db
 
 async def seed_iatf_data():
     print("START: IATF Compliance Seeding with VOLUME...")
@@ -183,7 +182,7 @@ async def seed_iatf_data():
 
     print("\nSUCCESS: VOLUME SEEDING COMPLETED!")
 
-    client.close()
+
 
 if __name__ == "__main__":
     asyncio.run(seed_iatf_data())
