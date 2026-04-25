@@ -10,7 +10,11 @@ const API = `${BACKEND_URL}/api`;
 const Recruitment = ({ user, onLogout, isSubComponent }) => {
   const [jobs, setJobs] = useState([]);
   const [candidates, setCandidates] = useState([]);
-  const [activeTab, setActiveTab] = useState('jobs');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('recruitmentActiveTab') || 'jobs');
+
+  useEffect(() => {
+    localStorage.setItem('recruitmentActiveTab', activeTab);
+  }, [activeTab]);
   const [loading, setLoading] = useState(true);
   const [showJobModal, setShowJobModal] = useState(false);
   const [showCandidateModal, setShowCandidateModal] = useState(false);
@@ -220,7 +224,7 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="recruitment" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content">
         <div className="page-inner">
           {content}

@@ -151,7 +151,7 @@ const Stores = ({ user, onLogout, isSubComponent }) => {
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="stores" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content">
         <div className="page-inner">
           {content}

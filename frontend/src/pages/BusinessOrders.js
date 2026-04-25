@@ -7,7 +7,11 @@ import PurchaseOrders from './PurchaseOrders';
 
 const BusinessOrders = ({ user, onLogout }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('inventory');
+    const [activeTab, setActiveTab] = useState(localStorage.getItem('businessOrdersActiveTab') || 'inventory');
+
+    React.useEffect(() => {
+        localStorage.setItem('businessOrdersActiveTab', activeTab);
+    }, [activeTab]);
 
     const getTabStyle = (tabId) => ({
         padding: '16px 12px',
@@ -23,7 +27,7 @@ const BusinessOrders = ({ user, onLogout }) => {
 
     return (
         <div className="page-root">
-            <Sidebar user={user} onLogout={onLogout} activePage="business-orders" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+            <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
             <div className="page-content">
                 <div style={{ padding: '0 32px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
                     <div style={{ padding: '24px 0 16px', display: 'flex', flexDirection: 'column' }}>

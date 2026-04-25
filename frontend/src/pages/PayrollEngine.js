@@ -431,7 +431,7 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="payroll" setActivePage={() => {}} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content">
         <div className="page-inner" style={{ paddingTop: '24px' }}>{content}</div>
       </div>

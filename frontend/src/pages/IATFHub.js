@@ -660,7 +660,7 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#05070f', fontFamily: "'Inter', sans-serif" }}>
-      <Sidebar user={user} onLogout={onLogout} activePage="iatf-hub" isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       {pageContent}
     </div>
   );

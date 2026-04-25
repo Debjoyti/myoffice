@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { MOCK_DASHBOARD_STATS, MOCK_INSIGHTS, MOCK_ANNOUNCEMENTS } from '../utils/demoData';
@@ -55,6 +56,7 @@ const getHealthScore = (stats) => {
 };
 
 const Dashboard = ({ user, onLogout }) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [insights, setInsights] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
 // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,7 +181,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   return (
     <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#05070f' }}>
-      <Sidebar user={user} onLogout={onLogout} activePage="dashboard" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
@@ -324,13 +326,18 @@ const Dashboard = ({ user, onLogout }) => {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {quickActions.map((action, i) => (
-                    <a key={i} href={action.href} className="group flex flex-col gap-3 p-4 rounded-md border transition-all duration-200 no-underline" style={{ backgroundColor: `${action.color}10`, borderColor: `${action.color}20` }}>
+                    <button
+                      key={i}
+                      onClick={() => navigate(action.href)}
+                      className="group flex flex-col gap-3 p-4 rounded-md border transition-all duration-200 text-left border-none cursor-pointer"
+                      style={{ backgroundColor: `${action.color}10`, border: `1px solid ${action.color}20` }}
+                    >
                       <span className="text-2xl group-hover:scale-110 transition-transform origin-bottom-left">{action.emoji}</span>
                       <div>
                         <p className="text-slate-200 text-sm font-bold m-0">{action.label}</p>
                         <p className="text-xs font-mono mt-1" style={{ color: `${action.color}99` }}>{action.sub}</p>
                       </div>
-                    </a>
+                    </button>
                   ))}
                 </div>
               </div>
