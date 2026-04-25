@@ -3,6 +3,8 @@ import Sidebar from '../components/Sidebar';
 
 const Careers = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState(localStorage.getItem('careersActiveTab') || 'jobBoard');
+  const [jdText, setJdText] = useState('');
+  const [creatingJob, setCreatingJob] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('careersActiveTab', activeTab);
@@ -30,6 +32,30 @@ const Careers = ({ user, onLogout }) => {
     fetchJobs();
   }, []);
 
+
+  const handleStartHiring = async () => {
+    if(!jdText.trim()) return alert('Please enter a JD');
+    setCreatingJob(true);
+    try {
+      const res = await fetch('/api/careers/jobs/create-from-jd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jd_text: jdText, organization_id: user?.organization_id || 'default_org' })
+      });
+      if(res.ok) {
+        alert('AI Hiring Engine configured successfully!');
+        setJdText('');
+        fetchJobs(); // refresh the job board
+      } else {
+        alert('Failed to start hiring');
+      }
+    } catch(e) {
+      console.error(e);
+      alert('Error creating job');
+    }
+    setCreatingJob(false);
+  };
+
   const fetchJobs = async () => {
     try {
       const res = await fetch('/api/careers/jobs');
@@ -49,7 +75,7 @@ const Careers = ({ user, onLogout }) => {
         job_id: selectedJob?.id || selectedJob?._id || "1",
         name: applyForm.name,
         email: applyForm.email,
-        resume_text: `Skills: ${applyForm.skills}, LI: ${applyForm.linkedin_url}, Naukri: ${applyForm.naukri_url}`,
+        resume_text: applyForm.full_resume || `Skills: ${applyForm.skills}, LI: ${applyForm.linkedin_url}, Naukri: ${applyForm.naukri_url}`,
         peer_rating: (parseFloat(applyForm.colleague_rating) + parseFloat(applyForm.boss_rating)) / 2
       };
 
@@ -101,6 +127,11 @@ const Careers = ({ user, onLogout }) => {
     if (!chatInput.trim() || !interviewSession) return;
     const session_id = interviewSession.session_id;
 
+    // Calculate simulated typing speed
+    const msgLength = chatInput.length;
+    const assumedTypingSpeedCharsPerSecond = 5;
+    const timeTaken = Math.max(1, Math.floor(msgLength / assumedTypingSpeedCharsPerSecond));
+
     // Optimistic UI update
     const newMessages = [...interviewSession.messages, { role: 'user', content: chatInput }];
     setInterviewSession({ ...interviewSession, messages: newMessages });
@@ -111,7 +142,7 @@ const Careers = ({ user, onLogout }) => {
       const res = await fetch(`/api/careers/ai-interview/${session_id}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg })
+        body: JSON.stringify({ message: msg, time_taken_seconds: timeTaken })
       });
       if (res.ok) {
         const data = await res.json();
@@ -128,7 +159,9 @@ const Careers = ({ user, onLogout }) => {
       const res = await fetch(`/api/careers/ai-interview/${interviewSession.session_id}/finish`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
-        alert(`Interview finished! AI Rating: ${data.rating}/10`);
+        const score = data.final_score !== undefined ? data.final_score : data.rating;
+        const recommendation = data.ai_report?.recommendation || '';
+        alert(`Interview completed. AI Final Score: ${score}/10. ${recommendation}`);
         setInterviewSession(null);
         setActiveTab('myProfile');
       }
@@ -207,6 +240,7 @@ const Careers = ({ user, onLogout }) => {
                   <input placeholder="LinkedIn URL" value={applyForm.linkedin_url} onChange={e=>setApplyForm({...applyForm, linkedin_url: e.target.value})} style={{ padding: '8px' }} />
                   <input placeholder="Naukri URL" value={applyForm.naukri_url} onChange={e=>setApplyForm({...applyForm, naukri_url: e.target.value})} style={{ padding: '8px' }} />
                   <input placeholder="Skills (comma separated)" value={applyForm.skills} onChange={e=>setApplyForm({...applyForm, skills: e.target.value})} required style={{ padding: '8px' }} />
+                  <textarea placeholder="Paste Full Resume Here..." value={applyForm.full_resume} onChange={e=>setApplyForm({...applyForm, full_resume: e.target.value})} required style={{ padding: '8px', height: '100px' }} />
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <label>Colleague Rating (0-5):
                       <input type="number" step="0.1" max="5" value={applyForm.colleague_rating} onChange={e=>setApplyForm({...applyForm, colleague_rating: parseFloat(e.target.value)})} style={{ width: '60px' }} />
@@ -293,35 +327,58 @@ const Careers = ({ user, onLogout }) => {
 
         {activeTab === 'recruiterView' && (
           <div style={{ color: '#ccc' }}>
-            <h2>Recruiter Dashboard</h2>
-            <button onClick={fetchCandidates} style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>Refresh Data</button>
+            <h2>Recruiter Dashboard (AI Engine)</h2>
+            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+               <h3>Start Autonomous Hiring</h3>
+               <p>Paste the Job Description below. The AI will parse skills, generate questions, and handle evaluations.</p>
+               <textarea
+                 value={jdText}
+                 onChange={e=>setJdText(e.target.value)}
+                 placeholder="Paste full JD here..."
+                 style={{ width: '100%', height: '120px', padding: '12px', background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', marginBottom: '16px' }}
+               />
+               <button onClick={handleStartHiring} disabled={creatingJob} style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                 {creatingJob ? 'Configuring Engine...' : '✨ Start Hiring ✨'}
+               </button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h3>Candidate Leaderboard (Merit Based)</h3>
+               <button onClick={fetchCandidates} style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '16px' }}>Refresh Data</button>
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
-                  <th style={{ padding: '12px' }}>Candidate Name / Info</th>
-                  <th style={{ padding: '12px' }}>Role/Skills</th>
-                  <th style={{ padding: '12px' }}>AI Rating</th>
-                  <th style={{ padding: '12px' }}>Prev Ratings</th>
+                  <th style={{ padding: '12px' }}>Rank</th>
+                  <th style={{ padding: '12px' }}>Candidate Info</th>
+                  <th style={{ padding: '12px' }}>AI Composite Score</th>
+                  <th style={{ padding: '12px' }}>Recommendation</th>
+                  <th style={{ padding: '12px' }}>Risk Flags</th>
                   <th style={{ padding: '12px' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {candidates.length === 0 ? (
-                   <tr><td colSpan="5" style={{ padding: '12px', textAlign: 'center' }}>No candidates found.</td></tr>
+                   <tr><td colSpan="6" style={{ padding: '12px', textAlign: 'center' }}>No candidates found.</td></tr>
                 ) : (
-                  candidates.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '12px' }}>{c.name}</td>
-                      <td style={{ padding: '12px' }}>{c.skills}</td>
-                      <td style={{ padding: '12px' }}>{c.ai_rating ? `${c.ai_rating}/10` : '-'}</td>
-                      <td style={{ padding: '12px' }}>{c.peer_rating ? `${c.peer_rating}/5` : '-'}</td>
+                  candidates.map((c, index) => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: index === 0 ? 'rgba(234, 179, 8, 0.1)' : 'transparent' }}>
+                      <td style={{ padding: '12px', fontWeight: 'bold', color: index === 0 ? '#eab308' : '#fff' }}>#{index + 1}</td>
+                      <td style={{ padding: '12px' }}>{c.name}<br/><span style={{fontSize:'12px', color:'#888'}}>{c.email}</span></td>
+                      <td style={{ padding: '12px', fontSize: '18px', fontWeight: 'bold' }}>{c.final_score !== undefined && c.final_score !== null ? `${(c.final_score * 10).toFixed(0)}%` : 'Pending'}</td>
+                      <td style={{ padding: '12px', fontWeight: 'bold', color: c.ai_report?.recommendation === 'Reject' ? '#ef4444' : (c.ai_report?.recommendation === 'Strong Hire' ? '#22c55e' : '#f59e0b') }}>{c.ai_report?.recommendation || '-'}</td>
+                      <td style={{ padding: '12px' }}>
+                         {c.ai_report?.risk_flags?.length > 0 ? (
+                             <span style={{ color: '#ef4444', fontSize: '12px' }}>{c.ai_report.risk_flags.join(', ')}</span>
+                         ) : <span style={{ color: '#22c55e', fontSize: '12px' }}>Clear</span>}
+                      </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{
                           padding: '4px 8px',
-                          background: c.status === 'rejected' ? '#ef4444' : (c.status === 'ai_interview_done' ? '#22c55e' : '#f59e0b'),
+                          background: c.status === 'rejected' ? '#ef4444' : (c.status === 'ai_interview_done' ? '#22c55e' : '#3b82f6'),
                           borderRadius: '4px', fontSize: '12px'
                         }}>
-                          {c.status}
+                          {c.status.replace('_', ' ')}
                         </span>
                       </td>
                     </tr>
