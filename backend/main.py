@@ -16,6 +16,7 @@ import uuid
 from cachetools import TTLCache
 import threading
 from fallback_db import InMemoryDatabase
+from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 
 try:
     from motor.motor_asyncio import AsyncIOMotorClient
@@ -217,8 +218,10 @@ def _invalidate_user_cache(user_id: str):
 
 class JobApplication(BaseModel):
     job_id: str
-    resume_text: str
-    peer_rating: float
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    resume_text: Optional[str] = None
+    peer_rating: Optional[float] = None
 
 class AIInterviewMessage(BaseModel):
     message: str
@@ -315,6 +318,17 @@ class Employee(BaseModel):
     employee_insurance_reg_date: Optional[str] = None
     employee_insurance_expiry: Optional[str] = None
     
+    food_allowance: Optional[str] = "No"
+    food_charges: Optional[str] = None
+    food_start_date: Optional[str] = None
+    food_close_date: Optional[str] = None
+    pf_enabled: Optional[str] = "No"
+    bank_name: Optional[str] = None
+    bank_ifsc: Optional[str] = None
+    bank_account_number: Optional[str] = None
+    bank_holder_name: Optional[str] = None
+    nationality: Optional[str] = None
+
     photo: Optional[str] = None
     status: str = "active"
     created_at: Optional[str] = None
@@ -522,6 +536,18 @@ class EmployeeCreate(BaseModel):
     driving_license: Optional[str] = None
     driving_expiry: Optional[str] = None
     esi_number: Optional[str] = None
+
+    food_allowance: Optional[str] = "No"
+    food_charges: Optional[str] = None
+    food_start_date: Optional[str] = None
+    food_close_date: Optional[str] = None
+    pf_enabled: Optional[str] = "No"
+    bank_name: Optional[str] = None
+    bank_ifsc: Optional[str] = None
+    bank_account_number: Optional[str] = None
+    bank_holder_name: Optional[str] = None
+    nationality: Optional[str] = None
+
     photo: Optional[str] = None
 
 class Attendance(BaseModel):
@@ -1018,6 +1044,22 @@ class JobPosting(BaseModel):
     organization_id: str
     created_at: str
 
+class Payslip(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    net_salary: float
+    earnings: list
+    deductions: list
+    organization_id: str
+    created_at: str
+
+class PayslipCreate(BaseModel):
+    employee_id: str
+    net_salary: float
+    earnings: list
+    deductions: list
+
 class JobPostingCreate(BaseModel):
     title: str
     department: str
@@ -1032,6 +1074,9 @@ class Candidate(BaseModel):
     name: str
     email: EmailStr
     resume_url: Optional[str] = None
+    resume_text: Optional[str] = None
+    peer_rating: Optional[float] = None
+    ai_interview_rating: Optional[float] = None
     status: str = "applied" # applied, screening, interview, offered, rejected
     organization_id: str
     created_at: str
@@ -1041,6 +1086,9 @@ class CandidateCreate(BaseModel):
     name: str
     email: EmailStr
     resume_url: Optional[str] = None
+    resume_text: Optional[str] = None
+    peer_rating: Optional[float] = None
+    ai_interview_rating: Optional[float] = None
 
 class KnowledgeBaseArticle(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1372,6 +1420,29 @@ async def get_departments(current_user: dict = Depends(get_current_user)):
     departments = await db.departments.find({"company_id": company_id}).to_list(1000)
     return [Department(**d) for d in departments]
 
+@api_router.put("/departments/{dept_id}", response_model=Department)
+async def update_department(dept_id: str, data: DepartmentCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    update_doc = {
+        "name": data.name,
+        "description": data.description,
+        "manager_id": data.manager_id,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    result = await db.departments.update_one({"id": dept_id, "company_id": company_id}, {"$set": update_doc})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Department not found")
+    doc = await db.departments.find_one({"id": dept_id, "company_id": company_id})
+    return Department(**doc)
+
+@api_router.delete("/departments/{dept_id}")
+async def delete_department(dept_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    result = await db.departments.delete_one({"id": dept_id, "company_id": company_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Department not found")
+    return {"status": "deleted"}
+
 @api_router.post("/teams", response_model=Team)
 async def create_team(data: TeamCreate, current_user: dict = Depends(get_current_user)):
     company_id = get_accountant_company(current_user)
@@ -1681,6 +1752,26 @@ async def lock_payroll(payroll_id: str, current_user: dict = Depends(get_current
     await db.payrolls.update_one({"id": payroll_id}, {"$set": update_data})
 
     updated = await db.payrolls.find_one({"id": payroll_id})
+
+    # Auto GL Entry for Payroll
+    exp_acc = await _get_or_create_system_account(db, company_id, "6000", "Salary Expense", "Expense", "Operating Expense")
+    liab_acc = await _get_or_create_system_account(db, company_id, "2100", "Salaries Payable", "Liability", "Current Liability")
+
+    total_gross = updated.get("total_gross", 0.0)
+    if total_gross > 0:
+        lines = [
+            {"account_id": exp_acc["id"], "account_name": exp_acc["name"], "debit": total_gross, "credit": 0.0, "description": f"Payroll Expense {updated.get('month')}"},
+            {"account_id": liab_acc["id"], "account_name": liab_acc["name"], "debit": 0.0, "credit": total_gross, "description": f"Salaries Payable {updated.get('month')}"}
+        ]
+        await create_auto_journal_entry(
+            db=db,
+            company_id=company_id,
+            date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            narration=f"Auto GL Entry for Payroll {updated.get('month')}",
+            reference=payroll_id,
+            lines=lines
+        )
+
     return Payroll(**updated)
 
 @api_router.get("/payroll", response_model=List[Payroll])
@@ -1999,6 +2090,26 @@ async def get_projects(current_user: dict = Depends(get_current_user)):
     projects = await db.projects.find(query, {"_id": 0}).to_list(1000)
     return projects
 
+
+@api_router.put("/projects/{project_id}", response_model=Project)
+async def update_project(project_id: str, data: ProjectCreate, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    update_doc = data.model_dump()
+    update_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.projects.update_one({"id": project_id, "organization_id": org_id}, {"$set": update_doc})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    doc = await db.projects.find_one({"id": project_id, "organization_id": org_id})
+    return Project(**doc)
+
+@api_router.delete("/projects/{project_id}")
+async def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.projects.delete_one({"id": project_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"status": "deleted"}
+
 @api_router.post("/tasks", response_model=Task)
 async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_current_user)):
     task_doc = task_data.model_dump()
@@ -2026,6 +2137,15 @@ async def update_task_status(task_id: str, status_data: StatusUpdate, current_us
     return {"message": "Task status updated"}
 
 VALID_LEAD_STATUSES = {"new", "contacted", "qualified", "proposal", "negotiation", "closed-won", "closed-lost"}
+
+
+@api_router.delete("/tasks/{task_id}")
+async def delete_task(task_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.tasks.delete_one({"id": task_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"status": "deleted"}
 
 @api_router.post("/leads", response_model=Lead)
 async def create_lead(lead_data: LeadCreate, current_user: dict = Depends(get_current_user)):
@@ -2058,6 +2178,15 @@ async def update_lead_status(lead_id: str, status_data: StatusUpdate, current_us
         raise HTTPException(status_code=404, detail="Lead not found")
     return {"message": "Lead status updated"}
 
+
+@api_router.delete("/leads/{lead_id}")
+async def delete_lead(lead_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.leads.delete_one({"id": lead_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {"status": "deleted"}
+
 @api_router.post("/deals", response_model=Deal)
 async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_current_user)):
     deal_doc = deal_data.model_dump()
@@ -2074,6 +2203,15 @@ async def get_deals(current_user: dict = Depends(get_current_user)):
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
     deals = await db.deals.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return deals
+
+
+@api_router.delete("/deals/{deal_id}")
+async def delete_deal(deal_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.deals.delete_one({"id": deal_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    return {"status": "deleted"}
 
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(exp_data: ExpenseCreate, current_user: dict = Depends(get_current_user)):
@@ -2272,7 +2410,63 @@ async def update_purchase_order_status(po_id: str, status_data: StatusUpdate, cu
         raise HTTPException(status_code=404, detail="Purchase order not found")
 
     result = await db.purchase_orders.update_one({"id": po_id}, {"$set": {"status": status_data.status}})
-    # Note: Inventory auto-receive is removed. Must use Goods Receipt Notes.
+
+    if status_data.status == "delivered" and po.get("status") != "delivered":
+        store = await db.stores.find_one({"id": po.get("store_id")})
+        location_name = store.get("name") if store else "Warehouse"
+
+        org_id = po.get("organization_id", current_user.get("organization_id"))
+        company_id = po.get("company_id", org_id)
+
+        # update inventory
+        for item in po.get("items", []):
+            item_name = item.get("name")
+            qty_to_add = int(item.get("quantity", 0))
+
+            existing_item = await db.inventory.find_one({
+                "organization_id": org_id,
+                "name": item_name,
+                "location": location_name
+            })
+
+            if existing_item:
+                await db.inventory.update_one(
+                    {"id": existing_item["id"]},
+                    {"$inc": {"quantity": qty_to_add}}
+                )
+            else:
+                new_item = {
+                    "id": str(uuid.uuid4()),
+                    "organization_id": org_id,
+                    "name": item_name,
+                    "category": "supplies",
+                    "quantity": qty_to_add,
+                    "unit": item.get("unit", "pcs"),
+                    "price_per_unit": item.get("price", item.get("unit_price", 0)),
+                    "location": location_name,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.inventory.insert_one(new_item)
+
+        # Auto GL Entry for Procurement -> Finance
+        inv_acc = await _get_or_create_system_account(db, company_id, "1200", "Inventory Asset", "Asset", "Current Asset")
+        ap_acc = await _get_or_create_system_account(db, company_id, "2000", "Accounts Payable", "Liability", "Current Liability")
+
+        total_amount = po.get("total_amount", 0.0)
+        if total_amount > 0:
+            lines = [
+                {"account_id": inv_acc["id"], "account_name": inv_acc["name"], "debit": total_amount, "credit": 0.0, "description": f"PO {po_id} Delivered"},
+                {"account_id": ap_acc["id"], "account_name": ap_acc["name"], "debit": 0.0, "credit": total_amount, "description": f"PO {po_id} AP Accrual"}
+            ]
+            await create_auto_journal_entry(
+                db=db,
+                company_id=company_id,
+                date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                narration=f"Auto GL Entry for PO {po_id} Goods Received",
+                reference=po_id,
+                lines=lines
+            )
+
     return {"message": "Purchase order status updated"}
 
 @api_router.post("/hr-fields", response_model=HRField)
@@ -2796,16 +2990,13 @@ async def get_goods_receipts(current_user: dict = Depends(get_current_user)):
 async def create_invoice(data: InvoiceCreate, current_user: dict = Depends(get_current_user)):
     doc = data.model_dump()
     doc["id"] = str(uuid.uuid4())
+    doc["invoice_number"] = f"INV-{datetime.now().year}-{str(uuid.uuid4())[:4].upper()}"
+    org_id = current_user.get("organization_id")
+    doc["organization_id"] = org_id
 
-    prefix = "INV" if doc.get("type") == "AR" else "PINV"
-    doc["invoice_number"] = f"{prefix}-{datetime.now().year}-{str(uuid.uuid4())[:4].upper()}"
-
-    doc["organization_id"] = current_user.get("organization_id")
-    if current_user.get("role") == "accountant":
-        doc["company_id"] = get_accountant_company(current_user)
-
-    doc["status"] = "pending"
-    doc["amount_paid"] = 0.0
+    company_id = get_accountant_company(current_user) if current_user.get("role") == "accountant" else org_id
+    doc["company_id"] = company_id
+    doc["status"] = "draft"
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
 
     org_id = current_user.get("organization_id")
@@ -2834,6 +3025,27 @@ async def create_invoice(data: InvoiceCreate, current_user: dict = Depends(get_c
             await db.journal_entries.insert_one(journal_entry)
 
     await db.invoices.insert_one(doc)
+
+    # Auto GL Entry for Sales Invoicing (Assuming Draft creates an accrual or change it if only on "issued")
+    # For now, we'll create the GL entry when the invoice is created
+    ar_acc = await _get_or_create_system_account(db, company_id, "1100", "Accounts Receivable", "Asset", "Current Asset")
+    rev_acc = await _get_or_create_system_account(db, company_id, "4000", "Sales Revenue", "Revenue", "Revenue")
+
+    total_amount = doc.get("total_amount", 0.0)
+    if total_amount > 0:
+        lines = [
+            {"account_id": ar_acc["id"], "account_name": ar_acc["name"], "debit": total_amount, "credit": 0.0, "description": f"Invoice {doc['invoice_number']}"},
+            {"account_id": rev_acc["id"], "account_name": rev_acc["name"], "debit": 0.0, "credit": total_amount, "description": f"Invoice {doc['invoice_number']} Revenue"}
+        ]
+        await create_auto_journal_entry(
+            db=db,
+            company_id=company_id,
+            date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            narration=f"Auto GL Entry for Sales Invoice {doc['invoice_number']}",
+            reference=doc["id"],
+            lines=lines
+        )
+
     return doc
 
 # ==========================================
@@ -2985,6 +3197,15 @@ async def get_vendors(current_user: dict = Depends(get_current_user)):
     return await db.vendors.find(query, {"_id": 0}).to_list(1000)
 
 # Assets (Office Management)
+@api_router.post("/payslips", response_model=Payslip)
+async def create_payslip(data: PayslipCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"PS-{str(uuid.uuid4())[:8].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.payslips.insert_one(doc)
+    return doc
+
 @api_router.post("/assets", response_model=Asset)
 async def create_asset(data: AssetCreate, current_user: dict = Depends(get_current_user)):
     doc = data.model_dump()
@@ -3880,6 +4101,7 @@ async def update_invoice_status(invoice_id: str, status_data: dict, current_user
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return {"message": f"Invoice marked as {new_status}", "status": new_status}
+
 
 # ═══════════════════════════════════════════════════════════
 # VENDORS CRUD
@@ -5213,22 +5435,32 @@ async def get_career_jobs():
 
 @app.post("/api/careers/apply")
 async def apply_job(application: JobApplication):
+    # This route is used directly from the careers public page (no auth).
+    # Since there's no auth, we must look up the job to find the organization_id.
+    job = await db.jobs.find_one({"id": application.job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
     status = "applied"
-    if application.peer_rating < 3.0:
+    if application.peer_rating and application.peer_rating < 3.0:
         status = "rejected"
 
     import uuid
     candidate_id = str(uuid.uuid4())
     doc = {
-        "_id": candidate_id,
         "id": candidate_id,
         "job_id": application.job_id,
+        "name": application.name if hasattr(application, 'name') and application.name else "Unknown Applicant",
+        "email": application.email if hasattr(application, 'email') and application.email else "unknown@example.com",
+        "resume_url": None,
         "resume_text": application.resume_text,
         "peer_rating": application.peer_rating,
         "status": status,
-        "ai_interview_rating": None
+        "ai_interview_rating": None,
+        "organization_id": job.get("organization_id"),
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
-    result = await db.candidates.insert_one(doc)
+    await db.candidates.insert_one(doc)
     return {"message": "Application received", "candidate_id": candidate_id, "status": status}
 
 @app.post("/api/careers/ai-interview/start/{candidate_id}")

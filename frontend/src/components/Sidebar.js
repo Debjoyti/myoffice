@@ -12,6 +12,15 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
   const [commandInput, setCommandInput] = useState('');
   const [commandFocused, setCommandFocused] = useState(false);
   const commandInputRef = useRef(null);
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  const toggleGroup = (groupName) => {
+    if (!groupName) return;
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -275,15 +284,24 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
 
         {/* Nav */}
         <nav className="sidebar-nav" style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
-          {visibleGroups.map((group, idx) => (
-            <div key={idx} className="mb-6">
+          {visibleGroups.map((group, idx) => {
+            const isCollapsed = group.group ? collapsedGroups[group.group] : false;
+            return (
+            <div key={idx} className="mb-4">
               {group.group && (
-                <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: groupColors[group.group] || '#94a3b8' }}>
-                  <div className="w-4 h-px opacity-50" style={{ background: groupColors[group.group] || '#94a3b8' }} />
-                  {group.group}
-                </div>
+                <button
+                  onClick={() => toggleGroup(group.group)}
+                  className="w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-slate-800/50 rounded-md transition-colors cursor-pointer border-none bg-transparent"
+                  style={{ color: groupColors[group.group] || '#94a3b8' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-px opacity-50" style={{ background: groupColors[group.group] || '#94a3b8' }} />
+                    {group.group}
+                  </div>
+                  <ChevronRight size={12} className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`} />
+                </button>
               )}
-              <div className="space-y-1 mt-2">
+              <div className={`space-y-0.5 overflow-hidden transition-all duration-300 ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100 mt-1'}`}>
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentActivePage === item.id;
@@ -303,7 +321,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
                       <span className={`text-sm truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                         {item.label}
                       </span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded tracking-wider shrink-0 ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded tracking-wider shrink-0 transition-opacity duration-200 ${isActive ? 'opacity-100 bg-indigo-500/20 text-indigo-300' : 'opacity-0 group-hover:opacity-100 bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>
                         {item.tcode}
                       </span>
                     </div>
@@ -312,7 +330,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
               })}
               </div>
             </div>
-          ))}
+          )})}
         </nav>
 
         {/* AI Insight strip */}

@@ -43,6 +43,8 @@ const Careers = ({ user, onLogout }) => {
     try {
       const payload = {
         job_id: selectedJob?.id || selectedJob?._id || "1",
+        name: applyForm.name,
+        email: applyForm.email,
         resume_text: `Skills: ${applyForm.skills}, LI: ${applyForm.linkedin_url}, Naukri: ${applyForm.naukri_url}`,
         peer_rating: (parseFloat(applyForm.colleague_rating) + parseFloat(applyForm.boss_rating)) / 2
       };
