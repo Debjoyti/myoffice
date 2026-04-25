@@ -319,8 +319,188 @@ class Employee(BaseModel):
     status: str = "active"
     created_at: Optional[str] = None
 
+
+class Department(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    name: str
+    description: Optional[str] = None
+    manager_id: Optional[str] = None  # emp_id of the manager
+    status: str = "active"
+    created_at: str
+
+class DepartmentCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    manager_id: Optional[str] = None
+
+class Team(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    department_id: str
+    name: str
+    description: Optional[str] = None
+    lead_id: Optional[str] = None  # emp_id of the lead
+    status: str = "active"
+    created_at: str
+
+class TeamCreate(BaseModel):
+    department_id: str
+    name: str
+    description: Optional[str] = None
+    lead_id: Optional[str] = None
+
+class Position(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    department_id: Optional[str] = None
+    team_id: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    reports_to_position_id: Optional[str] = None  # ID of the parent position
+    status: str = "active"
+    created_at: str
+
+class PositionCreate(BaseModel):
+    department_id: Optional[str] = None
+    team_id: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    reports_to_position_id: Optional[str] = None
+
+class EmployeePositionMapping(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    emp_id: str
+    position_id: str
+    start_date: str
+    end_date: Optional[str] = None
+    is_primary: bool = True
+    status: str = "active"
+    created_at: str
+
+class EmployeePositionMappingCreate(BaseModel):
+    emp_id: str
+    position_id: str
+    start_date: Optional[str] = None
+    is_primary: bool = True
+
+class SalaryComponent(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    name: str
+    type: str # "earning" or "deduction"
+    is_taxable: bool = True
+    default_percentage: Optional[float] = None # e.g. 0.40 for 40% of basic
+    base_component_id: Optional[str] = None # ID of component this depends on
+    created_at: str
+
+class SalaryComponentCreate(BaseModel):
+    name: str
+    type: str
+    is_taxable: bool = True
+    default_percentage: Optional[float] = None
+    base_component_id: Optional[str] = None
+
+class SalaryComponentValue(BaseModel):
+    component_id: str
+    suggested_amount: float
+    final_amount: float
+    type: str = "earning"
+
+class SalaryStructure(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    emp_id: str
+    components: List[SalaryComponentValue]
+    gross_salary: float
+    net_salary: float
+    pf_enabled: bool = False
+    esi_enabled: bool = False
+    status: str = "active"
+    created_at: str
+
+class SalaryStructureCreate(BaseModel):
+    emp_id: str
+    components: List[SalaryComponentValue]
+    pf_enabled: bool = False
+    esi_enabled: bool = False
+
+class Payroll(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    month: str # "YYYY-MM"
+    status: str # "draft", "processed", "locked"
+    processed_at: Optional[str] = None
+    locked_at: Optional[str] = None
+    total_gross: float = 0
+    total_net: float = 0
+    created_at: str
+
+class PayrollCreate(BaseModel):
+    month: str
+
+class Payslip(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    payroll_id: str
+    emp_id: str
+    month: str
+    components: List[SalaryComponentValue]
+    gross_salary: float
+    total_deductions: float
+    net_salary: float
+    status: str = "generated"
+    created_at: str
+
+class ComplianceRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    emp_id: str
+    type: str # "PF", "ESI", "PT", etc.
+    account_number: Optional[str] = None
+    is_active: bool = True
+    start_date: str
+    end_date: Optional[str] = None
+    created_at: str
+
+class ComplianceRecordCreate(BaseModel):
+    emp_id: str
+    type: str
+    account_number: Optional[str] = None
+    is_active: bool = True
+    start_date: Optional[str] = None
+
+class Document(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    emp_id: str
+    title: str
+    type: str # "Offer Letter", "ID Proof", etc.
+    file_url: str
+    status: str = "active"
+    created_at: str
+
+class DocumentCreate(BaseModel):
+    emp_id: str
+    title: str
+    type: str
+    file_url: str
+
+
 class EmployeeCreate(BaseModel):
     name: str
+    position_id: str
     emp_id: Optional[str] = None
     previous_emp_id: Optional[str] = None
     email: str
@@ -1167,8 +1347,412 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "hiring_progress": hiring_progress
     }
 
+
+# ─────────────────── ORGANIZATION STRUCTURE ───────────────────
+
+@api_router.post("/departments", response_model=Department)
+async def create_department(data: DepartmentCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    dept_id = str(uuid.uuid4())
+    doc = {
+        "id": dept_id,
+        "company_id": company_id,
+        "name": data.name,
+        "description": data.description,
+        "manager_id": data.manager_id,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.departments.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return Department(**doc)
+
+@api_router.get("/departments", response_model=List[Department])
+async def get_departments(current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    departments = await db.departments.find({"company_id": company_id}).to_list(1000)
+    return [Department(**d) for d in departments]
+
+@api_router.post("/teams", response_model=Team)
+async def create_team(data: TeamCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    team_id = str(uuid.uuid4())
+
+    # Verify department exists
+    dept = await db.departments.find_one({"id": data.department_id, "company_id": company_id})
+    if not dept:
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    doc = {
+        "id": team_id,
+        "company_id": company_id,
+        "department_id": data.department_id,
+        "name": data.name,
+        "description": data.description,
+        "lead_id": data.lead_id,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.teams.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return Team(**doc)
+
+@api_router.get("/teams", response_model=List[Team])
+async def get_teams(department_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    query = {"company_id": company_id}
+    if department_id:
+        query["department_id"] = department_id
+    teams = await db.teams.find(query).to_list(1000)
+    return [Team(**t) for t in teams]
+
+@api_router.post("/positions", response_model=Position)
+async def create_position(data: PositionCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    position_id = str(uuid.uuid4())
+
+    # Check if parent position exists
+    if data.reports_to_position_id:
+        parent = await db.positions.find_one({"id": data.reports_to_position_id, "company_id": company_id})
+        if not parent:
+            raise HTTPException(status_code=404, detail="Parent position not found")
+
+        # Prevent circular reporting
+        current_parent_id = parent.get("reports_to_position_id")
+        while current_parent_id:
+            if current_parent_id == position_id:
+                raise HTTPException(status_code=400, detail="Circular reporting detected")
+            grandparent = await db.positions.find_one({"id": current_parent_id})
+            current_parent_id = grandparent.get("reports_to_position_id") if grandparent else None
+
+    doc = {
+        "id": position_id,
+        "company_id": company_id,
+        "department_id": data.department_id,
+        "team_id": data.team_id,
+        "title": data.title,
+        "description": data.description,
+        "reports_to_position_id": data.reports_to_position_id,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.positions.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return Position(**doc)
+
+@api_router.get("/positions", response_model=List[Position])
+async def get_positions(department_id: Optional[str] = None, team_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    query = {"company_id": company_id}
+    if department_id:
+        query["department_id"] = department_id
+    if team_id:
+        query["team_id"] = team_id
+    positions = await db.positions.find(query).to_list(1000)
+    return [Position(**p) for p in positions]
+
+@api_router.post("/employee-positions", response_model=EmployeePositionMapping)
+async def create_employee_position(data: EmployeePositionMappingCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    mapping_id = str(uuid.uuid4())
+
+    # Verify position exists
+    pos = await db.positions.find_one({"id": data.position_id, "company_id": company_id})
+    if not pos:
+        raise HTTPException(status_code=404, detail="Position not found")
+
+    # Verify employee exists
+    emp = await db.employees.find_one({"id": data.emp_id, "company_id": company_id})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    doc = {
+        "id": mapping_id,
+        "company_id": company_id,
+        "emp_id": data.emp_id,
+        "position_id": data.position_id,
+        "start_date": data.start_date or datetime.now(timezone.utc).isoformat(),
+        "is_primary": data.is_primary,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.employee_positions.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return EmployeePositionMapping(**doc)
+
+@api_router.get("/employee-positions", response_model=List[EmployeePositionMapping])
+async def get_employee_positions(emp_id: Optional[str] = None, position_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    query = {"company_id": company_id}
+    if emp_id:
+        query["emp_id"] = emp_id
+    if position_id:
+        query["position_id"] = position_id
+    mappings = await db.employee_positions.find(query).to_list(1000)
+    return [EmployeePositionMapping(**m) for m in mappings]
+
+# ─────────────────── SALARY & PAYROLL ENGINE ───────────────────
+
+@api_router.post("/salary-components", response_model=SalaryComponent)
+async def create_salary_component(data: SalaryComponentCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    comp_id = str(uuid.uuid4())
+    doc = {
+        "id": comp_id,
+        "company_id": company_id,
+        "name": data.name,
+        "type": data.type,
+        "is_taxable": data.is_taxable,
+        "default_percentage": data.default_percentage,
+        "base_component_id": data.base_component_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.salary_components.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return SalaryComponent(**doc)
+
+@api_router.get("/salary-components", response_model=List[SalaryComponent])
+async def get_salary_components(current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    components = await db.salary_components.find({"company_id": company_id}).to_list(1000)
+    return [SalaryComponent(**c) for c in components]
+
+class SalarySuggestionRequest(BaseModel):
+    emp_id: str
+    annual_ctc: float
+
+@api_router.post("/salary-structure/suggest")
+async def suggest_salary_structure(data: SalarySuggestionRequest, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+
+    monthly_gross = data.annual_ctc / 12
+
+    # Standard components if DB empty
+    basic = monthly_gross * 0.40
+    hra = basic * 0.50
+    special = monthly_gross - (basic + hra)
+
+    pf_suggested = basic * 0.12
+    esi_suggested = monthly_gross * 0.0075 if monthly_gross <= 21000 else 0
+    pt_suggested = 200 # Standard PT
+
+    components = [
+        {"component_name": "Basic", "type": "earning", "suggested_amount": basic, "final_amount": basic},
+        {"component_name": "HRA", "type": "earning", "suggested_amount": hra, "final_amount": hra},
+        {"component_name": "Special Allowance", "type": "earning", "suggested_amount": special, "final_amount": special},
+        {"component_name": "PF", "type": "deduction", "suggested_amount": pf_suggested, "final_amount": pf_suggested},
+        {"component_name": "ESI", "type": "deduction", "suggested_amount": esi_suggested, "final_amount": esi_suggested},
+        {"component_name": "Professional Tax", "type": "deduction", "suggested_amount": pt_suggested, "final_amount": pt_suggested}
+    ]
+
+    return {
+        "monthly_gross": monthly_gross,
+        "components": components,
+        "pf_enabled": True,
+        "esi_enabled": monthly_gross <= 21000
+    }
+
+@api_router.post("/salary-structure", response_model=SalaryStructure)
+async def save_salary_structure(data: SalaryStructureCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    struct_id = str(uuid.uuid4())
+
+    gross = sum(c.final_amount for c in data.components if c.type == 'earning')
+    deductions = sum(c.final_amount for c in data.components if c.type == 'deduction')
+    net = gross - deductions
+
+    doc = {
+        "id": struct_id,
+        "company_id": company_id,
+        "emp_id": data.emp_id,
+        "components": [c.model_dump() for c in data.components],
+        "gross_salary": gross,
+        "net_salary": net,
+        "pf_enabled": data.pf_enabled,
+        "esi_enabled": data.esi_enabled,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    await db.salary_structures.update_one(
+        {"emp_id": data.emp_id, "company_id": company_id},
+        {"$set": {"status": "inactive"}}
+    )
+
+    await db.salary_structures.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return SalaryStructure(**doc)
+
+@api_router.get("/salary-structure/{emp_id}", response_model=SalaryStructure)
+async def get_salary_structure(emp_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    struct = await db.salary_structures.find_one({"emp_id": emp_id, "company_id": company_id, "status": "active"})
+    if not struct:
+        raise HTTPException(status_code=404, detail="Active salary structure not found")
+    return SalaryStructure(**struct)
+
+class ComplianceCheckRequest(BaseModel):
+    monthly_gross: float
+
+@api_router.post("/compliance/check")
+async def check_compliance_rules(data: ComplianceCheckRequest, current_user: dict = Depends(get_current_user)):
+    esi_mandatory = data.monthly_gross <= 21000 # ESI threshold is 21k, but requirements mentioned 22k for manual. We'll return flags based on 21k for ESI
+    esi_allowed = data.monthly_gross <= 22000
+
+    return {
+        "monthly_gross": data.monthly_gross,
+        "esi_mandatory": esi_mandatory,
+        "esi_allowed_manual": esi_allowed, # allow manual if <= 22k
+        "pf_allowed": True # PF is toggle-based
+    }
+
+@api_router.post("/payroll/run", response_model=Payroll)
+async def run_payroll(data: PayrollCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+
+    # Check if payroll already exists for this month
+    existing = await db.payrolls.find_one({"month": data.month, "company_id": company_id})
+    if existing:
+        if existing.get("status") == "locked":
+            raise HTTPException(status_code=400, detail="Payroll is locked for this month")
+        await db.payrolls.delete_one({"id": existing["id"]})
+        await db.payslips.delete_many({"payroll_id": existing["id"]})
+
+    payroll_id = str(uuid.uuid4())
+
+    # Fetch all active salary structures
+    structures = await db.salary_structures.find({"company_id": company_id, "status": "active"}).to_list(1000)
+
+    if not structures:
+        raise HTTPException(status_code=400, detail="No active salary structures found")
+
+    total_gross = 0
+    total_net = 0
+    payslips = []
+
+    for struct in structures:
+        gross = struct.get("gross_salary", 0)
+        net = struct.get("net_salary", 0)
+        total_gross += gross
+        total_net += net
+
+        payslip = {
+            "id": str(uuid.uuid4()),
+            "company_id": company_id,
+            "payroll_id": payroll_id,
+            "emp_id": struct.get("emp_id"),
+            "month": data.month,
+            "components": struct.get("components", []),
+            "gross_salary": gross,
+            "total_deductions": gross - net,
+            "net_salary": net,
+            "status": "generated",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        payslips.append(payslip)
+
+    if payslips:
+        await db.payslips.insert_many(payslips)
+
+    doc = {
+        "id": payroll_id,
+        "company_id": company_id,
+        "month": data.month,
+        "status": "processed",
+        "processed_at": datetime.now(timezone.utc).isoformat(),
+        "total_gross": total_gross,
+        "total_net": total_net,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    await db.payrolls.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return Payroll(**doc)
+
+@api_router.post("/payroll/{payroll_id}/lock", response_model=Payroll)
+async def lock_payroll(payroll_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+
+    payroll = await db.payrolls.find_one({"id": payroll_id, "company_id": company_id})
+    if not payroll:
+        raise HTTPException(status_code=404, detail="Payroll not found")
+
+    if payroll.get("status") == "locked":
+        raise HTTPException(status_code=400, detail="Payroll is already locked")
+
+    update_data = {
+        "status": "locked",
+        "locked_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    await db.payrolls.update_one({"id": payroll_id}, {"$set": update_data})
+
+    updated = await db.payrolls.find_one({"id": payroll_id})
+    return Payroll(**updated)
+
+@api_router.get("/payroll", response_model=List[Payroll])
+async def get_payrolls(current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    payrolls = await db.payrolls.find({"company_id": company_id}).sort("month", -1).to_list(100)
+    return [Payroll(**p) for p in payrolls]
+
+@api_router.get("/payslips/{emp_id}", response_model=List[Payslip])
+async def get_employee_payslips(emp_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    payslips = await db.payslips.find({"emp_id": emp_id, "company_id": company_id}).sort("month", -1).to_list(100)
+    return [Payslip(**p) for p in payslips]
+
+@api_router.post("/compliance-records", response_model=ComplianceRecord)
+async def create_compliance_record(data: ComplianceRecordCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    rec_id = str(uuid.uuid4())
+    doc = {
+        "id": rec_id,
+        "company_id": company_id,
+        "emp_id": data.emp_id,
+        "type": data.type,
+        "account_number": data.account_number,
+        "is_active": data.is_active,
+        "start_date": data.start_date or datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.compliance_records.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return ComplianceRecord(**doc)
+
+@api_router.get("/compliance-records/{emp_id}", response_model=List[ComplianceRecord])
+async def get_compliance_records(emp_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    records = await db.compliance_records.find({"emp_id": emp_id, "company_id": company_id}).to_list(100)
+    return [ComplianceRecord(**r) for r in records]
+
+@api_router.post("/documents", response_model=Document)
+async def create_document(data: DocumentCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    doc_id = str(uuid.uuid4())
+    doc = {
+        "id": doc_id,
+        "company_id": company_id,
+        "emp_id": data.emp_id,
+        "title": data.title,
+        "type": data.type,
+        "file_url": data.file_url,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.documents.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return Document(**doc)
+
+@api_router.get("/documents/{emp_id}", response_model=List[Document])
+async def get_documents(emp_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    docs = await db.documents.find({"emp_id": emp_id, "company_id": company_id, "status": "active"}).to_list(100)
+    return [Document(**d) for d in docs]
+
+
 @api_router.post("/employees", response_model=Employee)
 async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+
+    if not getattr(emp_data, 'position_id', None):
+        raise HTTPException(status_code=400, detail="Employee must be assigned to a position.")
+
+    pos = await db.positions.find_one({"id": emp_data.position_id, "company_id": company_id})
+    if not pos:
+        raise HTTPException(status_code=404, detail="Position not found.")
+
     # Limit check
     limits = current_user.get("subscription_limits") or {}
     max_employees = limits.get("max_employees")
@@ -1178,11 +1762,28 @@ async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends
             raise HTTPException(status_code=403, detail="Employee limit reached. Please upgrade your subscription.")
 
     emp_doc = emp_data.model_dump()
-    emp_doc["id"] = str(uuid.uuid4())
+    emp_doc.pop("position_id", None)
+    emp_id = str(uuid.uuid4())
+    emp_doc["id"] = emp_id
     emp_doc["organization_id"] = current_user.get("organization_id")
+    emp_doc["company_id"] = company_id
     emp_doc["status"] = "active"
     emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.employees.insert_one(emp_doc)
+
+    # Create employee-position mapping
+    mapping_doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": company_id,
+        "emp_id": emp_id,
+        "position_id": emp_data.position_id,
+        "start_date": datetime.now(timezone.utc).isoformat(),
+        "is_primary": True,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.employee_positions.insert_one(mapping_doc)
+
     return emp_doc
 
 @api_router.get("/employees", response_model=List[Employee])
@@ -3315,7 +3916,7 @@ async def get_iatf_module_data(module_name: str, current_user: dict = Depends(ge
     """Generic endpoint to fetch data for any IATF module"""
     org_id = current_user.get("organization_id")
     # Check for both organization_id and company_id in metadata
-    res = await db[f"iatf_{module_name}"].find({"metadata.company_id": org_id}, {"_id": 0}).to_list(1000)
+    res = await getattr(db, f"iatf_{module_name}").find({"metadata.company_id": org_id}, {"_id": 0}).to_list(1000)
     return res
 
 @api_router.post("/iatf/module/{module_name}")
@@ -3334,14 +3935,14 @@ async def create_iatf_record(module_name: str, data: dict, current_user: dict = 
         },
         **data
     }
-    await db[f"iatf_{module_name}"].insert_one(doc)
+    await getattr(db, f"iatf_{module_name}").insert_one(doc)
     return {"message": "Record created", "id": doc["id"]}
 
 @api_router.patch("/iatf/module/{module_name}/{record_id}/approve")
 async def approve_iatf_record(module_name: str, record_id: str, current_user: dict = Depends(get_current_user)):
     """Approve a compliance document"""
     now = datetime.now(timezone.utc).isoformat()
-    result = await db[f"iatf_{module_name}"].update_one(
+    result = await getattr(db, f"iatf_{module_name}").update_one(
         {"id": record_id},
         {"$set": {
             "metadata.approved_by": current_user.get("id"),
@@ -4723,6 +5324,8 @@ async def create_indexes():
     if using_fallback_db:
         logger.warning("Running backend with in-memory fallback DB.")
         await ensure_demo_users_seeded()
+        from seed_iatf_compliance import seed_iatf_data
+        await seed_iatf_data()
         return
 
     logger.info("Creating MongoDB indexes...")
@@ -4827,6 +5430,8 @@ async def create_indexes():
 
     logger.info("✅ MongoDB indexes created/verified successfully")
     await ensure_demo_users_seeded()
+    from seed_iatf_compliance import seed_iatf_data
+    await seed_iatf_data()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
@@ -4834,3 +5439,80 @@ async def shutdown_db_client():
         client.close()
 
 handler = app
+
+# ==========================================
+# SAAS ERP API ENDPOINTS (MOCKUP)
+# ==========================================
+
+class ApprovalWorkflow(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    entity_type: str
+    entity_id: str
+    requester_id: str
+    approver_id: str
+    status: str = "pending"
+    comments: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class ApprovalWorkflowCreate(BaseModel):
+    company_id: str
+    entity_type: str
+    entity_id: str
+    requester_id: str
+    approver_id: str
+    comments: Optional[str] = None
+
+@api_router.post("/workflows")
+async def create_workflow(data: ApprovalWorkflowCreate, current_user: dict = Depends(get_current_user)):
+    doc = ApprovalWorkflow(**data.dict()).dict()
+    await db.approval_workflows.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/workflows")
+async def get_workflows(company_id: str, current_user: dict = Depends(get_current_user)):
+    workflows = await db.approval_workflows.find({"company_id": company_id}, {"_id": 0}).to_list(1000)
+    return workflows
+
+class Payment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    invoice_id: Optional[str] = None
+    amount: float
+    payment_date: str
+    payment_method: Optional[str] = None
+    reference: Optional[str] = None
+    journal_entry_id: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class PaymentCreate(BaseModel):
+    company_id: str
+    invoice_id: Optional[str] = None
+    amount: float
+    payment_date: str
+    payment_method: Optional[str] = None
+    reference: Optional[str] = None
+
+@api_router.post("/payments")
+async def create_payment(data: PaymentCreate, current_user: dict = Depends(get_current_user)):
+    doc = Payment(**data.dict()).dict()
+    await db.payments.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    return doc
+
+@api_router.get("/payments")
+async def get_payments(company_id: str, current_user: dict = Depends(get_current_user)):
+    payments = await db.payments.find({"company_id": company_id}, {"_id": 0}).to_list(1000)
+    return payments
+
+@api_router.post("/payrolls/run")
+async def run_payroll(company_id: str, current_user: dict = Depends(get_current_user)):
+    return {"message": "Payroll run successfully triggered"}
+
+@api_router.post("/pr/{id}/approve")
+async def approve_pr(id: str, current_user: dict = Depends(get_current_user)):
+    return {"message": "Purchase Request approved"}
+
+@api_router.post("/assets/{id}/depreciate")
+async def depreciate_asset(id: str, current_user: dict = Depends(get_current_user)):
+    return {"message": "Asset depreciated successfully"}

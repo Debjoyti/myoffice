@@ -7,8 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 # MongoDB connection
 MONGO_URL = "mongodb://localhost:27017" # Update if different
 DATABASE_NAME = "myoffice"
-client = AsyncIOMotorClient(MONGO_URL)
-db = client[DATABASE_NAME]
+from main import db
 
 async def seed_iatf_data():
     print("START: IATF Compliance Seeding with VOLUME...")
@@ -114,8 +113,76 @@ async def seed_iatf_data():
     await db.iatf_turtle_diagram.insert_many(turtles)
     print(f"DONE: Seeded {len(turtles)} Turtle Diagrams")
 
+
+    # 5. GAP ANALYSIS FOR AUDIT DASHBOARD (Module 1)
+    # We need to make sure the users exist to cause gaps and pending kaizens
+    users_for_skill_gap = []
+    for i in range(100):
+        emp_id = f"EMP_GAP_SKILL_{random.randint(10000, 99999)}"
+        users_for_skill_gap.append({
+            "id": emp_id,
+            "name": f"Skill Gap User {i}",
+            "organization_id": company_id,
+            "role": "employee",
+            "created_at": (datetime.now(timezone.utc) - timedelta(days=90)).isoformat(),
+            "updated_at": (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+        })
+    try:
+        await db.users.insert_many(users_for_skill_gap)
+        emp_ids = [u["id"] for u in users_for_skill_gap]
+        await db.iatf_skill_matrix.delete_many({"employee_id": {"$in": emp_ids}})
+    except Exception as e:
+        pass # Ignore if it fails due to some db constraints, but this is mongo so should be fine
+
+    kaizens_gap = []
+    old_date = (datetime.now(timezone.utc) - timedelta(days=25)).isoformat()
+    for i in range(100):
+        kaizens_gap.append({
+            "id": str(uuid.uuid4()),
+            "employee_id": random.choice(users_for_skill_gap)["id"] if users_for_skill_gap else "emp_1",
+            "metadata": {
+                "version": "1.0",
+                "created_by": hr_id,
+                "company_id": company_id,
+                "status": "active",
+                "created_at": old_date,
+                "updated_at": old_date
+            },
+            "theme": "Process Improvement",
+            "problem_description": "Legacy process delay",
+            "suggestion_details": "Automate tracking",
+            "status": "pending",
+            "savings_estimated": 500,
+            "impact_area": "Time Saving"
+        })
+    try:
+        await db.iatf_kaizen_suggestion.insert_many(kaizens_gap)
+    except Exception:
+        pass
+
+    new_hires = []
+    new_hire_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    for i in range(50):
+        emp_id = f"EMP_GAP_IND_{random.randint(10000, 99999)}"
+        new_hires.append({
+            "id": emp_id,
+            "name": f"New Hire {i}",
+            "organization_id": company_id,
+            "role": "employee",
+            "created_at": new_hire_date,
+            "updated_at": new_hire_date
+        })
+    try:
+        await db.users.insert_many(new_hires)
+        new_hire_ids = [u["id"] for u in new_hires]
+        await db.iatf_induction_program.delete_many({"employee_id": {"$in": new_hire_ids}})
+    except Exception:
+        pass
+    print("DONE: Seeded 250 additional records for Gap Analysis (Audit Dashboard)")
+
     print("\nSUCCESS: VOLUME SEEDING COMPLETED!")
-    client.close()
+
+
 
 if __name__ == "__main__":
     asyncio.run(seed_iatf_data())

@@ -1,0 +1,4 @@
+1. Add Supabase Migration File for missing SAAS ERP functionality (HRMS, Organization Structure, Payroll, Finance, Procurement, Inventory, Asset Management).
+2. Create python tests for business workflows to show validation.
+3. Add backend endpoints/logic if required by the prompt, but given "FastAPI" and "MongoDB" are used here, wait, the prompt says "Built on Supabase (PostgreSQL + Auth + RLS)". I need to make sure I output a "Final Supabase SQL schema", "API structure", "Business logic explanation", "Event-driven architecture", "Test scenarios", "Bug fix report" and "FINAL STATUS".
+4. I will create a python script that prints these out or simply writes them to a file like `FINAL_REPORT.md` so the user can see them, and I will also implement these in the codebase where it makes sense (Supabase schema in `supabase/migrations/`).
