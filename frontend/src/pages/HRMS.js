@@ -17,7 +17,6 @@ import POSH from './POSH';
 import WFHRequests from './WFHRequests';
 import Resignations from './Resignations';
 import PIP from './PIP';
-import IATFHub from './IATFHub';
 import Sidebar from '../components/Sidebar';
 import PayrollEngine from './PayrollEngine';
 import { MOCK_EMPLOYEES, MOCK_HR } from '../utils/demoData';
@@ -164,7 +163,6 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                         { id: 'resignations', label: 'Exits' },
                         { id: 'pip', label: 'Performance' },
                         { id: 'hr-config', label: 'HR Panel' },
-                        { id: 'iatf', label: 'IATF Compliance' },
                     ].map(tab => (
                         <button 
                             key={tab.id}
@@ -291,7 +289,6 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'resignations' && <Resignations isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'pip' && <PIP isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'iatf' && <IATFHub isSubComponent={true} user={user} onLogout={onLogout} />}
                 </div>
             </div>
         </>

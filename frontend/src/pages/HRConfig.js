@@ -3,7 +3,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import {
   Plus, X, Trash2, Users, ClipboardList, FileText, Gift, Calendar, Clock,
-  CreditCard, Star, ChevronDown, ChevronRight, Download, RefreshCw, CheckCircle
+  CreditCard, Star, ChevronDown, Building2, ChevronRight, Download, RefreshCw, CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
