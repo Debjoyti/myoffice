@@ -1323,6 +1323,29 @@ async def get_departments(current_user: dict = Depends(get_current_user)):
     departments = await db.departments.find({"company_id": company_id}).to_list(1000)
     return [Department(**d) for d in departments]
 
+@api_router.put("/departments/{dept_id}", response_model=Department)
+async def update_department(dept_id: str, data: DepartmentCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    update_doc = {
+        "name": data.name,
+        "description": data.description,
+        "manager_id": data.manager_id,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    result = await db.departments.update_one({"id": dept_id, "company_id": company_id}, {"$set": update_doc})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Department not found")
+    doc = await db.departments.find_one({"id": dept_id, "company_id": company_id})
+    return Department(**doc)
+
+@api_router.delete("/departments/{dept_id}")
+async def delete_department(dept_id: str, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user)
+    result = await db.departments.delete_one({"id": dept_id, "company_id": company_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Department not found")
+    return {"status": "deleted"}
+
 @api_router.post("/teams", response_model=Team)
 async def create_team(data: TeamCreate, current_user: dict = Depends(get_current_user)):
     company_id = get_accountant_company(current_user)
@@ -1950,6 +1973,26 @@ async def get_projects(current_user: dict = Depends(get_current_user)):
     projects = await db.projects.find(query, {"_id": 0}).to_list(1000)
     return projects
 
+
+@api_router.put("/projects/{project_id}", response_model=Project)
+async def update_project(project_id: str, data: ProjectCreate, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    update_doc = data.model_dump()
+    update_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.projects.update_one({"id": project_id, "organization_id": org_id}, {"$set": update_doc})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    doc = await db.projects.find_one({"id": project_id, "organization_id": org_id})
+    return Project(**doc)
+
+@api_router.delete("/projects/{project_id}")
+async def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.projects.delete_one({"id": project_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"status": "deleted"}
+
 @api_router.post("/tasks", response_model=Task)
 async def create_task(task_data: TaskCreate, current_user: dict = Depends(get_current_user)):
     task_doc = task_data.model_dump()
@@ -1977,6 +2020,15 @@ async def update_task_status(task_id: str, status_data: StatusUpdate, current_us
     return {"message": "Task status updated"}
 
 VALID_LEAD_STATUSES = {"new", "contacted", "qualified", "proposal", "negotiation", "closed-won", "closed-lost"}
+
+
+@api_router.delete("/tasks/{task_id}")
+async def delete_task(task_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.tasks.delete_one({"id": task_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"status": "deleted"}
 
 @api_router.post("/leads", response_model=Lead)
 async def create_lead(lead_data: LeadCreate, current_user: dict = Depends(get_current_user)):
@@ -2009,6 +2061,15 @@ async def update_lead_status(lead_id: str, status_data: StatusUpdate, current_us
         raise HTTPException(status_code=404, detail="Lead not found")
     return {"message": "Lead status updated"}
 
+
+@api_router.delete("/leads/{lead_id}")
+async def delete_lead(lead_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.leads.delete_one({"id": lead_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return {"status": "deleted"}
+
 @api_router.post("/deals", response_model=Deal)
 async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_current_user)):
     deal_doc = deal_data.model_dump()
@@ -2025,6 +2086,15 @@ async def get_deals(current_user: dict = Depends(get_current_user)):
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
     deals = await db.deals.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return deals
+
+
+@api_router.delete("/deals/{deal_id}")
+async def delete_deal(deal_id: str, current_user: dict = Depends(get_current_user)):
+    org_id = current_user.get("organization_id")
+    result = await db.deals.delete_one({"id": deal_id, "organization_id": org_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    return {"status": "deleted"}
 
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(exp_data: ExpenseCreate, current_user: dict = Depends(get_current_user)):
@@ -3685,6 +3755,7 @@ async def update_invoice_status(invoice_id: str, status_data: dict, current_user
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return {"message": f"Invoice marked as {new_status}", "status": new_status}
+
 
 # ═══════════════════════════════════════════════════════════
 # VENDORS CRUD
