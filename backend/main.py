@@ -234,6 +234,7 @@ class JobApplication(BaseModel):
 
 class AIInterviewMessage(BaseModel):
     message: str
+    time_taken_seconds: Optional[int] = 30
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -1079,6 +1080,7 @@ class PayslipCreate(BaseModel):
     earnings: list
     deductions: list
 
+
 class JobPostingCreate(BaseModel):
     title: str
     department: str
@@ -1086,7 +1088,12 @@ class JobPostingCreate(BaseModel):
     type: str
     description: str
 
+class JDCreate(BaseModel):
+    jd_text: str
+    organization_id: Optional[str] = "default_org"
+
 class Candidate(BaseModel):
+
     model_config = ConfigDict(extra="ignore")
     id: str
     job_id: str
@@ -5717,8 +5724,41 @@ async def ensure_demo_users_seeded():
     logger.info("Demo seed bootstrap completed for org '%s'", DEFAULT_ORG_ID)
 
 
+
 # --- Careers Endpoints ---
+@app.post("/api/careers/jobs/create-from-jd")
+async def create_job_from_jd(payload: JDCreate):
+    from ai_recruitment import parse_jd
+    parsed_data = parse_jd(payload.jd_text)
+
+    # Generate a title heuristic
+    lines = payload.jd_text.strip().split("\n")
+    title = lines[0] if len(lines[0]) < 50 else "New AI Role"
+
+    skills_str = ", ".join([s["name"] for s in parsed_data["parsed_skills"]])
+
+    import uuid
+    job_id = str(uuid.uuid4())
+    job_doc = {
+        "id": job_id,
+        "title": title,
+        "department": "Engineering",
+        "location": "Remote",
+        "type": "Full-time",
+        "description": payload.jd_text,
+        "skills_required": skills_str,
+        "parsed_skills": parsed_data["parsed_skills"],
+        "experience_level": parsed_data["experience_level"],
+        "status": "open",
+        "organization_id": payload.organization_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    await db.jobs.insert_one(job_doc)
+    return {"message": "Job created autonomously via AI", "job_id": job_id, "parsed_data": parsed_data}
+
 @app.get("/api/careers/jobs")
+
 async def get_career_jobs():
     jobs_cursor = db.jobs.find({})
     jobs = await jobs_cursor.to_list(length=100)
@@ -5738,14 +5778,18 @@ async def get_career_jobs():
 @app.post("/api/careers/apply")
 async def apply_job(application: JobApplication):
     # This route is used directly from the careers public page (no auth).
-    # Since there's no auth, we must look up the job to find the organization_id.
     job = await db.jobs.find_one({"id": application.job_id})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     status = "applied"
-    if application.peer_rating and application.peer_rating < 3.0:
-        status = "rejected"
+
+    # Analyze resume using AI Recruitment Engine
+    from ai_recruitment import analyze_resume
+    jd_skills = job.get("parsed_skills", [])
+    resume_analysis = {}
+    if application.resume_text and jd_skills:
+        resume_analysis = analyze_resume(application.resume_text, jd_skills)
 
     import uuid
     candidate_id = str(uuid.uuid4())
@@ -5758,52 +5802,102 @@ async def apply_job(application: JobApplication):
         "resume_text": application.resume_text,
         "peer_rating": application.peer_rating,
         "status": status,
+        "resume_analysis": resume_analysis, # Store analysis for AI Interview
         "ai_interview_rating": None,
+        "final_score": 0.0,
         "organization_id": job.get("organization_id"),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.candidates.insert_one(doc)
-    return {"message": "Application received", "candidate_id": candidate_id, "status": status}
+    return {"message": "Application received", "candidate_id": candidate_id, "status": status, "resume_analysis": resume_analysis}
 
 @app.post("/api/careers/ai-interview/start/{candidate_id}")
 async def start_interview(candidate_id: str):
     candidate = await db.candidates.find_one({"id": candidate_id})
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
-    if candidate["status"] == "rejected":
-        raise HTTPException(status_code=400, detail="Candidate rejected due to peer ratings")
+
+    job = await db.jobs.find_one({"id": candidate.get("job_id")})
+    if not job:
+        raise HTTPException(status_code=404, detail="Associated Job not found")
+
+    from ai_recruitment import generate_interview_questions
+    jd_skills = job.get("parsed_skills", [])
+    resume_analysis = candidate.get("resume_analysis", {})
+
+    # Pre-generate a list of dynamic questions
+    interview_plan = generate_interview_questions(jd_skills, resume_analysis)
+    questions = interview_plan.get("questions", [])
 
     session_id = f"sess_{candidate_id}"
+
+    first_q_text = questions[0]["text"] if questions else "Welcome! Let's start the interview. Can you tell me about your experience?"
+
     doc = {
         "session_id": session_id,
         "candidate_id": candidate_id,
         "round": 1,
+        "questions": questions,
+        "current_question_index": 0,
+        "scores": [],
         "messages": [
-            {"role": "ai", "content": "Welcome! Let's start the interview. Can you tell me about your experience?"}
-        ]
+            {"role": "ai", "content": first_q_text}
+        ],
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
+    await db.interview_sessions.delete_many({"session_id": session_id})
     await db.interview_sessions.insert_one(doc)
+
+    # Update candidate status
+    await db.candidates.update_one({"id": candidate_id}, {"$set": {"status": "interviewing"}})
+
     return {"session_id": session_id, "messages": doc["messages"]}
 
+class AIInterviewMessageExtended(BaseModel):
+    message: str
+    time_taken_seconds: Optional[int] = 30
+
 @app.post("/api/careers/ai-interview/{session_id}/chat")
-async def interview_chat(session_id: str, msg: AIInterviewMessage):
+async def interview_chat(session_id: str, msg: AIInterviewMessageExtended):
     session = await db.interview_sessions.find_one({"session_id": session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     user_msg = {"role": "user", "content": msg.message}
 
-    reply = "Interesting. Can you elaborate on that?"
-    if "python" in msg.message.lower():
-        reply = "Great. How do you handle concurrency in Python?"
+    # Evaluate the answer
+    from ai_recruitment import evaluate_answer
+    questions = session.get("questions", [])
+    curr_idx = session.get("current_question_index", 0)
+
+    curr_question = questions[curr_idx] if curr_idx < len(questions) else {"skill": "general"}
+
+    evaluation = evaluate_answer(curr_question, msg.message, msg.time_taken_seconds)
+
+    # Prepare the next question
+    next_idx = curr_idx + 1
+    if next_idx < len(questions):
+        next_q_text = questions[next_idx]["text"]
+        reply = "Thank you. " + next_q_text
+    else:
+        reply = "Thank you. We have no further questions. You can end the interview now."
 
     ai_msg = {"role": "ai", "content": reply}
 
+    # Store the result
     await db.interview_sessions.update_one(
         {"session_id": session_id},
-        {"$push": {"messages": {"$each": [user_msg, ai_msg]}}}
+        {
+            "$push": {
+                "messages": {"$each": [user_msg, ai_msg]},
+                "scores": evaluation
+            },
+            "$set": {
+                "current_question_index": next_idx
+            }
+        }
     )
-    return {"reply": reply}
+    return {"reply": reply, "evaluation_flags": evaluation.get("flags", [])}
 
 @app.post("/api/careers/ai-interview/{session_id}/finish")
 async def finish_interview(session_id: str):
@@ -5812,19 +5906,56 @@ async def finish_interview(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
 
     candidate_id = session["candidate_id"]
+    scores = session.get("scores", [])
 
-    rating = 8.5
+    # Calculate Final Score and AI Recommendation
+    final_score = 0.0
+    total_flags = []
+
+    if scores:
+        total_score = sum(s["final_score"] for s in scores)
+        final_score = round(total_score / len(scores), 1)
+        for s in scores:
+            total_flags.extend(s.get("flags", []))
+
+    # Determine recommendation
+    if "copy_paste_detected" in total_flags or final_score < 4.0:
+        recommendation = "Reject"
+    elif final_score >= 8.5:
+        recommendation = "Strong Hire"
+    elif final_score >= 7.0:
+        recommendation = "Hire"
+    else:
+        recommendation = "Borderline"
+
+    ai_report = {
+        "final_score": final_score,
+        "recommendation": recommendation,
+        "risk_flags": list(set(total_flags)),
+        "detailed_scores": scores
+    }
 
     await db.candidates.update_one(
         {"id": candidate_id},
-        {"$set": {"ai_interview_rating": rating, "status": "ai_interview_done"}}
+        {
+            "$set": {
+                "ai_interview_rating": final_score,
+                "final_score": final_score,
+                "ai_report": ai_report,
+                "status": "ai_interview_done"
+            }
+        }
     )
 
-    return {"message": "Interview finished", "rating": rating}
+    return {"message": "Interview finished", "final_score": final_score, "report": ai_report}
 
 @app.get("/api/careers/candidates")
-async def get_career_candidates():
-    cursor = db.candidates.find({})
+async def get_career_candidates(job_id: Optional[str] = None):
+    query = {}
+    if job_id:
+        query["job_id"] = job_id
+
+    cursor = db.candidates.find(query).sort("final_score", -1) # Sort by merit (descending)
     candidates = await cursor.to_list(length=100)
     for c in candidates:
         if "_id" in c:
