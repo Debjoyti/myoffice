@@ -128,13 +128,27 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
   const removeE = (i) => setEarnings(p   => p.filter((_, ii) => ii !== i));
   const removeD = (i) => setDeductions(p => p.filter((_, ii) => ii !== i));
 
-  const handleGenerateSalarySlip = () => {
+  const handleGenerateSalarySlip = async () => {
     if (!selectedEmp) { toast.warning('Please select an employee first'); return; }
     const emp = employees.find(e => e.id === selectedEmp);
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/payslips`, {
+        employee_id: selectedEmp,
+        net_salary: netSalary,
+        earnings,
+        deductions
+      }, { headers: { Authorization: `Bearer ${token}` } });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save payslip to backend');
+    }
+
     const win = window.open('', '_blank');
     win.document.write(generateSalarySlipHTML(emp, earnings, deductions, netSalary, totalEarnings, totalDeductions));
     win.document.close();
-    toast.success('Salary slip opened for printing');
+    toast.success('Salary slip saved and opened for printing');
   };
 
   const generateSalarySlipHTML = (emp, earn, ded, net, totalE, totalD) => `

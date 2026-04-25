@@ -218,8 +218,10 @@ def _invalidate_user_cache(user_id: str):
 
 class JobApplication(BaseModel):
     job_id: str
-    resume_text: str
-    peer_rating: float
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    resume_text: Optional[str] = None
+    peer_rating: Optional[float] = None
 
 class AIInterviewMessage(BaseModel):
     message: str
@@ -316,6 +318,17 @@ class Employee(BaseModel):
     employee_insurance_reg_date: Optional[str] = None
     employee_insurance_expiry: Optional[str] = None
     
+    food_allowance: Optional[str] = "No"
+    food_charges: Optional[str] = None
+    food_start_date: Optional[str] = None
+    food_close_date: Optional[str] = None
+    pf_enabled: Optional[str] = "No"
+    bank_name: Optional[str] = None
+    bank_ifsc: Optional[str] = None
+    bank_account_number: Optional[str] = None
+    bank_holder_name: Optional[str] = None
+    nationality: Optional[str] = None
+
     photo: Optional[str] = None
     status: str = "active"
     created_at: Optional[str] = None
@@ -523,6 +536,18 @@ class EmployeeCreate(BaseModel):
     driving_license: Optional[str] = None
     driving_expiry: Optional[str] = None
     esi_number: Optional[str] = None
+
+    food_allowance: Optional[str] = "No"
+    food_charges: Optional[str] = None
+    food_start_date: Optional[str] = None
+    food_close_date: Optional[str] = None
+    pf_enabled: Optional[str] = "No"
+    bank_name: Optional[str] = None
+    bank_ifsc: Optional[str] = None
+    bank_account_number: Optional[str] = None
+    bank_holder_name: Optional[str] = None
+    nationality: Optional[str] = None
+
     photo: Optional[str] = None
 
 class Attendance(BaseModel):
@@ -970,6 +995,22 @@ class JobPosting(BaseModel):
     organization_id: str
     created_at: str
 
+class Payslip(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    net_salary: float
+    earnings: list
+    deductions: list
+    organization_id: str
+    created_at: str
+
+class PayslipCreate(BaseModel):
+    employee_id: str
+    net_salary: float
+    earnings: list
+    deductions: list
+
 class JobPostingCreate(BaseModel):
     title: str
     department: str
@@ -984,6 +1025,9 @@ class Candidate(BaseModel):
     name: str
     email: EmailStr
     resume_url: Optional[str] = None
+    resume_text: Optional[str] = None
+    peer_rating: Optional[float] = None
+    ai_interview_rating: Optional[float] = None
     status: str = "applied" # applied, screening, interview, offered, rejected
     organization_id: str
     created_at: str
@@ -993,6 +1037,9 @@ class CandidateCreate(BaseModel):
     name: str
     email: EmailStr
     resume_url: Optional[str] = None
+    resume_text: Optional[str] = None
+    peer_rating: Optional[float] = None
+    ai_interview_rating: Optional[float] = None
 
 class KnowledgeBaseArticle(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -2924,6 +2971,15 @@ async def get_vendors(current_user: dict = Depends(get_current_user)):
     return await db.vendors.find(query, {"_id": 0}).to_list(1000)
 
 # Assets (Office Management)
+@api_router.post("/payslips", response_model=Payslip)
+async def create_payslip(data: PayslipCreate, current_user: dict = Depends(get_current_user)):
+    doc = data.model_dump()
+    doc["id"] = f"PS-{str(uuid.uuid4())[:8].upper()}"
+    doc["organization_id"] = current_user.get("organization_id")
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.payslips.insert_one(doc)
+    return doc
+
 @api_router.post("/assets", response_model=Asset)
 async def create_asset(data: AssetCreate, current_user: dict = Depends(get_current_user)):
     doc = data.model_dump()
@@ -5153,22 +5209,32 @@ async def get_career_jobs():
 
 @app.post("/api/careers/apply")
 async def apply_job(application: JobApplication):
+    # This route is used directly from the careers public page (no auth).
+    # Since there's no auth, we must look up the job to find the organization_id.
+    job = await db.jobs.find_one({"id": application.job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
     status = "applied"
-    if application.peer_rating < 3.0:
+    if application.peer_rating and application.peer_rating < 3.0:
         status = "rejected"
 
     import uuid
     candidate_id = str(uuid.uuid4())
     doc = {
-        "_id": candidate_id,
         "id": candidate_id,
         "job_id": application.job_id,
+        "name": application.name if hasattr(application, 'name') and application.name else "Unknown Applicant",
+        "email": application.email if hasattr(application, 'email') and application.email else "unknown@example.com",
+        "resume_url": None,
         "resume_text": application.resume_text,
         "peer_rating": application.peer_rating,
         "status": status,
-        "ai_interview_rating": None
+        "ai_interview_rating": None,
+        "organization_id": job.get("organization_id"),
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
-    result = await db.candidates.insert_one(doc)
+    await db.candidates.insert_one(doc)
     return {"message": "Application received", "candidate_id": candidate_id, "status": status}
 
 @app.post("/api/careers/ai-interview/start/{candidate_id}")
