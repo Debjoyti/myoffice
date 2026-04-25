@@ -83,7 +83,7 @@ const Projects = ({ user, onLogout }) => {
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="projects" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content">
         <div className="page-inner">
           <div className="page-header">

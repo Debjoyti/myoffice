@@ -82,7 +82,11 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
   const [showModal, setShowModal] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('employeesActiveTab') || 'personal');
+
+  useEffect(() => {
+    localStorage.setItem('employeesActiveTab', activeTab);
+  }, [activeTab]);
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [editId, setEditId] = useState(null);
   const [searchQ, setSearchQ] = useState('');
@@ -583,7 +587,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="employees" setActivePage={() => {}} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content"><div className="page-inner">{content}</div></div>
     </div>
   );

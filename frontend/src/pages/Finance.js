@@ -21,7 +21,11 @@ const getCashFlowAdvice = (invoices, expenses) => {
 };
 
 const Finance = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('invoices');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('financeActiveTab') || 'invoices');
+
+  useEffect(() => {
+    localStorage.setItem('financeActiveTab', activeTab);
+  }, [activeTab]);
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -178,7 +182,7 @@ const Finance = ({ user, onLogout }) => {
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="finance" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content">
         <div className="page-inner">
           {/* Breadcrumb */}

@@ -27,7 +27,11 @@ const API = `${BACKEND_URL}/api`;
 
 const HRMS = ({ user, onLogout, isSubComponent }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [activeTab, setActiveTab] = useState(localStorage.getItem('hrmsActiveTab') || 'dashboard');
+
+    useEffect(() => {
+        localStorage.setItem('hrmsActiveTab', activeTab);
+    }, [activeTab]);
     const [employees, setEmployees] = useState([// eslint-disable-next-line react-hooks/exhaustive-deps
 // eslint-disable-next-line react-hooks/exhaustive-deps
 
@@ -299,7 +303,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
 
     return (
         <div className="page-root">
-            <Sidebar user={user} onLogout={onLogout} activePage="hrms" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+            <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
             <div className="page-content">
                 {content}
             </div>

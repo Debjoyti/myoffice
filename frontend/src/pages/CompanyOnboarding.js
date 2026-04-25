@@ -377,7 +377,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
   return (
     <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a' }}>
-      <Sidebar user={user} onLogout={onLogout} activePage="company-onboarding" setActivePage={() => {}} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>

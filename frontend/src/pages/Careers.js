@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 
 const Careers = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('jobBoard');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('careersActiveTab') || 'jobBoard');
+
+  useEffect(() => {
+    localStorage.setItem('careersActiveTab', activeTab);
+  }, [activeTab]);
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
 

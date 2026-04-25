@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 
-const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, setIsSidebarOpen }) => {
+const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
   const [commandInput, setCommandInput] = useState('');
   const [commandFocused, setCommandFocused] = useState(false);
   const commandInputRef = useRef(null);
@@ -119,16 +119,6 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
 
   const flatMenuItems = visibleGroups.flatMap(cat => cat.items);
 
-  const pathToId = {
-    '/': 'dashboard', '/employee-management': 'employee-management', '/projects': 'projects',
-    '/crm': 'crm', '/expenses': 'expenses', '/business-orders': 'business-orders',
-    '/hrms': 'hrms', '/team': 'team', '/saas-admin': 'saas-admin', '/finance': 'finance',
-    '/timesheets': 'timesheets', '/support-desk': 'support-desk', '/feed': 'feed',
-    '/assets': 'assets', '/recruitment': 'recruitment', '/kb': 'kb', '/audit': 'audit',
-    '/settings': 'settings', '/subscription': 'subscription', '/company-onboarding': 'company-onboarding',
-    '/accountant': 'accountant', '/travel': 'travel', '/iatf-hub': 'iatf-hub', '/careers': 'careers',
-  };
-  const currentActivePage = pathToId[location.pathname] || activePage;
 
   // Command palette search
   const commandResults = useMemo(() => {
@@ -143,7 +133,6 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
   }, [commandInput, flatMenuItems]);
 
   const handleCommandSelect = (item) => {
-    setActivePage(item.id);
     navigate(item.path);
     setCommandInput('');
     setCommandFocused(false);
@@ -304,7 +293,7 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
               <div className={`space-y-0.5 overflow-hidden transition-all duration-300 ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100 mt-1'}`}>
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = currentActivePage === item.id;
+                  const isActive = location.pathname === item.path;
                 return (
                   <Link
                     key={item.id}
@@ -312,7 +301,6 @@ const Sidebar = ({ user, onLogout, activePage, setActivePage, isSidebarOpen, set
                     data-testid={`nav-${item.id}`}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${isActive ? 'bg-indigo-600/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
                     onClick={() => {
-                      setActivePage(item.id);
                       if (window.innerWidth < 1024) setIsSidebarOpen(false);
                     }}
                   >

@@ -3,12 +3,16 @@ import Sidebar from '../components/Sidebar';
 import { Settings as SettingsIcon, Globe, Shield, Bell, Palette, Building } from 'lucide-react';
 
 const Settings = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('settingsActiveTab') || 'general');
+
+  useEffect(() => {
+    localStorage.setItem('settingsActiveTab', activeTab);
+  }, [activeTab]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="page-root">
-      <Sidebar user={user} onLogout={onLogout} activePage="settings" setActivePage={() => { }} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="page-content">
         <div className="page-inner">
           <div className="page-header">
