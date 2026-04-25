@@ -23,6 +23,10 @@ const getCashFlowAdvice = (invoices, expenses) => {
 const Finance = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('invoices');
   const [invoices, setInvoices] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [paymentData, setPaymentData] = useState({ amount: 0, payment_method: 'bank_transfer', payment_date: new Date().toISOString().split('T')[0], reference_number: '' });
   const [customers, setCustomers] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +39,21 @@ const Finance = ({ user, onLogout }) => {
     customer_id: '', items: [initialItem()], due_date: '', notes: ''
   });
   const [customerForm, setCustomerForm] = useState({ name: '', contact_person: '', email: '', phone: '', address: '' });
+
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/payments`, { headers: { Authorization: `Bearer ${token}` } });
+      setPayments(response.data || []);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
 
   useEffect(() => { fetchData(); }, []);
 
@@ -78,6 +97,36 @@ const Finance = ({ user, onLogout }) => {
     return s + base * ((parseFloat(item.gst_rate) || 0) / 100);
   }, 0);
   const grandTotal = subtotal + gstTotal;
+
+
+  const handleOpenPaymentModal = (invoice) => {
+    setSelectedInvoice(invoice);
+    setPaymentData({
+      invoice_id: invoice.id,
+      amount: invoice.total_amount - (invoice.amount_paid || 0),
+      payment_method: 'bank_transfer',
+      payment_date: new Date().toISOString().split('T')[0],
+      reference_number: ''
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/payments`, paymentData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Payment recorded successfully');
+      setShowPaymentModal(false);
+      fetchData(); // Refresh invoices and GL
+      fetchPayments();
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      toast.error('Failed to record payment');
+    }
+  };
 
   const handleInvoiceSubmit = async (e) => {
     e.preventDefault();
@@ -213,6 +262,11 @@ const Finance = ({ user, onLogout }) => {
                             <td style={{ color: isOverdue ? '#f87171' : 'rgba(255,255,255,0.6)' }}>
                               {inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN') : '—'}
                             </td>
+                            <td style={{ display: 'flex', gap: '8px' }}>
+                              {inv.status !== 'paid' && (
+                                <button type="button" onClick={() => handleOpenPaymentModal(inv)} className="btn-primary" style={{ padding: '4px 8px', fontSize: '12px' }}>Record Payment</button>
+                              )}
+                            </td>
                             <td>
                               {inv.status !== 'paid' && (
                                 <button onClick={() => updateInvoiceStatus(inv.id, 'paid')} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '7px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#34d399', cursor: 'pointer', fontWeight: 600 }}>Mark Paid</button>
@@ -292,19 +346,45 @@ const Finance = ({ user, onLogout }) => {
               <button onClick={() => setShowInvoiceModal(false)} className="icon-btn"><X size={16} /></button>
             </div>
             <form onSubmit={handleInvoiceSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px', marginBottom: '14px' }}>
+                <div>
+                  <label className="dark-label">Invoice Type *</label>
+                  <select className="dark-input" required value={invoiceForm.type} onChange={e => setInvoiceForm({ ...invoiceForm, type: e.target.value })}>
+                    <option value="AR">Accounts Receivable (AR) - Customer</option>
+                    <option value="AP">Accounts Payable (AP) - Vendor</option>
+                  </select>
+                </div>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label className="dark-label">Customer *</label>
-                  <select className="dark-input" required value={invoiceForm.customer_id} onChange={e => setInvoiceForm({ ...invoiceForm, customer_id: e.target.value })}>
-                    <option value="">Select customer</option>
-                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <label className="dark-label">{invoiceForm.type === 'AR' ? 'Customer *' : 'Vendor (ID)'}</label>
+                  {invoiceForm.type === 'AR' ? (
+                    <select className="dark-input" required value={invoiceForm.customer_id} onChange={e => setInvoiceForm({ ...invoiceForm, customer_id: e.target.value })}>
+                      <option value="">Select customer</option>
+                      {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  ) : (
+                    <input type="text" className="dark-input" placeholder="Vendor ID" value={invoiceForm.vendor_id || ''} onChange={e => setInvoiceForm({ ...invoiceForm, vendor_id: e.target.value })} />
+                  )}
                 </div>
                 <div>
                   <label className="dark-label">Due Date *</label>
                   <input type="date" className="dark-input" required value={invoiceForm.due_date} onChange={e => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })} />
                 </div>
               </div>
+
+              {invoiceForm.type === 'AP' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '14px' }}>
+                <div>
+                  <label className="dark-label">Purchase Order ID *</label>
+                  <input type="text" className="dark-input" required placeholder="PO-XXXX" value={invoiceForm.purchase_order_id || ''} onChange={e => setInvoiceForm({ ...invoiceForm, purchase_order_id: e.target.value })} />
+                </div>
+                <div>
+                  <label className="dark-label">Goods Receipt ID *</label>
+                  <input type="text" className="dark-input" required placeholder="GRN-XXXX" value={invoiceForm.goods_receipt_id || ''} onChange={e => setInvoiceForm({ ...invoiceForm, goods_receipt_id: e.target.value })} />
+                </div>
+              </div>
+              )}
 
               {/* Line Items */}
               <div>
@@ -403,7 +483,43 @@ const Finance = ({ user, onLogout }) => {
           </div>
         </div>
       )}
-    </div>
+
+        {/* Payment Modal */}
+        {showPaymentModal && selectedInvoice && (
+          <div className="dark-modal-overlay">
+            <div className="dark-modal" style={{ maxWidth: '500px' }}>
+              <div className="dark-modal-header">
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#fff' }}>Record Payment</h3>
+                <button onClick={() => setShowPaymentModal(false)} className="icon-btn"><X size={20} /></button>
+              </div>
+
+              <div style={{ padding: '24px' }}>
+                <form onSubmit={handlePaymentSubmit}>
+                  <div style={{ display: 'grid', gap: '20px' }}>
+                    <div>
+                      <label className="dark-label">Amount</label>
+                      <input type="number" step="0.01" value={paymentData.amount} onChange={(e) => setPaymentData({...paymentData, amount: parseFloat(e.target.value)})} required className="dark-input" />
+                    </div>
+                    <div>
+                      <label className="dark-label">Payment Method</label>
+                      <select value={paymentData.payment_method} onChange={(e) => setPaymentData({...paymentData, payment_method: e.target.value})} className="dark-input">
+                        <option value="bank_transfer" style={{color: '#000'}}>Bank Transfer</option>
+                        <option value="cash" style={{color: '#000'}}>Cash</option>
+                        <option value="credit_card" style={{color: '#000'}}>Credit Card</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                    <button type="button" onClick={() => setShowPaymentModal(false)} className="btn-dark-cancel">Cancel</button>
+                    <button type="submit" className="btn-dark-primary">Save Payment</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+</div>
   );
 };
 

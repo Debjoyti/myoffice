@@ -29,7 +29,7 @@ class BizOpsPlatformTester:
 
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
-        
+
         try:
             if method == 'GET':
                 response = requests.get(url, headers=test_headers)
@@ -73,13 +73,13 @@ class BizOpsPlatformTester:
             "auth/register",
             200,
             data={
-                "email": "admin@test.com", 
+                "email": "admin@test.com",
                 "password": "Test@123",
                 "name": "Admin User",
                 "role": "admin"
             }
         )
-        
+
         if register_success and 'access_token' in register_response:
             self.token = register_response['access_token']
             self.user = register_response['user']
@@ -112,7 +112,7 @@ class BizOpsPlatformTester:
         )
         if success:
             expected_fields = [
-                'total_employees', 'active_employees', 'total_projects', 
+                'total_employees', 'active_employees', 'total_projects',
                 'pending_leaves', 'total_leads', 'total_expenses',
                 'pending_purchase_requests', 'total_stores'
             ]
@@ -254,14 +254,14 @@ class BizOpsPlatformTester:
         if not self.created_resources['stores']:
             print("\n❌ No stores available for testing")
             return False
-            
+
         employee_id = self.test_employee_creation()
         if not employee_id:
             print("\n❌ Failed to create test employee")
             return False
 
         store_id = self.created_resources['stores'][0]
-        
+
         # Create purchase request
         pr_data = {
             "store_id": store_id,
@@ -285,7 +285,7 @@ class BizOpsPlatformTester:
             pr_id = response['id']
             self.created_resources['purchase_requests'].append(pr_id)
             print(f"✅ Created purchase request with ID: {pr_id}")
-            
+
             # Verify status is pending
             if response.get('status') != 'pending':
                 print(f"❌ Expected status 'pending', got '{response.get('status')}'")
@@ -333,7 +333,7 @@ class BizOpsPlatformTester:
         if success and 'id' in response:
             pr_id2 = response['id']
             self.created_resources['purchase_requests'].append(pr_id2)
-            
+
             # Reject this request
             success, response = self.run_test(
                 "Reject Purchase Request",
@@ -359,7 +359,7 @@ class BizOpsPlatformTester:
         # Use the first (approved) purchase request
         pr_id = self.created_resources['purchase_requests'][0]
         store_id = self.created_resources['stores'][0]
-        
+
         # Create purchase order
         po_data = {
             "purchase_request_id": pr_id,
@@ -386,7 +386,7 @@ class BizOpsPlatformTester:
             po_id = response['id']
             self.created_resources['purchase_orders'].append(po_id)
             print(f"✅ Created purchase order with ID: {po_id}")
-            
+
             # Verify correct amount
             if response.get('total_amount') != 375000:
                 print(f"❌ Expected amount 375000, got {response.get('total_amount')}")
@@ -522,11 +522,11 @@ class BizOpsPlatformTester:
         # Delete HR fields
         for field_id in self.created_resources['hr_fields']:
             self.run_test(f"Delete HR Field {field_id}", "DELETE", f"hr-fields/{field_id}", 200)
-        
+
         # Delete employees
         for emp_id in self.created_resources['employees']:
             self.run_test(f"Delete Employee {emp_id}", "DELETE", f"employees/{emp_id}", 200)
-        
+
         # Delete stores (this should be done last as other resources depend on them)
         for store_id in self.created_resources['stores']:
             self.run_test(f"Delete Store {store_id}", "DELETE", f"stores/{store_id}", 200)
@@ -579,7 +579,7 @@ class BizOpsPlatformTester:
         print(f"📊 BACKEND TEST RESULTS")
         print(f"Tests passed: {self.tests_passed}/{self.tests_run}")
         print(f"Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
-        
+
         if self.tests_passed == self.tests_run:
             print("\n🎉 ALL BACKEND TESTS PASSED!")
             return True
