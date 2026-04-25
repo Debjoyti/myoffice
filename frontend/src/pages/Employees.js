@@ -90,8 +90,12 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [editId, setEditId] = useState(null);
   const [searchQ, setSearchQ] = useState('');
+  const [positions, setPositions] = useState([]);
 
-  useEffect(() => { fetchEmployees(); }, []);
+  useEffect(() => {
+    fetchEmployees();
+    fetchPositions();
+  }, []);
 
   const fetchEmployees = async () => {
     try {
@@ -100,6 +104,14 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
       setEmployees(r.data);
     } catch { toast.error('Failed to fetch employees'); }
     setLoading(false);
+  };
+
+  const fetchPositions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const r = await axios.get(`${API}/positions`, { headers: { Authorization: `Bearer ${token}` } });
+      setPositions(r.data);
+    } catch (err) { console.error('Failed to fetch positions', err); }
   };
 
   const handleSubmit = async (e) => {
@@ -122,7 +134,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
       setEditId(null);
       setActiveTab('personal');
       fetchEmployees();
-    } catch { toast.error('Failed to save employee'); }
+    } catch (err) { toast.error('Failed to save employee: ' + (err.response?.data?.detail || err.message)); console.error(err); }
   };
 
   const handleDelete = async (id) => {
@@ -155,6 +167,33 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
       const reader = new FileReader();
       reader.onloadend = () => setFormData({ ...formData, photo: reader.result });
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDocumentParse = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const data = new FormData();
+    data.append('file', file);
+
+    toast.info('Parsing document...');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/parse-document`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const parsedData = response.data;
+      setFormData(prev => ({ ...prev, ...parsedData }));
+      toast.success('Document parsed and fields populated!');
+    } catch (err) {
+      toast.error('Failed to parse document');
+      console.error(err);
     }
   };
 
@@ -302,6 +341,20 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
               {/* ── PERSONAL ── */}
               {activeTab === 'personal' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Auto-fill from Document */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: 'rgba(99,102,241,0.1)', borderRadius: '12px', border: '1px dashed rgba(99,102,241,0.3)' }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#818cf8' }}>Auto-fill via OCR</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Upload a CV or Aadhaar card to automatically fill out details.</p>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <button type="button" className="btn-dark-primary" style={{ padding: '6px 12px', pointerEvents: 'none' }}>
+                        Upload Document
+                      </button>
+                      <input type="file" accept=".pdf,image/*" onChange={handleDocumentParse} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                  </div>
+
                   {/* Photo */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                     <div style={{ position: 'relative', width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
@@ -401,8 +454,31 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                   <SectionHeader title="Employment Details" />
                   <InputField label="Company EMP ID" field="emp_id" formData={formData} setFormData={setFormData} placeholder="Auto-generate or enter" />
                   <InputField label="Previous EMP ID" field="previous_emp_id" formData={formData} setFormData={setFormData} />
+                  <Field label="Position *">
+                    <select
+                      className="dark-input"
+                      style={{ fontSize: '13px' }}
+                      value={formData.position_id || ''}
+                      onChange={e => {
+                        const selectedPosId = e.target.value;
+                        const pos = positions.find(p => p.id === selectedPosId);
+                        setFormData({
+                          ...formData,
+                          position_id: selectedPosId,
+                          department: pos?.department_id || formData.department || 'General',
+                          designation: pos?.title || formData.designation || 'Employee'
+                        });
+                      }}
+                      required
+                    >
+                      <option value="">Select Position</option>
+                      {positions.map(p => (
+                        <option key={p.id} value={p.id}>{p.title}</option>
+                      ))}
+                    </select>
+                  </Field>
                   <InputField label="Department *" field="department" formData={formData} setFormData={setFormData} required />
-                                    <InputField label="Designation *" field="designation" formData={formData} setFormData={setFormData} required />
+                  <InputField label="Designation *" field="designation" formData={formData} setFormData={setFormData} required />
                   <InputField label="Parking Slot" field="parking_slot" formData={formData} setFormData={setFormData} placeholder="e.g. A-12" />
                   <InputField label="Vehicle Number" field="vehicle_number" formData={formData} setFormData={setFormData} placeholder="e.g. MH12AB1234" />
                   <InputField label="Joining Date *" field="date_of_joining" formData={formData} setFormData={setFormData} type="date" required />
