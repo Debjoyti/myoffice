@@ -16,6 +16,7 @@ import uuid
 from cachetools import TTLCache
 import threading
 from fallback_db import InMemoryDatabase
+from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 
 try:
     from motor.motor_asyncio import AsyncIOMotorClient
@@ -1632,6 +1633,26 @@ async def lock_payroll(payroll_id: str, current_user: dict = Depends(get_current
     await db.payrolls.update_one({"id": payroll_id}, {"$set": update_data})
 
     updated = await db.payrolls.find_one({"id": payroll_id})
+
+    # Auto GL Entry for Payroll
+    exp_acc = await _get_or_create_system_account(db, company_id, "6000", "Salary Expense", "Expense", "Operating Expense")
+    liab_acc = await _get_or_create_system_account(db, company_id, "2100", "Salaries Payable", "Liability", "Current Liability")
+
+    total_gross = updated.get("total_gross", 0.0)
+    if total_gross > 0:
+        lines = [
+            {"account_id": exp_acc["id"], "account_name": exp_acc["name"], "debit": total_gross, "credit": 0.0, "description": f"Payroll Expense {updated.get('month')}"},
+            {"account_id": liab_acc["id"], "account_name": liab_acc["name"], "debit": 0.0, "credit": total_gross, "description": f"Salaries Payable {updated.get('month')}"}
+        ]
+        await create_auto_journal_entry(
+            db=db,
+            company_id=company_id,
+            date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            narration=f"Auto GL Entry for Payroll {updated.get('month')}",
+            reference=payroll_id,
+            lines=lines
+        )
+
     return Payroll(**updated)
 
 @api_router.get("/payroll", response_model=List[Payroll])
@@ -2229,6 +2250,7 @@ async def update_purchase_order_status(po_id: str, status_data: StatusUpdate, cu
         location_name = store.get("name") if store else "Warehouse"
 
         org_id = po.get("organization_id", current_user.get("organization_id"))
+        company_id = po.get("company_id", org_id)
 
         # update inventory
         for item in po.get("items", []):
@@ -2259,6 +2281,25 @@ async def update_purchase_order_status(po_id: str, status_data: StatusUpdate, cu
                     "created_at": datetime.now(timezone.utc).isoformat()
                 }
                 await db.inventory.insert_one(new_item)
+
+        # Auto GL Entry for Procurement -> Finance
+        inv_acc = await _get_or_create_system_account(db, company_id, "1200", "Inventory Asset", "Asset", "Current Asset")
+        ap_acc = await _get_or_create_system_account(db, company_id, "2000", "Accounts Payable", "Liability", "Current Liability")
+
+        total_amount = po.get("total_amount", 0.0)
+        if total_amount > 0:
+            lines = [
+                {"account_id": inv_acc["id"], "account_name": inv_acc["name"], "debit": total_amount, "credit": 0.0, "description": f"PO {po_id} Delivered"},
+                {"account_id": ap_acc["id"], "account_name": ap_acc["name"], "debit": 0.0, "credit": total_amount, "description": f"PO {po_id} AP Accrual"}
+            ]
+            await create_auto_journal_entry(
+                db=db,
+                company_id=company_id,
+                date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                narration=f"Auto GL Entry for PO {po_id} Goods Received",
+                reference=po_id,
+                lines=lines
+            )
 
     return {"message": "Purchase order status updated"}
 
@@ -2699,12 +2740,35 @@ async def create_invoice(data: InvoiceCreate, current_user: dict = Depends(get_c
     doc = data.model_dump()
     doc["id"] = str(uuid.uuid4())
     doc["invoice_number"] = f"INV-{datetime.now().year}-{str(uuid.uuid4())[:4].upper()}"
-    doc["organization_id"] = current_user.get("organization_id")
-    if current_user.get("role") == "accountant":
-        doc["company_id"] = get_accountant_company(current_user)
+    org_id = current_user.get("organization_id")
+    doc["organization_id"] = org_id
+
+    company_id = get_accountant_company(current_user) if current_user.get("role") == "accountant" else org_id
+    doc["company_id"] = company_id
     doc["status"] = "draft"
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.invoices.insert_one(doc)
+
+    # Auto GL Entry for Sales Invoicing (Assuming Draft creates an accrual or change it if only on "issued")
+    # For now, we'll create the GL entry when the invoice is created
+    ar_acc = await _get_or_create_system_account(db, company_id, "1100", "Accounts Receivable", "Asset", "Current Asset")
+    rev_acc = await _get_or_create_system_account(db, company_id, "4000", "Sales Revenue", "Revenue", "Revenue")
+
+    total_amount = doc.get("total_amount", 0.0)
+    if total_amount > 0:
+        lines = [
+            {"account_id": ar_acc["id"], "account_name": ar_acc["name"], "debit": total_amount, "credit": 0.0, "description": f"Invoice {doc['invoice_number']}"},
+            {"account_id": rev_acc["id"], "account_name": rev_acc["name"], "debit": 0.0, "credit": total_amount, "description": f"Invoice {doc['invoice_number']} Revenue"}
+        ]
+        await create_auto_journal_entry(
+            db=db,
+            company_id=company_id,
+            date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            narration=f"Auto GL Entry for Sales Invoice {doc['invoice_number']}",
+            reference=doc["id"],
+            lines=lines
+        )
+
     return doc
 
 @api_router.get("/invoices", response_model=List[Invoice])

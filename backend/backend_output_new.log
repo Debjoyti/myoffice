@@ -1,0 +1,52 @@
+WARNING:root:MONGO_URL is missing. Using in-memory fallback database.
+WARNING:root:⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!
+INFO:     Started server process [90797]
+INFO:     Waiting for application startup.
+WARNING:main:Running backend with in-memory fallback DB.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+START: IATF Compliance Seeding with VOLUME...
+DONE: Seeded 1 Training Calendar with 100 programs
+DONE: Seeded Skill Matrix for 100 Employees
+DONE: Seeded 100 Kaizen Suggestions
+DONE: Seeded 10 Turtle Diagrams
+DONE: Seeded 250 additional records for Gap Analysis (Audit Dashboard)
+
+SUCCESS: VOLUME SEEDING COMPLETED!
+INFO:     127.0.0.1:39912 - "POST /api/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39916 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39932 - "POST /api/stores HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39944 - "POST /api/stores HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39960 - "GET /api/stores HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39974 - "GET /api/stores/afa0a38b-a8f4-41d5-b5ad-7077a883e9bb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39990 - "PUT /api/stores/afa0a38b-a8f4-41d5-b5ad-7077a883e9bb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39994 - "POST /api/departments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39998 - "POST /api/positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40010 - "POST /api/employees HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40022 - "POST /api/purchase-requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40026 - "GET /api/purchase-requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40032 - "PATCH /api/purchase-requests/251caee4-6c40-4fa8-bdd7-3c56fa90edfa/approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40044 - "POST /api/purchase-requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40054 - "PATCH /api/purchase-requests/94207ca7-973f-449a-bba0-304d52ffd492/reject HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40058 - "POST /api/purchase-orders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40072 - "GET /api/purchase-orders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40088 - "PATCH /api/purchase-orders/d62c2a24-f62d-4f41-b538-ddc02adf7a34/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40104 - "POST /api/hr-fields HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40112 - "POST /api/hr-fields HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40128 - "GET /api/hr-fields HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40130 - "GET /api/hr-fields?applies_to=employee HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40136 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40140 - "DELETE /api/hr-fields/20f43ade-207f-436f-a306-9ec2dac7e06c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40144 - "DELETE /api/hr-fields/59bd3edb-fee1-4135-8fd4-5121f8cf6094 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40148 - "DELETE /api/employees/5f6ab5db-cc6b-4ca9-a320-d4101a1e57f0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40162 - "DELETE /api/stores/afa0a38b-a8f4-41d5-b5ad-7077a883e9bb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40176 - "DELETE /api/stores/f79e2b31-f4d6-4427-86b6-22ec0cff86d6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51586 - "POST /api/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51588 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51596 - "POST /api/departments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "POST /api/positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51620 - "POST /api/employees HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51622 - "POST /api/salary-structure/suggest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51632 - "POST /api/salary-structure HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51636 - "POST /api/payroll/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51650 - "POST /api/payroll/d10a2362-825a-4191-8103-154674c5870e/lock HTTP/1.1" 200 OK
