@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, ArrowRight, ChevronLeft, Download, Plus, Trash2 } from 'lucide-react';
+import { X, Check, ArrowRight, ChevronLeft, Download, Plus, Trash2, Eye } from 'lucide-react';
+import { generateOfferLetterHtml } from '../utils/offerLetterTemplate';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -62,14 +63,14 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
         foodAllowance: true, coInsurance: true, empInsurance: true,
         gratuityFormula: '4.81', incrementAmount: 0, incrementTillDate: '',
         promotionLevel: '', promotionTillDate: '',
-        companyName: 'BizOps Technologies Private Limited',
-        companyAddress: '123, Tech Park, Hitech City, Hyderabad - 500081',
-        companyCIN: 'U72200MH2000PTC125631', companyPhone: '+91 908 256 1327', companyWebsite: 'www.bizops.in',
+        companyName: 'Company Name',
+        companyAddress: '',
+        companyCIN: '', companyPhone: '', companyWebsite: '',
         title: 'Mr', firstName: '', middleName: '', lastName: '',
         phone: '', email: '', aadhaarNumber: '', designation: '',
         officeLocation: 'Mumbai', localAddress: '', joiningDate: '', offerExpiryDate: '',
         workMode: 'Work from Office', shiftDetails: 'General Shift: 09:30 AM to 06:30 PM',
-        rulesAndRegs: `1. Employment Duties: Your duties will be defined by your reporting manager.\n2. Probation: You will be on probation for 6 months.\n3. Confidentiality: You shall maintain standard corporate confidentiality.\n4. Leave Policy: As per company norms.`,
+        rulesAndRegs: `1. Probation Period: You will be on probation for a period of six (6) months from your date of joining. Upon satisfactory performance, your employment will be confirmed in writing.\n\n2. Leave Policy: You will be entitled to leaves as per the Company's Leave Policy, which may be amended from time to time at the Company's sole discretion.\n\n3. Code of Conduct: You are expected to abide by the Company's Code of Conduct and maintain the highest standards of professional ethics.\n\n4. Confidentiality: During your employment and thereafter, you shall strictly maintain the confidentiality of all proprietary and confidential information of the Company and its clients.\n\n5. Background Verification: This offer and your continued employment are contingent upon the successful completion of a background verification process.\n\n6. Termination: During probation, your employment may be terminated by either party with a 15-day notice period. After confirmation, the notice period will be subject to the Company's standard termination policy.`, signatoryName: 'Authorized Signatory', signatoryDesignation: 'Human Resources',
     });
 
     const [earnings,   setEarnings]   = useState([]);
@@ -138,7 +139,7 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                     salaryBreakdown: buildBreakdown(), earningsRows: earnings, deductionRows: deductions,
                     totalEarnings: totalE, totalDeductions: totalD, netSalary: netSal,
                     aadhaar: formData.aadhaarNumber, location: formData.officeLocation,
-                    company: { name: formData.companyName, address: formData.companyAddress, cin: formData.companyCIN, phone: formData.companyPhone, website: formData.companyWebsite },
+                    company: { name: formData.companyName, address: formData.companyAddress, cin: formData.companyCIN, phone: formData.companyPhone, website: formData.companyWebsite, signatoryName: formData.signatoryName, signatoryDesignation: formData.signatoryDesignation },
                     timeline: { joiningDate: formData.joiningDate, offerExpiry: formData.offerExpiryDate, shift: formData.shiftDetails, workMode: formData.workMode },
                     rulesAndRegs: formData.rulesAndRegs,
                 },
@@ -385,6 +386,12 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                                 <div><label className="dark-label">Phone</label><input className="dark-input" value={formData.companyPhone} onChange={e => setFormData({ ...formData, companyPhone: e.target.value })} /></div>
                                                 <div><label className="dark-label">Website</label><input className="dark-input" value={formData.companyWebsite} onChange={e => setFormData({ ...formData, companyWebsite: e.target.value })} /></div>
                                             </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                <div><label className="dark-label">Signatory Name</label><input className="dark-input" value={formData.signatoryName} onChange={e => setFormData({ ...formData, signatoryName: e.target.value })} /></div>
+                                                <div><label className="dark-label">Signatory Designation</label><input className="dark-input" value={formData.signatoryDesignation} onChange={e => setFormData({ ...formData, signatoryDesignation: e.target.value })} /></div>
+                                            </div>
+
                                         </div>
                                     </section>
                                     <section>
@@ -442,6 +449,47 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                     )}
                 </div>
 
+
+                    {/* ══════════ STEP 5: Preview ══════════ */}
+                    {step === 5 && (
+                        <div className="fade-in" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ flex: 1, background: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+                                <iframe
+                                    srcDoc={generateOfferLetterHtml({
+                                        name: `${formData.firstName} ${formData.lastName}`.trim(),
+                                        designation: formData.designation,
+                                        ctc_yearly: parseFloat(formData.yearlyCTC),
+                                        phone: formData.phone,
+                                        email: formData.email,
+                                        details: {
+                                            salaryBreakdown: buildBreakdown(),
+                                            aadhaar: formData.aadhaarNumber,
+                                            location: formData.officeLocation,
+                                            company: {
+                                                name: formData.companyName,
+                                                address: formData.companyAddress,
+                                                cin: formData.companyCIN,
+                                                phone: formData.companyPhone,
+                                                website: formData.companyWebsite,
+                                                signatoryName: formData.signatoryName,
+                                                signatoryDesignation: formData.signatoryDesignation
+                                            },
+                                            timeline: {
+                                                joiningDate: formData.joiningDate,
+                                                offerExpiry: formData.offerExpiryDate,
+                                                shift: formData.shiftDetails,
+                                                workMode: formData.workMode
+                                            },
+                                            rulesAndRegs: formData.rulesAndRegs,
+                                        }
+                                    }, true)}
+                                    style={{ width: '100%', height: '100%', border: 'none' }}
+                                    title="Offer Letter Preview"
+                                />
+                            </div>
+                        </div>
+                    )}
+
                 {/* Footer */}
                 <div style={{ padding: '20px 32px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                     <button onClick={onClose} className="btn-dark-cancel">Cancel</button>
@@ -451,7 +499,7 @@ const OfferLetterModal = ({ show, onClose, onSave }) => {
                                 <ChevronLeft size={18} /> Back
                             </button>
                         )}
-                        {step < 4
+                        {step < 5
                             ? <button onClick={() => setStep(step + 1)} className="btn-dark-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Next Step <ArrowRight size={18} /></button>
                             : <button onClick={handleGenerate} className="btn-dark-primary" style={{ padding: '12px 32px', display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none' }}>Generate Offer Letter <Download size={18} /></button>
                         }
