@@ -13,7 +13,7 @@ const SaasAdmin = ({ user, onLogout }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newClient, setNewClient] = useState({ 
         name: '', email: '', password: '', 
-        max_employees: '', max_projects: '', 
+        max_employees: '', max_projects: '', max_companies: '',
         enabled_services: [], subscription_end_date: '' 
     });
 
@@ -75,7 +75,8 @@ const SaasAdmin = ({ user, onLogout }) => {
             await axios.post(`${API}/saas/clients`, {
                 ...newClient,
                 max_employees: newClient.max_employees ? parseInt(newClient.max_employees) : null,
-                max_projects: newClient.max_projects ? parseInt(newClient.max_projects) : null
+                max_projects: newClient.max_projects ? parseInt(newClient.max_projects) : null,
+                max_companies: newClient.max_companies ? parseInt(newClient.max_companies) : null
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -152,6 +153,7 @@ const SaasAdmin = ({ user, onLogout }) => {
                                 <input placeholder="Password" type="password" value={newClient.password} onChange={e => setNewClient({ ...newClient, password: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
                                 <input placeholder="Max Employees" type="number" value={newClient.max_employees} onChange={e => setNewClient({ ...newClient, max_employees: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
                                 <input placeholder="Max Projects" type="number" value={newClient.max_projects} onChange={e => setNewClient({ ...newClient, max_projects: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Max Companies" type="number" value={newClient.max_companies} onChange={e => setNewClient({ ...newClient, max_companies: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
                                 <div style={{ width: '100%' }}>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '8px' }}>Subscription End Date</p>
                                     <input type="date" value={newClient.subscription_end_date} onChange={e => setNewClient({ ...newClient, subscription_end_date: e.target.value })} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px', width: '200px' }} />
@@ -201,6 +203,7 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
     const limits = client.subscription_limits || {};
     const [empLimit, setEmpLimit] = useState(limits.max_employees || '');
     const [projLimit, setProjLimit] = useState(limits.max_projects || '');
+    const [compLimit, setCompLimit] = useState(limits.max_companies || '');
     const [enabledServices, setEnabledServices] = useState(client.enabled_services || []);
     const [subEndDate, setSubEndDate] = useState(client.subscription_end_date || '');
     const [isEditing, setIsEditing] = useState(false);
@@ -229,7 +232,7 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '10px' }}>
                     <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Users size={12} /> Employees
@@ -244,6 +247,14 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                     </p>
                     <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>
                         {client.usage?.projects || 0} <span style={{ color: 'rgba(255,255,255,0.3)' }}>/ {limits.max_projects || '∞'}</span>
+                    </p>
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '10px' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Shield size={12} /> Companies
+                    </p>
+                    <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>
+                        {client.usage?.companies || 0} <span style={{ color: 'rgba(255,255,255,0.3)' }}>/ {limits.max_companies || '∞'}</span>
                     </p>
                 </div>
             </div>
@@ -267,6 +278,19 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     value={empLimit}
                                     onChange={e => setEmpLimit(e.target.value)}
                                     placeholder="e.g. 50"
+                                    style={{
+                                        flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                        color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
+                                    }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', width: '90px' }}>Max Companies</label>
+                                <input
+                                    type="number"
+                                    value={compLimit}
+                                    onChange={e => setCompLimit(e.target.value)}
+                                    placeholder="e.g. 5"
                                     style={{
                                         flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                                         color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
@@ -323,6 +347,7 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     onUpdate(client.id, {
                                         max_employees: empLimit ? parseInt(empLimit) : null,
                                         max_projects: projLimit ? parseInt(projLimit) : null,
+                                        max_companies: compLimit ? parseInt(compLimit) : null,
                                         enabled_services: enabledServices,
                                         subscription_end_date: subEndDate
                                     });
@@ -343,6 +368,9 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                             </span>
                             <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
                                 Projects: {limits.max_projects || 'Unlimited'}
+                            </span>
+                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                                Companies: {limits.max_companies || 'Unlimited'}
                             </span>
                         </div>
                         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>

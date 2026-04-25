@@ -2703,24 +2703,33 @@ async def get_subscription_plans():
 
 @api_router.get("/subscriptions/current")
 async def get_current_subscription(current_user: dict = Depends(get_current_user)):
+    user_data = None
     # For company admin, they are the source of truth
     if current_user.get("role") == "admin":
-        return {
-            "status": current_user.get("subscription_status"),
-            "end_date": current_user.get("subscription_end_date"),
-            "limits": current_user.get("subscription_limits"),
-            "enabled_services": current_user.get("enabled_services")
-        }
+        user_data = current_user
     # For employee, take from admin
-    if current_user.get("role") == "employee" and current_user.get("organization_id"):
-        admin = await db.users.find_one({"organization_id": current_user["organization_id"], "role": "admin"})
-        if admin:
-            return {
-                "status": admin.get("subscription_status"),
-                "end_date": admin.get("subscription_end_date"),
-                "limits": admin.get("subscription_limits"),
-                "enabled_services": admin.get("enabled_services")
+    elif current_user.get("role") == "employee" and current_user.get("organization_id"):
+        user_data = await db.users.find_one({"organization_id": current_user["organization_id"], "role": "admin"})
+
+    if user_data:
+        organization_id = user_data.get("organization_id")
+
+        employees_count = await db.employees.count_documents({"organization_id": organization_id})
+        projects_count = await db.projects.count_documents({"organization_id": organization_id})
+        companies_count = await db.companies.count_documents({"organization_id": organization_id})
+
+        return {
+            "status": user_data.get("subscription_status"),
+            "end_date": user_data.get("subscription_end_date"),
+            "limits": user_data.get("subscription_limits"),
+            "enabled_services": user_data.get("enabled_services"),
+            "usage": {
+                "employees": employees_count,
+                "projects": projects_count,
+                "companies": companies_count
             }
+        }
+
     return None
 
 @api_router.post("/analytics/track")
@@ -2761,6 +2770,7 @@ async def get_onboarding_funnel(current_user: dict = Depends(get_current_user)):
 class ClientLimitsUpdate(BaseModel):
     max_employees: Optional[int] = None
     max_projects: Optional[int] = None
+    max_companies: Optional[int] = None
     enabled_services: Optional[List[str]] = None
     subscription_end_date: Optional[str] = None
 
@@ -2770,6 +2780,7 @@ class ClientCreate(BaseModel):
     password: str
     max_employees: Optional[int] = None
     max_projects: Optional[int] = None
+    max_companies: Optional[int] = None
     enabled_services: Optional[List[str]] = None
     subscription_end_date: Optional[str] = None
 
@@ -2790,6 +2801,8 @@ async def create_saas_client(client_data: ClientCreate, current_user: dict = Dep
         limits["max_employees"] = client_data.max_employees
     if client_data.max_projects is not None:
         limits["max_projects"] = client_data.max_projects
+    if client_data.max_companies is not None:
+        limits["max_companies"] = client_data.max_companies
         
     user_doc = {
         "id": user_id,
@@ -2858,6 +2871,8 @@ async def update_client_limits(client_id: str, limits: ClientLimitsUpdate, curre
         new_limits["max_employees"] = limits.max_employees
     if limits.max_projects is not None:
         new_limits["max_projects"] = limits.max_projects
+    if limits.max_companies is not None:
+        new_limits["max_companies"] = limits.max_companies
         
     update_data = {"subscription_limits": new_limits}
     if limits.enabled_services is not None:
@@ -3861,9 +3876,26 @@ class CompanyProfileCreate(BaseModel):
 @api_router.post("/company", response_model=CompanyProfile)
 @api_router.post("/companies", response_model=CompanyProfile)
 async def create_company(data: CompanyProfileCreate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can create companies")
+
+    org_id = current_user.get("organization_id", "default")
+
+    # Check max_companies limit
+    if current_user.get("role") == "admin":
+        admin_user = current_user
+    else:
+        admin_user = await db.users.find_one({"organization_id": org_id, "role": "admin"})
+
+    if admin_user and admin_user.get("subscription_limits"):
+        max_companies = admin_user["subscription_limits"].get("max_companies")
+        if max_companies is not None:
+            current_companies_count = await db.companies.count_documents({"organization_id": org_id, "deleted_at": None})
+            if current_companies_count >= max_companies:
+                raise HTTPException(status_code=403, detail=f"Company limit reached ({max_companies}). Please upgrade your subscription.")
+
     now = datetime.now(timezone.utc).isoformat()
     company_id = str(uuid.uuid4())
-    org_id = current_user.get("organization_id", "default")
     
     # Auto-generate company_code if not provided
     comp_code = data.company_code or f"CMP-{str(uuid.uuid4())[:8].upper()}"
@@ -3898,6 +3930,9 @@ async def create_company(data: CompanyProfileCreate, current_user: dict = Depend
 @api_router.get("/company")
 @api_router.get("/companies")
 async def list_companies(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can list companies")
+
     org = current_user.get("organization_id", "default")
     query = {"organization_id": org} if current_user.get("role") != "superadmin" else {}
     
@@ -3910,6 +3945,9 @@ async def list_companies(include_deleted: bool = False, current_user: dict = Dep
 @api_router.get("/company/{company_id}", response_model=CompanyProfile)
 @api_router.get("/companies/{company_id}", response_model=CompanyProfile)
 async def get_company(company_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can access companies")
+
     company = await db.companies.find_one({"id": company_id}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -3918,6 +3956,9 @@ async def get_company(company_id: str, current_user: dict = Depends(get_current_
 @api_router.put("/company/{company_id}", response_model=CompanyProfile)
 @api_router.put("/companies/{company_id}", response_model=CompanyProfile)
 async def update_company(company_id: str, data: CompanyProfileCreate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can update companies")
+
     company = await db.companies.find_one({"id": company_id}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -3945,6 +3986,9 @@ async def update_company(company_id: str, data: CompanyProfileCreate, current_us
 @api_router.delete("/company/{company_id}")
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admins can delete companies")
+
     now = datetime.now(timezone.utc).isoformat()
     result = await db.companies.update_one({"id": company_id}, {"$set": {"deleted_at": now, "status": "deleted"}})
     if result.matched_count == 0:
