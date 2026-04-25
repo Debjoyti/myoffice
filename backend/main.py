@@ -10,6 +10,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from typing import List, Optional, Literal, Set
 from datetime import datetime, timezone, timedelta
+from fastapi import UploadFile, File
+from ocr_helpers import extract_text_from_file, parse_employee_from_text
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import uuid
@@ -6053,3 +6055,10 @@ async def depreciate_asset(id: str, current_user: dict = Depends(get_current_use
     await db.audit_logs.insert_one(audit_doc)
 
     return {"message": "Asset depreciated successfully", "new_value": new_value}
+
+@api_router.post("/parse-document")
+async def parse_document(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    content = await file.read()
+    text = extract_text_from_file(content, file.filename)
+    parsed_data = parse_employee_from_text(text)
+    return parsed_data
