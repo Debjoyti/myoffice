@@ -101,3 +101,73 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+user_problem_statement: Break the system and find all bugs focusing on negative testing, edge cases, and regression issues.
+backend:
+  - task: "HRMS Module Testing"
+    implemented: true
+    working: false
+    file: "backend/main.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: false
+        -agent: "main"
+        -comment: "Department Duplication: `POST /departments` allows creating multiple departments with the exact same name within the same company. Missing Relationships Validation: `POST /employees` allows invalid `department` or `designation`. Payroll Execution Logic: `POST /payroll/run` fails with a 400 when an invalid month format is passed, but does not strictly enforce YYYY-MM. Empty String Inputs: Endpoints like `POST /departments` allow saving empty strings for required fields."
+
+  - task: "Procurement & Inventory Module Testing (PR -> PO -> GRN)"
+    implemented: true
+    working: false
+    file: "backend/main.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: false
+        -agent: "main"
+        -comment: "Missing GRN Functionality: No API endpoints to process a Good Receipt Note (GRN) to track received goods. PO Negative Quantities: `POST /purchase-orders` accepts negative `quantity` and `total_amount` values. Invalid Vendor Reference in PO: A PO can be created with a `vendor_id` that does not exist in the database."
+
+  - task: "Finance Module Testing (Invoices & Payments)"
+    implemented: true
+    working: false
+    file: "backend/main.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: false
+        -agent: "main"
+        -comment: "Payment Amount Validation: `POST /payments` accepts negative amounts. Unverified Invoice ID in Payments: Payment can be created referencing a non-existent `invoice_id`. Company Creation Internal Server Error: `POST /companies` returns 500 Internal Server Error because `CompanyProfileCreate` strictly requires `company_code`, but the endpoint auto-generates it."
+
+  - task: "General Authentication"
+    implemented: true
+    working: false
+    file: "backend/main.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        -working: false
+        -agent: "main"
+        -comment: "Duplicate Registration Leak: Registering an existing email correctly returns a 400, but lacks context handling for multi-tenant environments."
+
+frontend: []
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "HRMS Module Testing"
+    - "Procurement & Inventory Module Testing"
+    - "Finance Module Testing"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+    -agent: "main"
+    -message: "Completed QA automation testing, running edge cases, and testing the requested flows. Findings are logged in the testing data and a separate QA_REPORT.md has been generated with full fix recommendations and test coverage report."
