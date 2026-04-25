@@ -586,6 +586,80 @@ class AttendanceCreate(BaseModel):
     check_out: Optional[str] = None
     status: str = "present"
 
+# --- AI Attendance Models ---
+
+class FaceVerification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    timestamp: str
+    status: str # 'success', 'failed', 'spoof_detected'
+    confidence_score: float
+    liveness_passed: bool
+
+class DeviceLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    timestamp: str
+    user_agent: str
+    device_fingerprint: str
+
+class IpLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    timestamp: str
+    ip_address: str
+    is_vpn_proxy: bool
+
+class ActivityLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    timestamp: str
+    session_id: str
+    idle_time_seconds: int
+    is_active: bool
+
+class AnomalyFlag(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    session_id: str
+    timestamp: str
+    reason: str # 'face_mismatch', 'ip_change', 'long_idle', 'device_change'
+    severity: str # 'low', 'medium', 'high'
+
+class AttendanceSession(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    start_time: str
+    end_time: Optional[str] = None
+    last_heartbeat: Optional[str] = None
+    status: str # 'active', 'ended', 'suspicious'
+    trust_score: float = 100.0
+
+class AttendanceSessionStart(BaseModel):
+    employee_id: str
+    face_verification_id: str
+    ip_address: str
+    user_agent: str
+    device_fingerprint: str
+
+class AttendanceSessionHeartbeat(BaseModel):
+    session_id: str
+    employee_id: str
+    face_verification_id: Optional[str] = None
+    idle_time_seconds: int
+    ip_address: str
+
+class AttendanceSessionEnd(BaseModel):
+    session_id: str
+    employee_id: str
+    face_verification_id: str
+
 class LeaveRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -2062,6 +2136,182 @@ async def get_attendance(employee_id: Optional[str] = None, current_user: dict =
         query["employee_id"] = employee_id
     attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(500)
     return attendance
+
+# --- AI Attendance Endpoints ---
+
+@api_router.post("/attendance/session/start", response_model=AttendanceSession)
+async def start_attendance_session(session_data: AttendanceSessionStart, current_user: dict = Depends(get_current_user)):
+    now = datetime.utcnow().isoformat()
+    session_id = str(uuid.uuid4())
+    org_id = current_user.get("organization_id")
+
+    # Check if a session is already active
+    active_session = await db.attendance_sessions.find_one({"employee_id": session_data.employee_id, "status": "active"})
+    if active_session:
+        raise HTTPException(status_code=400, detail="An active session already exists for this employee.")
+
+    session_doc = {
+        "id": session_id,
+        "employee_id": session_data.employee_id,
+        "organization_id": org_id,
+        "start_time": now,
+        "last_heartbeat": now,
+        "status": "active",
+        "trust_score": 100.0
+    }
+
+    ip_log = {
+        "id": str(uuid.uuid4()),
+        "employee_id": session_data.employee_id,
+        "organization_id": org_id,
+        "timestamp": now,
+        "ip_address": session_data.ip_address,
+        "is_vpn_proxy": False # Simplified for now, could integrate a 3rd party API to check IP
+    }
+
+    device_log = {
+        "id": str(uuid.uuid4()),
+        "employee_id": session_data.employee_id,
+        "organization_id": org_id,
+        "timestamp": now,
+        "user_agent": session_data.user_agent,
+        "device_fingerprint": session_data.device_fingerprint
+    }
+
+    await db.attendance_sessions.insert_one(session_doc)
+    await db.ip_logs.insert_one(ip_log)
+    await db.device_logs.insert_one(device_log)
+
+    # Also log regular attendance record check-in
+    today_str = now[:10]
+    att_record = await db.attendance.find_one({"employee_id": session_data.employee_id, "date": today_str})
+    if not att_record:
+        att_doc = {
+            "id": str(uuid.uuid4()),
+            "employee_id": session_data.employee_id,
+            "organization_id": org_id,
+            "date": today_str,
+            "check_in": now[11:16],
+            "status": "present",
+            "created_at": now
+        }
+        await db.attendance.insert_one(att_doc)
+
+    return session_doc
+
+@api_router.post("/attendance/session/heartbeat")
+async def heartbeat_attendance_session(heartbeat_data: AttendanceSessionHeartbeat, current_user: dict = Depends(get_current_user)):
+    now = datetime.utcnow().isoformat()
+    org_id = current_user.get("organization_id")
+
+    session = await db.attendance_sessions.find_one({"id": heartbeat_data.session_id, "organization_id": org_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    if session.get("status") != "active":
+        raise HTTPException(status_code=400, detail="Session is not active.")
+
+    # Check for IP change
+    latest_ip = await db.ip_logs.find_one(
+        {"employee_id": heartbeat_data.employee_id},
+        sort=[("timestamp", -1)]
+    )
+    trust_score = session.get("trust_score", 100.0)
+
+    if latest_ip and latest_ip.get("ip_address") != heartbeat_data.ip_address:
+        anomaly = {
+            "id": str(uuid.uuid4()),
+            "employee_id": heartbeat_data.employee_id,
+            "organization_id": org_id,
+            "session_id": heartbeat_data.session_id,
+            "timestamp": now,
+            "reason": "ip_change",
+            "severity": "high"
+        }
+        await db.anomaly_flags.insert_one(anomaly)
+        trust_score -= 20.0
+
+        await db.ip_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "employee_id": heartbeat_data.employee_id,
+            "organization_id": org_id,
+            "timestamp": now,
+            "ip_address": heartbeat_data.ip_address,
+            "is_vpn_proxy": False
+        })
+
+    if heartbeat_data.idle_time_seconds > 600: # 10 minutes idle
+        anomaly = {
+            "id": str(uuid.uuid4()),
+            "employee_id": heartbeat_data.employee_id,
+            "organization_id": org_id,
+            "session_id": heartbeat_data.session_id,
+            "timestamp": now,
+            "reason": "long_idle",
+            "severity": "medium"
+        }
+        await db.anomaly_flags.insert_one(anomaly)
+        trust_score -= 5.0
+
+    new_status = "suspicious" if trust_score < 50.0 else "active"
+
+    await db.attendance_sessions.update_one(
+        {"id": heartbeat_data.session_id},
+        {"$set": {"last_heartbeat": now, "trust_score": trust_score, "status": new_status}}
+    )
+
+    return {"status": "heartbeat_recorded", "trust_score": trust_score, "session_status": new_status}
+
+@api_router.post("/attendance/session/end", response_model=AttendanceSession)
+async def end_attendance_session(end_data: AttendanceSessionEnd, current_user: dict = Depends(get_current_user)):
+    now = datetime.utcnow().isoformat()
+    org_id = current_user.get("organization_id")
+
+    session = await db.attendance_sessions.find_one({"id": end_data.session_id, "organization_id": org_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    await db.attendance_sessions.update_one(
+        {"id": end_data.session_id},
+        {"$set": {"end_time": now, "status": "ended" if session.get("status") == "active" else session.get("status")}}
+    )
+
+    today_str = now[:10]
+    await db.attendance.update_one(
+        {"employee_id": end_data.employee_id, "date": today_str},
+        {"$set": {"check_out": now[11:16]}}
+    )
+
+    updated_session = await db.attendance_sessions.find_one({"id": end_data.session_id})
+    if updated_session:
+        updated_session.pop("_id", None)
+    return updated_session
+
+@api_router.get("/attendance/sessions", response_model=List[AttendanceSession])
+async def get_attendance_sessions(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+
+    # Enforce RBAC: Non-admin employees can only see their own sessions
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+    elif employee_id:
+        query["employee_id"] = employee_id
+
+    sessions = await db.attendance_sessions.find(query, {"_id": 0}).sort("start_time", -1).to_list(100)
+    return sessions
+
+@api_router.get("/attendance/anomalies", response_model=List[AnomalyFlag])
+async def get_attendance_anomalies(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+
+    # Enforce RBAC: Non-admin employees can only see their own anomalies
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+    elif employee_id:
+        query["employee_id"] = employee_id
+
+    anomalies = await db.anomaly_flags.find(query, {"_id": 0}).sort("timestamp", -1).to_list(100)
+    return anomalies
 
 @api_router.post("/leave-requests", response_model=LeaveRequest)
 async def create_leave_request(leave_data: LeaveRequestCreate, current_user: dict = Depends(get_current_user)):
