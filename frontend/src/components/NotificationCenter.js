@@ -174,8 +174,8 @@ const NotificationCenter = ({ user }) => {
       {/* Notification Panel */}
       {isOpen && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 200,
-          width: '380px', maxHeight: '520px',
+          position: 'fixed', top: '80px', left: '260px', zIndex: 9999,
+          width: '350px', maxHeight: '520px',
           background: '#0c1220',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '18px',
