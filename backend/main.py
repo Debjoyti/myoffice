@@ -30,9 +30,15 @@ _cache_lock = threading.Lock()
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+import sys
+
 mongo_url = os.environ.get('MONGO_URL', '').strip()
 db_name = os.environ.get('DB_NAME', 'myoffice').strip() or 'myoffice'
 using_fallback_db = not bool(mongo_url)
+
+if os.environ.get('ENVIRONMENT', 'production') != 'test' and using_fallback_db:
+    logging.error("CRITICAL: MONGO_URL is missing. Production environment requires a valid MongoDB connection.")
+    sys.exit(1)
 
 if using_fallback_db or AsyncIOMotorClient is None:
     client = None
@@ -136,6 +142,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY or SECRET_KEY == 'your-secret-key-change-in-production':
     import sys
     if os.environ.get('ENVIRONMENT', 'production') != 'test':
+        logging.error("CRITICAL: SECRET_KEY is missing or insecure. Production environment requires a secure SECRET_KEY.")
+        sys.exit(1)
+    else:
         # Warn but don't crash dev environments without the key set
         SECRET_KEY = SECRET_KEY or 'dev-only-key-do-not-use-in-production'
         logging.warning('⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!')
