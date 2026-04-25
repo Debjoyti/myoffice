@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -520,6 +520,16 @@ class DocumentCreate(BaseModel):
     type: str
     file_url: str
 
+
+
+class BulkEmployeeParseRequest(BaseModel):
+    text: str
+
+class ParsedEmployee(BaseModel):
+    name: str
+    email: str
+    department: str
+    designation: str
 
 class EmployeeCreate(BaseModel):
     name: str
@@ -1841,6 +1851,127 @@ async def get_documents(emp_id: str, current_user: dict = Depends(get_current_us
     docs = await db.documents.find({"emp_id": emp_id, "company_id": company_id, "status": "active"}).to_list(100)
     return [Document(**d) for d in docs]
 
+
+
+
+@api_router.post("/ai/upload-employees", response_model=List[ParsedEmployee])
+async def upload_employees_ai(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    import csv
+    import io
+    import re
+    from openpyxl import load_workbook
+
+    employees = []
+    contents = await file.read()
+
+    lines = []
+    if file.filename.endswith('.xlsx'):
+        wb = load_workbook(io.BytesIO(contents), data_only=True)
+        sheet = wb.active
+        for row in sheet.iter_rows(values_only=True):
+            # Convert row to comma separated string to reuse our parsing logic
+            row_str = " , ".join([str(cell) for cell in row if cell is not None])
+            if row_str.strip():
+                lines.append(row_str)
+    else:
+        # Assume CSV or TXT
+        text = contents.decode('utf-8', errors='ignore')
+        lines = text.split('\n')
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        emp = {
+            "name": "",
+            "email": "",
+            "department": "General",
+            "designation": "Employee"
+        }
+
+        email_match = re.search(r'[\w\.-]+@[\w\.-]+', line)
+        if email_match:
+            emp["email"] = email_match.group(0)
+            line = line.replace(email_match.group(0), '')
+
+        parts = [p.strip() for p in re.split(r'[,|;-]', line) if p.strip()]
+        if parts:
+            emp["name"] = parts[0]
+            if len(parts) > 1:
+                emp["designation"] = parts[1]
+            if len(parts) > 2:
+                emp["department"] = parts[2]
+        else:
+            words = line.split()
+            if len(words) >= 2:
+                emp["name"] = f"{words[0]} {words[1]}"
+                if len(words) > 2:
+                    emp["designation"] = " ".join(words[2:])
+
+        emp["name"] = re.sub(r'[^a-zA-Z\s]', '', emp["name"]).strip()
+        if not emp["name"]:
+            if emp["email"]:
+                emp["name"] = emp["email"].split('@')[0].replace('.', ' ').title()
+            else:
+                emp["name"] = "Unknown Employee"
+
+        if not emp["email"]:
+            emp["email"] = f"{emp['name'].replace(' ', '.').lower()}@example.com"
+
+        employees.append(emp)
+
+    return employees
+
+@api_router.post("/ai/parse-employees", response_model=List[ParsedEmployee])
+async def parse_employees_ai(req: BulkEmployeeParseRequest, current_user: dict = Depends(get_current_user)):
+    import re
+    employees = []
+    lines = req.text.split('\n')
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        emp = {
+            "name": "",
+            "email": "",
+            "department": "General",
+            "designation": "Employee"
+        }
+
+        email_match = re.search(r'[\w\.-]+@[\w\.-]+', line)
+        if email_match:
+            emp["email"] = email_match.group(0)
+            line = line.replace(email_match.group(0), '')
+
+        parts = [p.strip() for p in re.split(r'[,|;-]', line) if p.strip()]
+        if parts:
+            emp["name"] = parts[0]
+            if len(parts) > 1:
+                emp["designation"] = parts[1]
+            if len(parts) > 2:
+                emp["department"] = parts[2]
+        else:
+            words = line.split()
+            if len(words) >= 2:
+                emp["name"] = f"{words[0]} {words[1]}"
+                if len(words) > 2:
+                    emp["designation"] = " ".join(words[2:])
+
+        emp["name"] = re.sub(r'[^a-zA-Z\s]', '', emp["name"]).strip()
+        if not emp["name"]:
+            if emp["email"]:
+                emp["name"] = emp["email"].split('@')[0].replace('.', ' ').title()
+            else:
+                emp["name"] = "Unknown Employee"
+
+        if not emp["email"]:
+            emp["email"] = f"{emp['name'].replace(' ', '.').lower()}@example.com"
+
+        employees.append(emp)
+
+    return employees
 
 @api_router.post("/employees", response_model=Employee)
 async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends(get_current_user)):
@@ -3857,6 +3988,124 @@ class CompanyProfileCreate(BaseModel):
     payment_barcode: Optional[str] = None
     logo: Optional[str] = None
     stamp: Optional[str] = None
+
+
+class BulkEmployeePayload(BaseModel):
+    employees: List[dict]
+
+@api_router.post("/companies/{company_id}/bulk-onboard")
+async def bulk_onboard_employees(company_id: str, payload: BulkEmployeePayload, current_user: dict = Depends(get_current_user)):
+    import uuid
+    from datetime import datetime, timezone
+
+    # Optional: verify company exists
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    org_id = current_user.get("organization_id", "default")
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Ensure default department
+    dept = await db.departments.find_one({"company_id": company_id, "name": "General"})
+    if not dept:
+        dept_id = str(uuid.uuid4())
+        await db.departments.insert_one({
+            "id": dept_id,
+            "company_id": company_id,
+            "name": "General",
+            "description": "Default department created via bulk onboarding",
+            "manager_id": None,
+            "status": "active",
+            "created_at": now,
+            "updated_at": now
+        })
+    else:
+        dept_id = dept["id"]
+
+    # Ensure default team
+    team = await db.teams.find_one({"company_id": company_id, "name": "General Team"})
+    if not team:
+        team_id = str(uuid.uuid4())
+        await db.teams.insert_one({
+            "id": team_id,
+            "company_id": company_id,
+            "department_id": dept_id,
+            "name": "General Team",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now
+        })
+    else:
+        team_id = team["id"]
+
+    # Maps designation to position_id
+    pos_map = {}
+
+    # Prepare bulk insertions
+    employees_to_insert = []
+    positions_to_insert = []
+    emp_pos_to_insert = []
+
+    for emp_data in payload.employees:
+        emp_id = str(uuid.uuid4())
+        designation = emp_data.get("designation", "Employee")
+
+        # Ensure position exists
+        if designation not in pos_map:
+            pos = await db.positions.find_one({"company_id": company_id, "title": designation})
+            if not pos:
+                pos_id = str(uuid.uuid4())
+                await db.positions.insert_one({
+                    "id": pos_id,
+                    "company_id": company_id,
+                    "department_id": dept_id,
+                    "team_id": team_id,
+                    "title": designation,
+                    "level": "L1",
+                    "status": "active",
+                    "created_at": now,
+                    "updated_at": now
+                })
+                pos_map[designation] = pos_id
+            else:
+                pos_map[designation] = pos["id"]
+
+        pos_id = pos_map[designation]
+
+        # Create Employee document
+        emp_doc = {
+            "id": emp_id,
+            "organization_id": org_id,
+            "company_id": company_id,
+            "name": emp_data.get("name", "Unknown"),
+            "email": emp_data.get("email", ""),
+            "department": emp_data.get("department", "General"),
+            "designation": designation,
+            "status": "active",
+            "created_at": now,
+            "updated_at": now
+        }
+        employees_to_insert.append(emp_doc)
+
+        # Create mapping
+        emp_pos_to_insert.append({
+            "id": str(uuid.uuid4()),
+            "company_id": company_id,
+            "emp_id": emp_id,
+            "position_id": pos_id,
+            "is_primary": True,
+            "start_date": now[:10],
+            "created_at": now,
+            "updated_at": now
+        })
+
+    if employees_to_insert:
+        await db.employees.insert_many(employees_to_insert)
+    if emp_pos_to_insert:
+        await db.employee_positions.insert_many(emp_pos_to_insert)
+
+    return {"message": f"Successfully onboarded {len(employees_to_insert)} employees."}
 
 @api_router.post("/company", response_model=CompanyProfile)
 @api_router.post("/companies", response_model=CompanyProfile)
