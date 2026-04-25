@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts';
-import { LayoutDashboard, Landmark, Receipt, Users, Calculator, FileText, ChevronDown, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, Search, Filter, MoreVertical, Building2, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Landmark, Receipt, Users, Calculator, FileText, ChevronDown, ChevronRight, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, Search, Filter, MoreVertical, Building2, Calendar, Clock, AlertCircle, Package, ShoppingBag, ShoppingCart, FileBarChart, LogOut, RefreshCw, Settings } from 'lucide-react';
 import { MOCK_FINANCE } from '../utils/demoData';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
