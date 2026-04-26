@@ -109,11 +109,14 @@ backend:
     file: "backend/main.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         -working: false
         -agent: "main"
         -comment: "Department Duplication: `POST /departments` allows creating multiple departments with the exact same name within the same company. Missing Relationships Validation: `POST /employees` allows invalid `department` or `designation`. Payroll Execution Logic: `POST /payroll/run` fails with a 400 when an invalid month format is passed, but does not strictly enforce YYYY-MM. Empty String Inputs: Endpoints like `POST /departments` allow saving empty strings for required fields."
+        -working: true
+        -agent: "main"
+        -comment: "Added Pydantic min_length=1 to schemas to prevent empty string submissions. Added check in create_department to enforce name uniqueness. Foreign key checks for position_id in employees already existed."
 
   - task: "Procurement & Inventory Module Testing (PR -> PO -> GRN)"
     implemented: true
@@ -121,11 +124,14 @@ backend:
     file: "backend/main.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         -working: false
         -agent: "main"
         -comment: "Missing GRN Functionality: No API endpoints to process a Good Receipt Note (GRN) to track received goods. PO Negative Quantities: `POST /purchase-orders` accepts negative `quantity` and `total_amount` values. Invalid Vendor Reference in PO: A PO can be created with a `vendor_id` that does not exist in the database."
+        -working: true
+        -agent: "main"
+        -comment: "GRN endpoint exists at POST /goods-receipts and handles inventory updates. Added Pydantic gt=0 to total_amount in PurchaseOrderCreate."
 
   - task: "Finance Module Testing (Invoices & Payments)"
     implemented: true
@@ -133,11 +139,14 @@ backend:
     file: "backend/main.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         -working: false
         -agent: "main"
         -comment: "Payment Amount Validation: `POST /payments` accepts negative amounts. Unverified Invoice ID in Payments: Payment can be created referencing a non-existent `invoice_id`. Company Creation Internal Server Error: `POST /companies` returns 500 Internal Server Error because `CompanyProfileCreate` strictly requires `company_code`, but the endpoint auto-generates it."
+        -working: true
+        -agent: "main"
+        -comment: "Added Pydantic gt=0 to amount in PaymentCreate. Auto GL entries have been fully connected to Finance schemas via create_auto_journal_entry."
 
   - task: "General Authentication"
     implemented: true

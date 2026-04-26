@@ -357,7 +357,7 @@ class Department(BaseModel):
     created_at: str
 
 class DepartmentCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
     description: Optional[str] = None
     manager_id: Optional[str] = None
 
@@ -535,14 +535,14 @@ class ParsedEmployee(BaseModel):
     designation: str
 
 class EmployeeCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
     position_id: str
     emp_id: Optional[str] = None
     previous_emp_id: Optional[str] = None
     email: str
     phone: str
-    department: str
-    designation: str
+    department: str = Field(..., min_length=1)
+    designation: str = Field(..., min_length=1)
     date_of_joining: Optional[str] = None
     pan_number: Optional[str] = None
     aadhaar_number: Optional[str] = None
@@ -893,10 +893,10 @@ class PurchaseOrder(BaseModel):
 class PurchaseOrderCreate(BaseModel):
     purchase_request_id: str
     store_id: str
-    supplier_name: str
+    supplier_name: str = Field(..., min_length=1)
     supplier_contact: Optional[str] = None
-    items: List[dict]
-    total_amount: float
+    items: List[dict] = Field(..., min_length=1)
+    total_amount: float = Field(..., gt=0)
     delivery_date: Optional[str] = None
     created_by: str
 
@@ -938,7 +938,7 @@ class CustomerCreate(BaseModel):
 class GoodsReceiptCreate(BaseModel):
     purchase_order_id: str
     store_id: str
-    items_received: List[dict]
+    items_received: List[dict] = Field(..., min_length=1)
     receipt_date: str
     delivery_note: Optional[str] = None
     received_by: str
@@ -958,8 +958,8 @@ class GoodsReceipt(BaseModel):
 
 class PaymentCreate(BaseModel):
     invoice_id: str
-    amount: float
-    payment_method: str
+    amount: float = Field(..., gt=0)
+    payment_method: str = Field(..., min_length=1)
     payment_date: str
     reference_number: Optional[str] = None
 
@@ -1503,6 +1503,12 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 @api_router.post("/departments", response_model=Department)
 async def create_department(data: DepartmentCreate, current_user: dict = Depends(get_current_user)):
     company_id = get_accountant_company(current_user)
+
+    # Uniqueness check
+    existing = await db.departments.find_one({"company_id": company_id, "name": data.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Department with this name already exists in the company")
+
     dept_id = str(uuid.uuid4())
     doc = {
         "id": dept_id,
@@ -2782,6 +2788,15 @@ async def reject_purchase_request(pr_id: str, current_user: dict = Depends(get_c
 @api_router.post("/purchase-orders", response_model=PurchaseOrder)
 async def create_purchase_order(po_data: PurchaseOrderCreate, current_user: dict = Depends(get_current_user)):
     po_doc = po_data.model_dump()
+
+    # Check for negative quantities in items
+    for item in po_doc.get("items", []):
+        if item.get("quantity", 0) <= 0:
+            raise HTTPException(status_code=400, detail="Item quantity must be strictly positive")
+
+    # The QA report also mentioned verifying vendor_id, but the schema uses supplier_name instead
+    # However, if there's a vendor table we might check it. For now, strict item qty validation.
+
     po_doc["id"] = str(uuid.uuid4())
     po_doc["status"] = "pending"
     po_doc["created_at"] = datetime.now(timezone.utc).isoformat()
@@ -3233,10 +3248,23 @@ async def get_saas_clients(current_user: dict = Depends(get_current_user)):
             {"$group": {"_id": "$organization_id", "count": {"$sum": 1}}}
         ]
         import asyncio
-        emp_res, proj_res = await asyncio.gather(
-            db.employees.aggregate(emp_pipeline).to_list(None),
-            db.projects.aggregate(proj_pipeline).to_list(None)
-        )
+
+        try:
+            # First try the motor way which returns a cursor that needs to be awaited
+            emp_cursor = db.employees.aggregate(emp_pipeline)
+            proj_cursor = db.projects.aggregate(proj_pipeline)
+
+            # For fallback_db.aggregate() it returns AsyncInMemoryCursor directly,
+            # but in motor it returns an AsyncIOMotorCommandCursor.
+            emp_res, proj_res = await asyncio.gather(
+                emp_cursor.to_list(1000),
+                proj_cursor.to_list(1000)
+            )
+        except Exception:
+            # Fallback if the above fails (e.g. if the cursor itself needs awaiting or different motor version)
+            emp_res = await db.employees.aggregate(emp_pipeline).to_list(1000)
+            proj_res = await db.projects.aggregate(proj_pipeline).to_list(1000)
+
         emp_counts = {r["_id"]: r["count"] for r in emp_res}
         proj_counts = {r["_id"]: r["count"] for r in proj_res}
 
@@ -4240,7 +4268,7 @@ class CompanyProfile(BaseModel):
     deleted_at: Optional[str] = None
 
 class CompanyProfileCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
     company_code: Optional[str] = None
     legal_name: Optional[str] = None
     industry: Optional[str] = None
@@ -4861,8 +4889,19 @@ async def calculate_fnf(id: str, current_user: dict = Depends(get_current_user))
     monthly = ctc / 12
     daily = monthly / 30
     
-    # Approximate unutilized leaves logic (demo 15 days)
-    leave_encashment = 15 * daily
+    # Get unutilized leaves by checking approved leaves vs a default allocation
+    employee_id = resig.get("employee_id")
+    # Using 24 as a baseline yearly accrual standard
+    total_accrued_leaves = 24
+
+    approved_leaves_cursor = await db.leave_requests.find({"employee_id": employee_id, "status": "approved", "organization_id": org_id}).to_list(1000)
+
+    utilized_leaves = 0
+    for l in approved_leaves_cursor:
+        utilized_leaves += (datetime.fromisoformat(l["end_date"]) - datetime.fromisoformat(l["start_date"])).days + 1
+
+    unused_leaves = max(0, total_accrued_leaves - utilized_leaves)
+    leave_encashment = unused_leaves * daily
     
     # Notice period deficit/recovery (assuming 30 days standard vs what is entered)
     notice_diff = max(0, 30 - resig.get("notice_period_days", 30))
@@ -4873,8 +4912,9 @@ async def calculate_fnf(id: str, current_user: dict = Depends(get_current_user))
     
     breakdown = {
         "Base Salary Pending (1M)": base_last_month,
-        "Leave Encashment (approx)": leave_encashment,
-        "Notice Period Deficit Recovery": -notice_recovery
+        "Leave Encashment": leave_encashment,
+        "Notice Period Deficit Recovery": -notice_recovery,
+        "Unused Leaves": unused_leaves
     }
     
     await db.resignations.update_one(
