@@ -1,0 +1,17 @@
+WARNING:root:MONGO_URL is missing. Using in-memory fallback database.
+WARNING:root:⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!
+INFO:     Started server process [75596]
+INFO:     Waiting for application startup.
+WARNING:main:Running backend with in-memory fallback DB.
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('127.0.0.1', 8000): [errno 98] address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+START: IATF Compliance Seeding with VOLUME...
+DONE: Seeded 1 Training Calendar with 100 programs
+DONE: Seeded Skill Matrix for 100 Employees
+DONE: Seeded 100 Kaizen Suggestions
+DONE: Seeded 10 Turtle Diagrams
+DONE: Seeded 250 additional records for Gap Analysis (Audit Dashboard)
+
+SUCCESS: VOLUME SEEDING COMPLETED!

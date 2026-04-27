@@ -19,10 +19,12 @@ const Login = ({ onLogin }) => {
       toast.success(isRegister ? 'Account created successfully!' : 'Welcome back!');
       onLogin(response.data.user, response.data.access_token);
     } catch (error) {
-      if (!BACKEND_URL) {
+      if (error.response) {
+        toast.error(error.response.data?.detail || 'Authentication failed. Please try again.');
+      } else if (!BACKEND_URL && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         toast.error('Backend URL is not configured. Set REACT_APP_BACKEND_URL in Vercel project environment variables.');
       } else {
-        toast.error(error.response?.data?.detail || 'Authentication failed. Please try again.');
+        toast.error('Network error. Is the backend running?');
       }
     }
     setLoading(false);

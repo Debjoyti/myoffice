@@ -61,7 +61,17 @@ const webpackConfig = {
         ],
       };
 
+
+      // Fix face-api.js "fs" module issue in browser
+      webpackConfig.resolve.fallback = {
+        ...webpackConfig.resolve.fallback,
+        "fs": false,
+        "path": false,
+        "crypto": false
+      };
+
       // Add health check plugin to webpack if enabled
+
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
       }

@@ -32,3 +32,46 @@ INFO:     127.0.0.1:42208 - "POST /api/salary-structure/suggest HTTP/1.1" 200 OK
 INFO:     127.0.0.1:42220 - "POST /api/salary-structure HTTP/1.1" 200 OK
 INFO:     127.0.0.1:42230 - "POST /api/payroll/run HTTP/1.1" 200 OK
 INFO:     127.0.0.1:42232 - "POST /api/payroll/e1a1c311-3997-451d-8307-35b5711dc9aa/lock HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43848 - "POST /api/auth/login HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:33700 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     None:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/insights HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/companies HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/announcements HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/insights HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/companies HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/announcements HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/insights HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/companies HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/announcements HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/insights HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/companies HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/announcements HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     None:0 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     None:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/insights HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/companies HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/announcements HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/insights HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/companies HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/announcements HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
