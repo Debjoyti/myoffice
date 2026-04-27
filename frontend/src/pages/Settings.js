@@ -1,14 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
 import Sidebar from '../components/Sidebar';
-import { Settings as SettingsIcon, Globe, Shield, Bell, Palette, Building } from 'lucide-react';
+import { Settings as SettingsIcon, Globe, Shield, Bell, Palette, Building, ToggleLeft, ToggleRight, CheckSquare } from 'lucide-react';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const Settings = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState(localStorage.getItem('settingsActiveTab') || 'general');
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('settingsActiveTab', activeTab);
   }, [activeTab]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/settings`, { headers: { Authorization: `Bearer ${token}` } });
+      setSettings(res.data);
+    } catch (err) {
+      toast.error('Failed to load platform settings');
+    }
+    setLoading(false);
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/settings`, settings, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Settings saved successfully');
+    } catch (err) {
+      toast.error('Failed to save settings');
+    }
+    setSaving(false);
+  };
+
+  const updateFeatureToggle = (key, value) => {
+      setSettings(prev => ({ ...prev, feature_toggles: { ...prev.feature_toggles, [key]: value } }));
+  };
+
+  const updateEnabledModule = (module, isEnabled) => {
+      setSettings(prev => {
+          const modules = new Set(prev.enabled_modules || []);
+          if (isEnabled) modules.add(module);
+          else modules.delete(module);
+          return { ...prev, enabled_modules: Array.from(modules) };
+      });
+  };
+
+  const updateNotification = (key, value) => {
+      setSettings(prev => ({ ...prev, notification_settings: { ...prev.notification_settings, [key]: value } }));
+  };
+
+  const updateIntegration = (key, value) => {
+      setSettings(prev => ({ ...prev, integration_configs: { ...prev.integration_configs, [key]: value } }));
+  };
 
   return (
     <div className="page-root">
@@ -27,9 +84,7 @@ const Settings = ({ user, onLogout }) => {
             <div style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {[
                     { id: 'general', label: 'General', icon: Building },
-                    { id: 'branding', label: 'Branding & UI', icon: Palette },
                     { id: 'notifications', label: 'Notifications', icon: Bell },
-                    { id: 'security', label: 'Security & SSO', icon: Shield },
                     { id: 'localization', label: 'Localization', icon: Globe },
                 ].map(item => (
                     <button 
@@ -50,59 +105,100 @@ const Settings = ({ user, onLogout }) => {
 
             {/* Content for Settings */}
             <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '40px' }}>
-                {activeTab === 'general' && (
-                    <div className="fade-in">
-                        <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Organization Details</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '500px' }}>
-                            <div>
-                                <label className="dark-label">Organization Name</label>
-                                <input type="text" className="dark-input" defaultValue="BizOps Enterprise" />
-                            </div>
-                            <div>
-                                <label className="dark-label">Corporate Email</label>
-                                <input type="email" className="dark-input" defaultValue="admin@bizops.io" />
-                            </div>
-                            <div>
-                                <label className="dark-label">Timezone</label>
-                                <select className="dark-input">
-                                    <option>UTC +5:30 (IST)</option>
-                                    <option>UTC +0:00 (GMT)</option>
-                                    <option>UTC -5:00 (EST)</option>
-                                </select>
-                            </div>
-                            <button className="btn-dark-primary" style={{ marginTop: '20px', width: 'fit-content' }}>Save Changes</button>
-                        </div>
-                    </div>
-                )}
-                {activeTab === 'branding' && (
-                    <div className="fade-in">
-                        <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Visual Branding</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                            <div>
-                                <label className="dark-label">Company Logo</label>
-                                <div style={{ marginTop: '10px', width: '100px', height: '100px', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>Upload PNG</span>
+                {loading ? <div className="dark-loading">Loading settings...</div> : settings && (
+                    <>
+                        {activeTab === 'general' && (
+                            <div className="fade-in">
+                                <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Feature & Module Configurations</h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '600px' }}>
+                                    <div>
+                                        <label className="dark-label" style={{ marginBottom: '12px', display: 'block' }}>Feature Toggles</label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {Object.entries(settings.feature_toggles || {}).map(([key, value]) => (
+                                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px' }}>
+                                                    <span style={{ color: '#fff', textTransform: 'capitalize' }}>{key.replace('_', ' ')}</span>
+                                                    <div style={{ cursor: 'pointer' }} onClick={() => updateFeatureToggle(key, !value)}>
+                                                        {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="rgba(255,255,255,0.4)" size={24} />}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="dark-label" style={{ marginBottom: '12px', display: 'block' }}>Enabled Modules</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            {['HRMS', 'FINANCE', 'CRM', 'INVENTORY', 'ASSETS'].map(module => {
+                                                const isEnabled = (settings.enabled_modules || []).includes(module);
+                                                return (
+                                                    <div key={module} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => updateEnabledModule(module, !isEnabled)}>
+                                                        <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: `2px solid ${isEnabled ? '#6366f1' : 'rgba(255,255,255,0.2)'}`, background: isEnabled ? '#6366f1' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            {isEnabled && <CheckSquare size={14} color="#fff" />}
+                                                        </div>
+                                                        <span style={{ color: '#fff' }}>{module}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <button className="btn-dark-primary" onClick={handleSave} disabled={saving} style={{ marginTop: '20px', width: 'fit-content' }}>
+                                        {saving ? 'Saving...' : 'Save General Settings'}
+                                    </button>
                                 </div>
                             </div>
-                            <div>
-                                <label className="dark-label">Primary Color</label>
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                    {['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#ec4899'].map(color => (
-                                        <div key={color} style={{ width: '32px', height: '32px', borderRadius: '50%', background: color, border: '2px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} />
+                        )}
+
+                        {activeTab === 'notifications' && (
+                            <div className="fade-in">
+                                <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Notification Preferences</h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '600px' }}>
+                                    {Object.entries(settings.notification_settings || {}).map(([key, value]) => (
+                                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '8px' }}>
+                                            <div>
+                                                <div style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize' }}>{key.replace('_', ' ')}</div>
+                                            </div>
+                                            <div style={{ cursor: 'pointer' }} onClick={() => updateNotification(key, !value)}>
+                                                {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="rgba(255,255,255,0.4)" size={24} />}
+                                            </div>
+                                        </div>
                                     ))}
+                                    <button className="btn-dark-primary" onClick={handleSave} disabled={saving} style={{ marginTop: '20px', width: 'fit-content' }}>
+                                        {saving ? 'Saving...' : 'Save Notification Settings'}
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                )}
-                {activeTab !== 'general' && activeTab !== 'branding' && (
-                    <div style={{ textAlign: 'center', padding: '60px' }}>
-                        <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                            <SettingsIcon size={32} color="rgba(255,255,255,0.2)" />
-                        </div>
-                        <h3 style={{ color: '#fff', fontSize: '18px', margin: '0 0 8px' }}>Module Under Development</h3>
-                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>This configuration tab will be available in the next Enterprise update.</p>
-                    </div>
+                        )}
+
+                        {activeTab === 'localization' && (
+                            <div className="fade-in">
+                                <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Integrations & External Configs</h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '600px' }}>
+                                    {Object.entries(settings.integration_configs || {}).map(([key, value]) => (
+                                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '8px' }}>
+                                            <div style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize' }}>{key.replace('_', ' ')} Integration</div>
+                                            <div style={{ cursor: 'pointer' }} onClick={() => updateIntegration(key, !value)}>
+                                                {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="rgba(255,255,255,0.4)" size={24} />}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button className="btn-dark-primary" onClick={handleSave} disabled={saving} style={{ marginTop: '20px', width: 'fit-content' }}>
+                                        {saving ? 'Saving...' : 'Save Integrations'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab !== 'general' && activeTab !== 'notifications' && activeTab !== 'localization' && (
+                            <div style={{ textAlign: 'center', padding: '60px' }}>
+                                <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                                    <SettingsIcon size={32} color="rgba(255,255,255,0.2)" />
+                                </div>
+                                <h3 style={{ color: '#fff', fontSize: '18px', margin: '0 0 8px' }}>Coming Soon</h3>
+                                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>This configuration tab will be available in future releases.</p>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
           </div>

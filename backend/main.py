@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, status, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, status, Request, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -91,6 +91,7 @@ class AIAuditTrackerMiddleware(BaseHTTPMiddleware):
             auth = request.headers.get("Authorization")
             user_id, org_id, user_email = None, "unknown", "System/Unknown"
             
+            company_id = None
             if auth and auth.startswith("Bearer "):
                 try:
                     token = auth.split(" ")[1]
@@ -99,13 +100,16 @@ class AIAuditTrackerMiddleware(BaseHTTPMiddleware):
                     with _cache_lock:
                         user = _user_cache.get(user_id)
                     if user:
+                        user_id = user.get("id", user_id)
                         user_email = user.get("email", "Unknown")
                         org_id = user.get("organization_id", "unknown")
+                        company_id = user.get("company_id")
                 except Exception:
                     pass
             
             parts = path.split("/")
             module = parts[2] if len(parts) > 2 else "system"
+            entity_id = parts[3] if len(parts) > 3 else None
             
             # AI Anomaly Heuristics (ZOHO/SAP flavor)
             details = f"{method} action executed on {module.upper()} module"
@@ -116,13 +120,28 @@ class AIAuditTrackerMiddleware(BaseHTTPMiddleware):
                 details += " 🔒 [AI FLAG: Sensitive data modification detected]"
                 anomaly = True
             
+            action_map = {"POST": "CREATE", "PUT": "UPDATE", "PATCH": "UPDATE", "DELETE": "DELETE"}
+
+            ip_address = request.client.host if request.client else None
+            device_info = request.headers.get("user-agent")
+
+            # Avoid logging login requests here as they are explicitly logged in the endpoint
+            if module.upper() == "AUTH" and "login" in path:
+                return response
+
             log_doc = {
                 "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "company_id": company_id,
                 "organization_id": org_id,
                 "user_email": user_email,
                 "action": method,
+                "action_type": action_map.get(method, method),
                 "module": module.upper(),
+                "entity_id": entity_id,
                 "details": details,
+                "ip_address": ip_address,
+                "device_info": device_info,
                 "anomaly_flag": anomaly,
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
@@ -1231,10 +1250,16 @@ class KnowledgeBaseArticle(BaseModel):
 class AuditLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    user_id: Optional[str] = None
+    company_id: Optional[str] = None
     user_email: str
+    action_type: Optional[str] = None
     action: str
     module: str
+    entity_id: Optional[str] = None
     details: str
+    ip_address: Optional[str] = None
+    device_info: Optional[str] = None
     organization_id: str
     created_at: str
 
@@ -1441,7 +1466,7 @@ async def register(user_data: UserRegister):
     return {"access_token": access_token, "token_type": "bearer", "user": safe_user}
 
 @api_router.post("/auth/login", response_model=Token)
-async def login(user_data: UserLogin):
+async def login(user_data: UserLogin, request: Request):
     user = await db.users.find_one({"email": user_data.email}, {"_id": 0})
     if not user or not verify_password(user_data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -1456,6 +1481,26 @@ async def login(user_data: UserLogin):
             user["enabled_services"] = admin.get("enabled_services")
             user["subscription_end_date"] = admin.get("subscription_end_date")
             
+    # Audit Login action
+    ip_address = request.client.host if request.client else None
+    device_info = request.headers.get("user-agent")
+    log_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "company_id": user.get("company_id"),
+        "organization_id": user.get("organization_id", "unknown"),
+        "user_email": user["email"],
+        "action": "LOGIN",
+        "action_type": "LOGIN",
+        "module": "AUTH",
+        "details": "User successfully logged in",
+        "ip_address": ip_address,
+        "device_info": device_info,
+        "anomaly_flag": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.audit_logs.insert_one(log_doc)
+
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 @api_router.get("/auth/me", response_model=User)
@@ -2412,6 +2457,14 @@ class SubscriptionCreate(BaseModel):
     plan: str
     billing_cycle: str = "monthly"
 
+class PlatformSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    organization_id: str
+    feature_toggles: Optional[dict] = Field(default_factory=dict)
+    enabled_modules: Optional[List[str]] = Field(default_factory=list)
+    notification_settings: Optional[dict] = Field(default_factory=dict)
+    integration_configs: Optional[dict] = Field(default_factory=dict)
+
 class Analytics(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -3243,6 +3296,48 @@ async def get_subscription_plans():
         ]
     }
 
+# ── Platform Settings ──────────────────────────────────────────────
+@api_router.get("/settings", response_model=PlatformSettings)
+async def get_platform_settings(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to access platform settings.")
+
+    org_id = current_user.get("organization_id")
+    settings = await db.platform_settings.find_one({"organization_id": org_id}, {"_id": 0})
+    if not settings:
+        # Return default if none exists yet
+        return PlatformSettings(
+            organization_id=org_id,
+            feature_toggles={"ai_insights": True, "dark_mode_default": True},
+            enabled_modules=["HRMS", "FINANCE", "CRM"],
+            notification_settings={"email_alerts": True, "slack_integration": False},
+            integration_configs={"stripe": False, "razorpay": False}
+        )
+    return settings
+
+@api_router.put("/settings", response_model=PlatformSettings)
+async def update_platform_settings(data: PlatformSettings, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to modify platform settings.")
+
+    org_id = current_user.get("organization_id")
+    update_data = data.model_dump(exclude={"organization_id"})
+
+    await db.platform_settings.update_one(
+        {"organization_id": org_id},
+        {"$set": update_data},
+        upsert=True
+    )
+
+    updated = await db.platform_settings.find_one({"organization_id": org_id}, {"_id": 0})
+    # If using in-memory db, upsert might return dict directly if not perfectly mocked
+    if not updated:
+        update_data["organization_id"] = org_id
+        return update_data
+
+    return updated
+
+
 @api_router.get("/subscriptions/current")
 async def get_current_subscription(current_user: dict = Depends(get_current_user)):
     user_data = None
@@ -3879,10 +3974,27 @@ async def get_kb_articles(category: Optional[str] = None, current_user: dict = D
 
 # Audit logs (Enterprise Transparency)
 @api_router.get("/audit", response_model=List[AuditLog])
-async def get_audit_logs(current_user: dict = Depends(get_current_user)):
+async def get_audit_logs(
+    search: Optional[str] = Query(None, description="Search query for audit details"),
+    module: Optional[str] = Query(None, description="Filter by module"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: dict = Depends(get_current_user)
+):
     if current_user["role"] not in ["admin", "superadmin"]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    return await db.audit_logs.find({"organization_id": current_user["organization_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+    query = {"organization_id": current_user["organization_id"]}
+    if search:
+        query["$or"] = [
+            {"user_email": {"$regex": search, "$options": "i"}},
+            {"details": {"$regex": search, "$options": "i"}},
+            {"action": {"$regex": search, "$options": "i"}}
+        ]
+    if module:
+        query["module"] = module.upper()
+
+    return await db.audit_logs.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).to_list(limit)
 
 
 # Dashboard AI Insights (The 'Killer Feature' for a Top ERP)
@@ -6517,6 +6629,8 @@ async def create_indexes():
     await db.posh_complaints.create_index([("organization_id", 1), ("status", 1)])
     await db.wfh_requests.create_index([("organization_id", 1), ("status", 1)])
     await db.audit_logs.create_index([("organization_id", 1), ("created_at", -1)])
+    await db.audit_logs.create_index([("company_id", 1)])
+    await db.audit_logs.create_index([("module", 1)])
     await db.offer_letters.create_index([("organization_id", 1), ("created_at", -1)])
     await db.jobs.create_index([("organization_id", 1), ("status", 1)])
     await db.candidates.create_index([("organization_id", 1), ("job_id", 1)])
