@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
+import * as tf from '@tensorflow/tfjs';
+import * as blazeface from '@tensorflow-models/blazeface';
 
 const Careers = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState(localStorage.getItem('careersActiveTab') || 'jobBoard');
@@ -28,9 +30,101 @@ const Careers = ({ user, onLogout }) => {
   const [chatInput, setChatInput] = useState('');
   const [candidates, setCandidates] = useState([]);
 
+  // Anti-cheating refs
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [proctorStatus, setProctorStatus] = useState('Initializing Face Detection...');
+  const [blazeModel, setBlazeModel] = useState(null);
+
   useEffect(() => {
     fetchJobs();
+    loadBlazeface();
   }, []);
+
+  const loadBlazeface = async () => {
+    try {
+      await tf.setBackend('webgl');
+      const model = await blazeface.load();
+      setBlazeModel(model);
+      setProctorStatus('Ready');
+    } catch(err) {
+      console.error("TFJS load error:", err);
+      setProctorStatus('Failed to load Face Model');
+    }
+  };
+
+  useEffect(() => {
+    let animationId;
+
+    const setupCamera = async () => {
+      if (videoRef.current && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoRef.current.srcObject = stream;
+        } catch (err) {
+          console.error("Camera access denied:", err);
+          setProctorStatus('Camera Access Denied');
+        }
+      }
+    };
+
+    const detectFaces = async () => {
+      if (videoRef.current && canvasRef.current && blazeModel) {
+        if (videoRef.current.readyState === 4) {
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const returnTensors = false;
+          const predictions = await blazeModel.estimateFaces(video, returnTensors);
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          if (predictions.length > 0) {
+            if (predictions.length > 1) {
+               setProctorStatus('WARNING: Multiple faces detected!');
+            } else {
+               setProctorStatus('Proctoring: Active & Clear');
+            }
+            predictions.forEach(pred => {
+               ctx.beginPath();
+               ctx.lineWidth = "2";
+               ctx.strokeStyle = predictions.length > 1 ? "red" : "green";
+               ctx.rect(
+                 pred.topLeft[0],
+                 pred.topLeft[1],
+                 pred.bottomRight[0] - pred.topLeft[0],
+                 pred.bottomRight[1] - pred.topLeft[1]
+               );
+               ctx.stroke();
+            });
+          } else {
+            setProctorStatus('WARNING: No face detected!');
+          }
+        }
+      }
+      animationId = requestAnimationFrame(detectFaces);
+    };
+
+    if (activeTab === 'aiInterview' && interviewSession) {
+      setupCamera().then(() => {
+        videoRef.current.onloadeddata = () => {
+          detectFaces();
+        };
+      });
+    }
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+      if (videoRef.current && videoRef.current.srcObject) {
+         videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, [activeTab, interviewSession, blazeModel]);
 
 
   const handleStartHiring = async () => {
@@ -290,8 +384,12 @@ const Careers = ({ user, onLogout }) => {
             ) : (
               <div style={{ display: 'flex', gap: '24px' }}>
                 <div style={{ flex: 2, background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px' }}>
-                  <div style={{ width: '100%', height: '300px', background: '#111', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', border: '2px solid #22c55e' }}>
-                    [Active Webcam Feed]
+                  <div style={{ position: 'relative', width: '100%', height: '300px', background: '#111', borderRadius: '8px', marginBottom: '16px', border: proctorStatus.includes('WARNING') ? '2px solid #ef4444' : '2px solid #22c55e', overflow: 'hidden' }}>
+                    <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+                    <canvas ref={canvasRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', color: proctorStatus.includes('WARNING') ? '#ef4444' : '#22c55e' }}>
+                      {proctorStatus}
+                    </div>
                   </div>
                   <div style={{ height: '300px', overflowY: 'auto', background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {interviewSession.messages.map((m, idx) => (
