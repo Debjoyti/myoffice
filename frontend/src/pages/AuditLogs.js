@@ -12,16 +12,41 @@ const AuditLogs = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [moduleFilter, setModuleFilter] = useState('');
+  const [skip, setSkip] = useState(0);
+  const limit = 100;
+
+  useEffect(() => {
+    // Reset pagination when search or filter changes
+    setSkip(0);
+  }, [searchQuery, moduleFilter]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+        fetchData();
+    }, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, moduleFilter, skip]);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${API}/audit`, { headers: { Authorization: `Bearer ${token}` } });
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (moduleFilter) params.append('module', moduleFilter);
+      params.append('skip', skip.toString());
+      params.append('limit', limit.toString());
+
+      const res = await axios.get(`${API}/audit?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
       setLogs(res.data);
     } catch { toast.error('Failed to fetch audit logs'); }
     setLoading(false);
   };
+
+  const handleNextPage = () => setSkip(prev => prev + limit);
+  const handlePrevPage = () => setSkip(prev => Math.max(0, prev - limit));
 
   return (
     <div className="page-root">
@@ -41,7 +66,31 @@ const AuditLogs = ({ user, onLogout }) => {
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} size={16} />
-              <input type="text" placeholder="Search by user or action..." className="dark-input" style={{ paddingLeft: '40px' }} />
+              <input
+                type="text"
+                placeholder="Search by user or action..."
+                className="dark-input"
+                style={{ paddingLeft: '40px' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div style={{ position: 'relative', width: '200px' }}>
+                <Filter style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} size={16} />
+                <select
+                  className="dark-input"
+                  style={{ paddingLeft: '40px' }}
+                  value={moduleFilter}
+                  onChange={(e) => setModuleFilter(e.target.value)}
+                >
+                    <option value="">All Modules</option>
+                    <option value="AUTH">Authentication</option>
+                    <option value="HRMS">HRMS</option>
+                    <option value="FINANCE">Finance</option>
+                    <option value="CRM">CRM</option>
+                    <option value="SETTINGS">Settings</option>
+                    <option value="SYSTEM">System</option>
+                </select>
             </div>
           </div>
 
@@ -81,11 +130,35 @@ const AuditLogs = ({ user, onLogout }) => {
               {logs.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '100px 0' }}>
                     <History size={48} color="rgba(255,255,255,0.05)" style={{ margin: '0 auto 16px' }} />
-                    <p style={{ color: 'rgba(255,255,255,0.2)' }}>No audit logs recorded yet. Systems are secured.</p>
+                    <p style={{ color: 'rgba(255,255,255,0.2)' }}>No audit logs found matching criteria.</p>
                 </div>
               )}
             </div>
           )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
+              Showing {logs.length} records {skip > 0 ? `(offset ${skip})` : ''}
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={handlePrevPage}
+                disabled={skip === 0}
+                className="btn-dark-secondary"
+                style={{ padding: '8px 16px', opacity: skip === 0 ? 0.5 : 1, cursor: skip === 0 ? 'not-allowed' : 'pointer' }}
+              >
+                Previous
+              </button>
+              <button
+                onClick={handleNextPage}
+                disabled={logs.length < limit}
+                className="btn-dark-secondary"
+                style={{ padding: '8px 16px', opacity: logs.length < limit ? 0.5 : 1, cursor: logs.length < limit ? 'not-allowed' : 'pointer' }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

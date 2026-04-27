@@ -104,6 +104,7 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
 
   const isItemVisible = (item) => {
     if (user?.role === 'superadmin') return true;
+    if (item.id === 'audit' && user?.role !== 'admin') return false;
     if (['dashboard', 'subscription', 'settings'].includes(item.id)) return true;
     if (user?.role === 'accountant' && ['dashboard', 'accountant', 'settings', 'feed'].includes(item.id)) return true;
     const serviceId = serviceMapping[item.id];
