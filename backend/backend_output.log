@@ -1,6 +1,6 @@
 WARNING:root:MONGO_URL is missing. Using in-memory fallback database.
 WARNING:root:⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!
-INFO:     Started server process [86106]
+INFO:     Started server process [38525]
 INFO:     Waiting for application startup.
 WARNING:main:Running backend with in-memory fallback DB.
 INFO:     Application startup complete.
@@ -13,17 +13,22 @@ DONE: Seeded 10 Turtle Diagrams
 DONE: Seeded 250 additional records for Gap Analysis (Audit Dashboard)
 
 SUCCESS: VOLUME SEEDING COMPLETED!
-INFO:     127.0.0.1:55176 - "POST /api/careers/jobs/create-from-jd HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55188 - "POST /api/careers/apply HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55198 - "POST /api/careers/ai-interview/start/d203434a-f59f-4526-b025-c3f19c6739d0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55208 - "POST /api/careers/ai-interview/sess_d203434a-f59f-4526-b025-c3f19c6739d0/chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55222 - "POST /api/careers/ai-interview/sess_d203434a-f59f-4526-b025-c3f19c6739d0/chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55226 - "POST /api/careers/ai-interview/sess_d203434a-f59f-4526-b025-c3f19c6739d0/finish HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55238 - "GET /api/careers/candidates HTTP/1.1" 200 OK
 INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
-INFO:     None:0 - "GET /api/careers/jobs HTTP/1.1" 200 OK
+INFO:     None:0 - "GET /undefined/api/expenses HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/employees HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/expenses/categories HTTP/1.1" 404 Not Found
 INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
-INFO:     None:0 - "GET /api/careers/jobs HTTP/1.1" 200 OK
+INFO:     None:0 - "GET /undefined/api/expenses HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/employees HTTP/1.1" 404 Not Found
+INFO:     None:0 - "GET /undefined/api/expenses/categories HTTP/1.1" 404 Not Found
 INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
 INFO:     None:0 - "GET /undefined/api/dashboard/stats HTTP/1.1" 404 Not Found
-INFO:     None:0 - "GET /api/careers/candidates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42178 - "POST /api/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42188 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42190 - "POST /api/departments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42194 - "POST /api/positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42204 - "POST /api/employees HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42208 - "POST /api/salary-structure/suggest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42220 - "POST /api/salary-structure HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42230 - "POST /api/payroll/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42232 - "POST /api/payroll/e1a1c311-3997-451d-8307-35b5711dc9aa/lock HTTP/1.1" 200 OK

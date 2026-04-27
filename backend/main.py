@@ -19,6 +19,7 @@ from cachetools import TTLCache
 import threading
 from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
+from ai_expense_engine import analyze_receipt, validate_expense_claim
 
 try:
     from motor.motor_asyncio import AsyncIOMotorClient
@@ -754,6 +755,21 @@ class DealCreate(BaseModel):
     probability: int = 50
     expected_close_date: Optional[str] = None
 
+class ExpenseCategory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    company_id: str
+    organization_id: str
+    name: str
+    max_limit: float
+    requires_receipt: bool = True
+    created_at: str
+
+class ExpenseCategoryCreate(BaseModel):
+    name: str
+    max_limit: float
+    requires_receipt: bool = True
+
 class Expense(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -762,7 +778,14 @@ class Expense(BaseModel):
     amount: float
     description: Optional[str] = None
     date: str
-    status: str = "pending"
+    status: str = "submitted" # submitted, manager_approved, finance_approved, approved, rejected, flagged, paid
+    receipt_url: Optional[str] = None
+    payment_method: str = "direct" # direct, payroll
+    ai_extracted_data: Optional[dict] = None
+    ai_score: float = 10.0
+    ai_flags: List[str] = []
+    manager_id: Optional[str] = None
+    finance_id: Optional[str] = None
     created_at: str
 
 class ExpenseCreate(BaseModel):
@@ -771,6 +794,9 @@ class ExpenseCreate(BaseModel):
     amount: float
     description: Optional[str] = None
     date: str
+    receipt_url: Optional[str] = None
+    payment_method: str = "direct"
+    ai_extracted_data: Optional[dict] = None
 
 class InventoryItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -2618,15 +2644,61 @@ async def delete_deal(deal_id: str, current_user: dict = Depends(get_current_use
         raise HTTPException(status_code=404, detail="Deal not found")
     return {"status": "deleted"}
 
+@api_router.post("/expenses/categories", response_model=ExpenseCategory)
+async def create_expense_category(cat_data: ExpenseCategoryCreate, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    company_id = get_accountant_company(current_user) if current_user.get("role") == "accountant" else current_user.get("company_id", "default_company")
+    cat_doc = cat_data.model_dump()
+    cat_doc["id"] = str(uuid.uuid4())
+    cat_doc["company_id"] = company_id
+    cat_doc["organization_id"] = current_user.get("organization_id")
+    cat_doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.expense_categories.insert_one(cat_doc)
+    return cat_doc
+
+@api_router.get("/expenses/categories", response_model=List[ExpenseCategory])
+async def get_expense_categories(current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user) if current_user.get("role") == "accountant" else current_user.get("company_id", "default_company")
+    cats = await db.expense_categories.find({"company_id": company_id}, {"_id": 0}).to_list(100)
+    return cats
+
+@api_router.post("/expenses/upload-receipt")
+async def upload_expense_receipt(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    try:
+        content = await file.read()
+        text = extract_text_from_file(content, file.filename)
+        extracted = analyze_receipt(text)
+
+        # In a real app we'd save to S3. Here we simulate it.
+        receipt_url = f"/uploads/receipts/{uuid.uuid4()}_{file.filename}"
+
+        return {
+            "receipt_url": receipt_url,
+            "extracted_data": extracted,
+            "raw_text": text[:500]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(exp_data: ExpenseCreate, current_user: dict = Depends(get_current_user)):
+    company_id = get_accountant_company(current_user) if current_user.get("role") == "accountant" else current_user.get("company_id", "default_company")
     exp_doc = exp_data.model_dump()
     exp_doc["id"] = str(uuid.uuid4())
-    exp_doc["status"] = "pending"
+    exp_doc["status"] = "submitted"
     exp_doc["organization_id"] = current_user.get("organization_id")
-    if current_user.get("role") == "accountant":
-        exp_doc["company_id"] = get_accountant_company(current_user)
+    exp_doc["company_id"] = company_id
     exp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Run AI Validation
+    validation_result = await validate_expense_claim(db, company_id, exp_doc)
+    exp_doc["ai_score"] = validation_result["score"]
+    exp_doc["ai_flags"] = validation_result["flags"]
+    if validation_result["score"] < 5.0:
+        exp_doc["status"] = "flagged"
+
     await db.expenses.insert_one(exp_doc)
     return exp_doc
 
@@ -2639,24 +2711,89 @@ async def get_expenses(current_user: dict = Depends(get_current_user)):
     return expenses
 
 @api_router.patch("/expenses/{expense_id}/approve")
-async def approve_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["admin", "superadmin"]:
-        raise HTTPException(status_code=403, detail="Only admins can approve expenses")
-    result = await db.expenses.update_one(
-        {"id": expense_id},
-        {"$set": {"status": "approved", "approved_by": current_user["id"], "approved_date": datetime.now(timezone.utc).isoformat()}}
-    )
-    if result.matched_count == 0:
+async def approve_expense(expense_id: str, level: str, current_user: dict = Depends(get_current_user)):
+    # level can be 'manager' or 'finance'
+    expense = await db.expenses.find_one({"id": expense_id})
+    if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
-    return {"message": "Expense approved"}
+
+    company_id = expense.get("company_id", "default_company")
+    updates = {}
+    if level == "manager":
+        updates["status"] = "manager_approved"
+        updates["manager_id"] = current_user["id"]
+    elif level == "finance":
+        if current_user.get("role") not in ["admin", "superadmin", "accountant"]:
+            raise HTTPException(status_code=403, detail="Not authorized for finance approval")
+        updates["status"] = "approved"
+        updates["finance_id"] = current_user["id"]
+        updates["approved_date"] = datetime.now(timezone.utc).isoformat()
+
+        # Trigger Auto GL Entry for Expense -> Payable
+        try:
+            exp_acc = await _get_or_create_system_account(db, company_id, "5020", "Employee Expenses", "expense", "operating")
+            pay_acc = await _get_or_create_system_account(db, company_id, "2020", "Expense Payables", "liability", "current")
+            await create_auto_journal_entry(
+                db=db,
+                company_id=company_id,
+                date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                narration=f"Expense Claim Approved: {expense.get('category')} - {expense.get('description', '')}",
+                reference=f"EXP-{expense['id'][:8]}",
+                lines=[
+                    {"account_id": exp_acc["id"], "debit": expense["amount"], "credit": 0.0},
+                    {"account_id": pay_acc["id"], "debit": 0.0, "credit": expense["amount"]}
+                ],
+                created_by="System - Expense Module"
+            )
+        except Exception as e:
+            print(f"GL Error during expense approval: {e}")
+
+    result = await db.expenses.update_one({"id": expense_id}, {"$set": updates})
+    return {"message": f"Expense {level} approved"}
+
+@api_router.patch("/expenses/{expense_id}/pay")
+async def pay_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin", "accountant"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    expense = await db.expenses.find_one({"id": expense_id})
+    if not expense or expense.get("status") != "approved":
+        raise HTTPException(status_code=400, detail="Expense not found or not approved")
+
+    company_id = expense.get("company_id", "default_company")
+
+    # Auto GL: Payable -> Bank
+    try:
+        pay_acc = await _get_or_create_system_account(db, company_id, "2020", "Expense Payables", "liability", "current")
+        bank_acc = await _get_or_create_system_account(db, company_id, "1010", "Main Bank Account", "asset", "bank")
+        await create_auto_journal_entry(
+            db=db,
+            company_id=company_id,
+            date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            narration=f"Expense Reimbursement Paid",
+            reference=f"PAY-EXP-{expense['id'][:8]}",
+            lines=[
+                {"account_id": pay_acc["id"], "debit": expense["amount"], "credit": 0.0},
+                {"account_id": bank_acc["id"], "debit": 0.0, "credit": expense["amount"]}
+            ],
+            created_by="System - Expense Module"
+        )
+    except Exception as e:
+        print(f"GL Error during expense payment: {e}")
+
+    await db.expenses.update_one(
+        {"id": expense_id},
+        {"$set": {"status": "paid", "paid_date": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Expense marked as paid"}
 
 @api_router.patch("/expenses/{expense_id}/reject")
 async def reject_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["admin", "superadmin"]:
-        raise HTTPException(status_code=403, detail="Only admins can reject expenses")
+    if current_user.get("role") not in ["admin", "superadmin", "accountant", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized to reject expenses")
     result = await db.expenses.update_one(
         {"id": expense_id},
-        {"$set": {"status": "rejected", "approved_by": current_user["id"], "approved_date": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {"status": "rejected", "rejected_by": current_user["id"], "rejected_date": datetime.now(timezone.utc).isoformat()}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Expense not found")
