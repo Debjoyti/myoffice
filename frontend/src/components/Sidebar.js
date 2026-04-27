@@ -75,6 +75,7 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
       group: 'HR & Operations',
       items: [
         { id: 'hrms', label: 'HR People Hub', icon: Users, path: '/hrms', tcode: 'PA40', desc: 'Human resources' },
+        { id: 'salary-details', label: 'Salary Details', icon: Receipt, path: '/salary-details', tcode: 'SAL1', desc: 'My compensation' },
         { id: 'iatf-hub', label: 'IATF Hub', icon: ShieldCheck, path: '/iatf-hub', tcode: 'IATF', desc: 'L&D & Compliance' },
         { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team', tcode: 'SU01', desc: 'User management' },
         { id: 'careers', label: 'Careers', icon: Briefcase, path: '/careers', tcode: 'CARE', desc: 'Careers & Hiring' },
