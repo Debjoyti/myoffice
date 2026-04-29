@@ -46,7 +46,6 @@ const getHealthScore = (stats) => {
   if (stats.total_employees > 0) { score += 10; breakdown.push({ label: 'Team built', positive: true }); }
   if (stats.total_leads > 5) { score += 10; breakdown.push({ label: 'Active pipeline', positive: true }); }
   if (stats.total_invoices > 2) { score += 10; breakdown.push({ label: 'Revenue flowing', positive: true }); }
-  if (stats.total_projects > 0) { score += 8; breakdown.push({ label: 'Projects active', positive: true }); }
   if (stats.pending_leaves > 3) { score -= 8; breakdown.push({ label: 'Leave backlog', positive: false }); }
   if (stats.total_tickets > 10) { score -= 5; breakdown.push({ label: 'High ticket volume', positive: false }); }
   score = Math.max(0, Math.min(100, score));
@@ -143,13 +142,10 @@ const Dashboard = ({ user, onLogout }) => {
 
   const statCards = [
     { id: 'employees', title: 'Total Employees', value: stats?.total_employees ?? '—', icon: Users,        color: '#6366f1', trend: '+2 this month', sparkData: sparklines.employees },
-    { id: 'projects',  title: 'Active Projects',  value: stats?.total_projects  ?? '—', icon: Briefcase,    color: '#8b5cf6', trend: 'On track',       sparkData: [2,3,4,4,stats?.total_projects||4] },
     { id: 'leaves',    title: 'Pending Leaves',   value: stats?.pending_leaves  ?? '—', icon: Calendar,     color: '#f59e0b', trend: 'Needs review',   sparkData: [0,1,2,1,stats?.pending_leaves||1] },
-    { id: 'crm',       title: 'CRM Pipeline',     value: stats?.total_leads     ?? '—', icon: Target,       color: '#22d3ee', trend: 'Active leads',   sparkData: sparklines.leads },
     { id: 'finance',   title: 'Invoices',          value: stats?.total_invoices  ?? '—', icon: Receipt,      color: '#f59e0b', trend: 'In system',      sparkData: sparklines.invoices },
     { id: 'support',   title: 'Support Tickets',  value: stats?.total_tickets   ?? '—', icon: MessageSquare,color: '#f43f5e', trend: 'Need attention', sparkData: sparklines.tickets },
     { id: 'finance',   title: 'Monthly Expenses', value: `₹${((stats?.total_expenses || 0) / 100000).toFixed(1)}L`, icon: DollarSign, color: '#ef4444', trend: 'This month', sparkData: [1,2,2,3,(stats?.total_expenses||0)/100000] },
-    { id: 'projects',  title: 'Billable Hours',   value: `${stats?.total_timesheet_hours ?? 0}h`, icon: Clock, color: '#38bdf8', trend: 'Logged total', sparkData: [10,20,30,stats?.total_timesheet_hours||40] },
   ].filter(card => {
     if (user?.role === 'superadmin') return true;
     if (!user?.enabled_services) return true;
@@ -158,11 +154,8 @@ const Dashboard = ({ user, onLogout }) => {
 
   const quickActions = [
     { id: 'finance',   label: 'Create Invoice',  sub: 'VF01 · Finance',    href: '/finance',      emoji: '🧾', color: '#6366f1' },
-    { id: 'projects',  label: 'Log Time',         sub: 'CAT2 · Timesheets', href: '/timesheets',   emoji: '⏱️', color: '#22d3ee' },
     { id: 'support',   label: 'Raise Ticket',     sub: 'SO11 · Support',    href: '/support-desk', emoji: '🆘', color: '#f43f5e' },
     { id: 'employees', label: 'Add Employee',     sub: 'PA40 · HRMS',       href: '/hrms',         emoji: '👤', color: '#8b5cf6' },
-    { id: 'projects',  label: 'Create Project',   sub: 'CJ20N · Projects',  href: '/projects',     emoji: '📋', color: '#10b981' },
-    { id: 'assets',    label: 'New Asset',        sub: 'AA01 · Assets',     href: '/assets',       emoji: '📦', color: '#f59e0b' },
   ].filter(a => {
     if (user?.role === 'superadmin') return true;
     if (!user?.enabled_services) return true;
@@ -173,7 +166,6 @@ const Dashboard = ({ user, onLogout }) => {
   const aiBriefItems = [
     stats?.pending_leaves > 0 && { type: 'warning', icon: AlertTriangle, msg: `${stats.pending_leaves} leave request${stats.pending_leaves > 1 ? 's' : ''} pending your review`, link: '/hrms', color: '#f59e0b' },
     stats?.total_tickets > 0 && { type: 'info', icon: MessageSquare, msg: `${stats.total_tickets} support ticket${stats.total_tickets > 1 ? 's' : ''} in queue — check SLA status`, link: '/support-desk', color: '#6366f1' },
-    stats?.total_leads > 0 && { type: 'positive', icon: TrendingUp, msg: `${stats.total_leads} leads in CRM pipeline — review today for momentum`, link: '/crm', color: '#10b981' },
     stats?.total_invoices > 0 && { type: 'info', icon: Receipt, msg: `${stats.total_invoices} invoice${stats.total_invoices > 1 ? 's' : ''} created — follow up on any overdue amounts`, link: '/finance', color: '#22d3ee' },
   ].filter(Boolean);
 

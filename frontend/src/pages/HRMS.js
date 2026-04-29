@@ -10,9 +10,7 @@ import {
 import Employees from './Employees';
 import Attendance from './Attendance';
 import LeaveManagement from './LeaveManagement';
-import OfferLetters from './OfferLetters';
 import HRConfig from './HRConfig';
-import Recruitment from './Recruitment';
 import POSH from './POSH';
 import WFHRequests from './WFHRequests';
 import Resignations from './Resignations';
@@ -282,8 +280,6 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'attendance' && <Attendance isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'leave' && <LeaveManagement isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'wfh' && <WFHRequests isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'recruitment' && <Recruitment isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'offer-letters' && <OfferLetters isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'payroll' && <PayrollEngine isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'hr-config' && <HRConfig isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}

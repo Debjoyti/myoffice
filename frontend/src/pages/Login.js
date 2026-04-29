@@ -151,12 +151,12 @@ const Login = ({ onLogin }) => {
             }}>smarter, faster.</span>
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '17px', lineHeight: 1.6, margin: 0 }}>
-            Complete office management — HR, payroll, projects, CRM, inventory and more, all in one platform.
+            Complete office management — HR, payroll, attendance, operations and more, all in one platform.
           </p>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          {['👥 HR & Attendance', '📊 Analytics', '💼 Projects', '🎯 CRM', '🏪 Stores', '💰 Expenses'].map(f => (
+          {['👥 HR & Attendance', '📊 Payroll', '📈 Organization', '💰 Reimbursements'].map(f => (
             <span key={f} className="feature-pill">{f}</span>
           ))}
         </div>

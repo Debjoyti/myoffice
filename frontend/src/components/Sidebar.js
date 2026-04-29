@@ -47,7 +47,7 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
     'careers': 'recruitment',
   };
 
-  const categorizedMenuItems = [
+    const categorizedMenuItems = [
     {
       group: null,
       items: [
@@ -55,49 +55,18 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
       ]
     },
     {
-      group: 'Personal & Work',
-      items: [
-        { id: 'feed', label: 'Office Feed', icon: Rss, path: '/feed', tcode: 'ZFEED', desc: 'Announcements' },
-        { id: 'timesheets', label: 'Timesheets', icon: Clock, path: '/timesheets', tcode: 'CAT2', desc: 'Time tracking' },
-        { id: 'support-desk', label: 'Support Desk', icon: MessageSquare, path: '/support-desk', tcode: 'SO11', desc: 'Help tickets' },
-        { id: 'kb', label: 'Knowledge Base', icon: Book, path: '/kb', tcode: 'DB02', desc: 'Docs & SOPs' },
-        { id: 'travel', label: 'Travel Tracker', icon: MapPin, path: '/travel', tcode: 'TRV1', desc: 'GPS trip tracker' },
-      ]
-    },
-    {
-      group: 'Sales & Projects',
-      items: [
-        { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm', tcode: 'VA01', desc: 'Leads & deals' },
-        { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects', tcode: 'CJ20N', desc: 'Track projects' },
-      ]
-    },
-    {
       group: 'HR & Operations',
       items: [
-        { id: 'hrms', label: 'HR People Hub', icon: Users, path: '/hrms', tcode: 'PA40', desc: 'Human resources' },
-        { id: 'salary-details', label: 'Salary Details', icon: Receipt, path: '/salary-details', tcode: 'SAL1', desc: 'My compensation' },
-        { id: 'iatf-hub', label: 'IATF Hub', icon: ShieldCheck, path: '/iatf-hub', tcode: 'IATF', desc: 'L&D & Compliance' },
-        { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team', tcode: 'SU01', desc: 'User management' },
-        { id: 'careers', label: 'Careers', icon: Briefcase, path: '/careers', tcode: 'CARE', desc: 'Careers & Hiring' },
-      ]
-    },
-    {
-      group: 'Finance & Assets',
-      items: [
-        { id: 'accountant', label: 'Accountant Portal', icon: ClipboardList, path: '/accountant', tcode: 'FB01', desc: 'Books & accounts' },
-        { id: 'finance', label: 'Finance & Books', icon: Receipt, path: '/finance', tcode: 'VF01', desc: 'Invoices & billing' },
-        { id: 'expenses', label: 'Expenses', icon: TrendingUp, path: '/expenses', tcode: 'FB60', desc: 'Expense tracker' },
-        { id: 'business-orders', label: 'Business Orders', icon: Package, path: '/business-orders', tcode: 'ME51N', desc: 'Purchase orders' },
-        { id: 'assets', label: 'Asset Management', icon: Box, path: '/assets', tcode: 'AA01', desc: 'Fixed assets' },
+        { id: 'hrms', label: 'HR People Hub', icon: Users, path: '/hr', tcode: 'PA40', desc: 'Human resources' },
+        { id: 'salary-details', label: 'Salary Details', icon: Receipt, path: '/salary', tcode: 'SAL1', desc: 'My compensation' },
+        { id: 'team', label: 'Team Members', icon: UserPlus, path: '/org', tcode: 'SU01', desc: 'User management' },
+        { id: 'reimbursements', label: 'Reimbursements', icon: Receipt, path: '/reimbursements', tcode: 'REIMB', desc: 'Expenses' },
       ]
     },
     {
       group: 'Administration',
       items: [
-        ...(user?.role === 'superadmin' ? [{ id: 'saas-admin', label: 'SAAS Admin', icon: Shield, path: '/saas-admin', tcode: 'SU01', desc: 'Platform admin' }] : []),
-        ...(user?.role === 'admin' ? [{ id: 'subscription', label: 'Subscription', icon: Receipt, path: '/subscription', tcode: 'SUB1', desc: 'Billing plan' }] : []),
         { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20', desc: 'Activity trail' },
-        ...(user?.role === 'admin' ? [{ id: 'company-onboarding', label: 'Company Setup', icon: Building2, path: '/company-onboarding', tcode: 'COMP', desc: 'Company profile' }] : []),
         { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO', desc: 'Preferences' },
       ]
     }
