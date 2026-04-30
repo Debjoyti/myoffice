@@ -55,76 +55,94 @@ const Careers = ({ user, onLogout }) => {
 
   useEffect(() => {
     let animationId;
+    let isActive = true;
+    const videoElement = videoRef.current;
+    const canvasElement = canvasRef.current;
 
     const setupCamera = async () => {
-      if (videoRef.current && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          videoRef.current.srcObject = stream;
-        } catch (err) {
-          console.error("Camera access denied:", err);
+      if (!videoElement || !navigator.mediaDevices?.getUserMedia) return;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (!isActive) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        videoElement.srcObject = stream;
+      } catch (err) {
+        console.error("Camera access denied:", err);
+        if (isActive) {
           setProctorStatus('Camera Access Denied');
         }
       }
     };
 
     const detectFaces = async () => {
-      if (videoRef.current && canvasRef.current && blazeModel) {
-        if (videoRef.current.readyState === 4) {
-          const video = videoRef.current;
-          const canvas = canvasRef.current;
-          const ctx = canvas.getContext('2d');
+      if (!isActive || !videoElement || !canvasElement || !blazeModel) return;
 
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+      if (videoElement.readyState === 4) {
+        const ctx = canvasElement.getContext('2d');
+        if (!ctx) return;
 
-          const returnTensors = false;
-          const predictions = await blazeModel.estimateFaces(video, returnTensors);
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const predictions = await blazeModel.estimateFaces(videoElement, false);
+        if (!isActive) return;
 
-          if (predictions.length > 0) {
-            if (predictions.length > 1) {
-               setProctorStatus('WARNING: Multiple faces detected!');
-            } else {
-               setProctorStatus('Proctoring: Active & Clear');
-            }
-            predictions.forEach(pred => {
-               ctx.beginPath();
-               ctx.lineWidth = "2";
-               ctx.strokeStyle = predictions.length > 1 ? "red" : "green";
-               ctx.rect(
-                 pred.topLeft[0],
-                 pred.topLeft[1],
-                 pred.bottomRight[0] - pred.topLeft[0],
-                 pred.bottomRight[1] - pred.topLeft[1]
-               );
-               ctx.stroke();
-            });
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+        if (predictions.length > 0) {
+          if (predictions.length > 1) {
+            setProctorStatus('WARNING: Multiple faces detected!');
           } else {
-            setProctorStatus('WARNING: No face detected!');
+            setProctorStatus('Proctoring: Active & Clear');
           }
+
+          predictions.forEach(pred => {
+            ctx.beginPath();
+            ctx.lineWidth = "2";
+            ctx.strokeStyle = predictions.length > 1 ? "red" : "green";
+            ctx.rect(
+              pred.topLeft[0],
+              pred.topLeft[1],
+              pred.bottomRight[0] - pred.topLeft[0],
+              pred.bottomRight[1] - pred.topLeft[1]
+            );
+            ctx.stroke();
+          });
+        } else {
+          setProctorStatus('WARNING: No face detected!');
         }
       }
-      animationId = requestAnimationFrame(detectFaces);
+
+      if (isActive) {
+        animationId = requestAnimationFrame(detectFaces);
+      }
     };
 
-    if (activeTab === 'aiInterview' && interviewSession) {
-      const currentVideo = videoRef.current;
+    if (activeTab === 'aiInterview' && interviewSession && videoElement && canvasElement && blazeModel) {
       setupCamera().then(() => {
-        if (!currentVideo) return;
-        currentVideo.onloadeddata = () => {
+        if (!isActive) return;
+        videoElement.onloadeddata = () => {
+          if (!isActive) return;
           detectFaces();
         };
       });
     }
 
     return () => {
-      const currentVideo = videoRef.current;
+      isActive = false;
       if (animationId) cancelAnimationFrame(animationId);
-      if (currentVideo && currentVideo.srcObject) {
-         currentVideo.srcObject.getTracks().forEach(t => t.stop());
+
+      if (videoElement) {
+        videoElement.onloadeddata = null;
+        const stream = videoElement.srcObject;
+        if (stream && typeof stream !== 'string' && typeof stream.getTracks === 'function') {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        videoElement.srcObject = null;
       }
     };
   }, [activeTab, interviewSession, blazeModel]);

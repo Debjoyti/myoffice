@@ -47,15 +47,39 @@ const webpackConfig = {
       '@': path.resolve(__dirname, 'src'),
     },
     configure: (webpackConfig) => {
+      const faceDetectionPackagesPattern = /face-api\.js|@tensorflow-models\/blazeface/;
+
       webpackConfig.resolve = webpackConfig.resolve || {};
       webpackConfig.resolve.fallback = {
         ...(webpackConfig.resolve.fallback || {}),
         fs: false,
       };
 
+      const sourceMapRule = webpackConfig.module?.rules?.find(
+        (rule) =>
+          rule.enforce === "pre" &&
+          Array.isArray(rule.use) &&
+          rule.use.some((useEntry) => useEntry.loader && useEntry.loader.includes("source-map-loader"))
+      );
+      if (sourceMapRule) {
+        const existingExcludes = Array.isArray(sourceMapRule.exclude)
+          ? sourceMapRule.exclude
+          : sourceMapRule.exclude
+            ? [sourceMapRule.exclude]
+            : [];
+        sourceMapRule.exclude = [...existingExcludes, faceDetectionPackagesPattern];
+      }
+
       webpackConfig.ignoreWarnings = [
         ...(webpackConfig.ignoreWarnings || []),
         /Failed to parse source map/,
+        (warning) => {
+          const warningText =
+            typeof warning === "string"
+              ? warning
+              : [warning?.message, warning?.details].filter(Boolean).join("\n");
+          return warningText.includes("Can't resolve 'fs'") && warningText.includes("face-api.js");
+        },
       ];
 
       // Add ignored patterns to reduce watched directories
