@@ -8,7 +8,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const PRIORITY_CONFIG = {
-  low:    { label: 'Low',    color: '#6366f1', bg: 'rgba(99,102,241,0.12)',  icon: Circle },
+  low:    { label: 'Low',    color: 'var(--brand-primary)', bg: 'rgba(99,102,241,0.12)',  icon: Circle },
   medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Clock },
   high:   { label: 'High',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  icon: AlertTriangle },
 };
@@ -149,7 +149,7 @@ const SupportDesk = ({ user, onLogout }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                 <h1 className="page-title">Support Desk</h1>
-                <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', fontFamily: 'JetBrains Mono, monospace' }}>SO11</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px', fontFamily: 'JetBrains Mono, monospace' }}>SO11</span>
                 <span className="ai-badge"><Sparkles size={9} /> Smart Replies</span>
               </div>
               <p className="page-subtitle">Track & resolve tickets with AI-powered categorization and SLA monitoring</p>
@@ -160,7 +160,7 @@ const SupportDesk = ({ user, onLogout }) => {
           {/* KPIs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '20px' }} className="stagger">
             {[
-              { label: 'Total',       value: tickets.length,   color: '#6366f1', icon: MessageSquare },
+              { label: 'Total',       value: tickets.length,   color: 'var(--brand-primary)', icon: MessageSquare },
               { label: 'Open',        value: openCount,        color: '#22d3ee', icon: Circle },
               { label: 'In Progress', value: inProgressCount,  color: '#f59e0b', icon: Clock },
               { label: 'High Priority', value: highPriorityCount, color: '#f43f5e', icon: AlertTriangle },
@@ -172,7 +172,7 @@ const SupportDesk = ({ user, onLogout }) => {
                   <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: `${k.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
                     <Icon size={15} color={k.color} />
                   </div>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: '0 0 2px', fontWeight: 600 }}>{k.label}</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '11px', margin: '0 0 2px', fontWeight: 600 }}>{k.label}</p>
                   <p style={{ color: k.color, fontSize: '22px', fontWeight: 900, margin: 0 }}>{k.value}</p>
                 </div>
               );
@@ -210,7 +210,7 @@ const SupportDesk = ({ user, onLogout }) => {
                 const smartReplies = getSmartReplies(t);
 
                 return (
-                  <div key={t.id} className="dark-card" style={{ padding: '18px 20px', borderLeft: `3px solid ${pCfg.color}`, cursor: 'pointer', transition: 'all 0.2s' }}
+                  <div key={t.id} className="glass-card" style={{ padding: '18px 20px', borderLeft: `3px solid ${pCfg.color}`, cursor: 'pointer', transition: 'all 0.2s' }}
                     onClick={() => setSelectedTicket(isSelected ? null : t)}>
                     {/* Header row */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -221,22 +221,22 @@ const SupportDesk = ({ user, onLogout }) => {
                       <span className={sCfg.class}>{sCfg.label}</span>
                     </div>
 
-                    <h3 style={{ color: '#fff', fontSize: '14px', margin: '0 0 6px', fontWeight: 700, lineHeight: 1.3 }}>{t.subject}</h3>
+                    <h3 style={{ color: 'var(--text-primary)', fontSize: '14px', margin: '0 0 6px', fontWeight: 700, lineHeight: 1.3 }}>{t.subject}</h3>
 
                     {/* AI Category */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                      <Tag size={11} color="#818cf8" />
-                      <span style={{ fontSize: '10.5px', color: '#818cf8', fontWeight: 600 }}>AI: {category}</span>
+                      <Tag size={11} color="var(--brand-primary)" />
+                      <span style={{ fontSize: '10.5px', color: 'var(--brand-primary)', fontWeight: 600 }}>AI: {category}</span>
                     </div>
 
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12.5px', lineHeight: 1.5, margin: '0 0 14px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '12.5px', lineHeight: 1.5, margin: '0 0 14px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       {t.description}
                     </p>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <User size={11} color="rgba(255,255,255,0.3)" />
-                        <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px' }}>{t.contact_email}</span>
+                        <User size={11} color="var(--text-muted)" />
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px' }}>{t.contact_email}</span>
                       </div>
                       <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.22)' }}>
                         {t.created_at ? new Date(t.created_at).toLocaleDateString('en-IN') : '—'}
@@ -247,18 +247,18 @@ const SupportDesk = ({ user, onLogout }) => {
                     {isSelected && (
                       <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }} onClick={e => e.stopPropagation()}>
                         {/* AI Smart Replies */}
-                        <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '10px', padding: '12px' }}>
+                        <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(94, 106, 210, 0.15)', borderRadius: '10px', padding: '12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                            <Sparkles size={12} color="#818cf8" />
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Smart Replies</span>
+                            <Sparkles size={12} color="var(--brand-primary)" />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Smart Replies</span>
                           </div>
                           {smartReplies.map((reply, i) => (
                             <div key={i} style={{ marginBottom: i < smartReplies.length - 1 ? '8px' : 0 }}>
-                              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11.5px', margin: '0 0 4px', lineHeight: 1.5, background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11.5px', margin: '0 0 4px', lineHeight: 1.5, background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                                 {reply}
                               </p>
                               <button onClick={() => { navigator.clipboard?.writeText(reply); toast.success('Reply copied!'); }}
-                                style={{ fontSize: '10px', color: '#818cf8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '0 4px' }}>
+                                style={{ fontSize: '10px', color: 'var(--brand-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '0 4px' }}>
                                 📋 Copy reply
                               </button>
                             </div>
@@ -271,7 +271,7 @@ const SupportDesk = ({ user, onLogout }) => {
                             <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontWeight: 700, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Update Status</p>
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                               {Object.entries(STATUS_CONFIG).filter(([k]) => k !== t.status).map(([statusKey, cfg]) => (
-                                <button key={statusKey} onClick={() => updateStatus(t.id, statusKey)} style={{ padding: '5px 12px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: cfg.color, fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                                <button key={statusKey} onClick={() => updateStatus(t.id, statusKey)} style={{ padding: '5px 12px', borderRadius: '7px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: cfg.color, fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
                                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.09)'}
                                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
                                   → {cfg.label}
@@ -300,7 +300,7 @@ const SupportDesk = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '520px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0, fontSize: '18px', fontWeight: 800 }}>Create Support Ticket</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '18px', fontWeight: 800 }}>Create Support Ticket</h2>
               <button onClick={() => setShowModal(false)} className="icon-btn"><X size={16} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -309,8 +309,8 @@ const SupportDesk = ({ user, onLogout }) => {
                 <input type="text" className="dark-input" placeholder="Brief description of the issue" required value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} />
               </div>
               {aiCategory && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '9px' }}>
-                  <Sparkles size={12} color="#818cf8" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(94, 106, 210, 0.15)', borderRadius: '9px' }}>
+                  <Sparkles size={12} color="var(--brand-primary)" />
                   <span style={{ fontSize: '12px', color: '#a5b4fc', fontWeight: 600 }}>AI Category: {aiCategory}</span>
                   <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginLeft: 'auto' }}>SLA: {SLA_TARGETS[formData.priority]}h</span>
                 </div>

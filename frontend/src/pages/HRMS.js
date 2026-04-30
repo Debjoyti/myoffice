@@ -107,8 +107,8 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
         padding: '16px 12px',
         border: 'none',
         background: 'none',
-        color: activeTab === tabId ? '#818cf8' : 'rgba(255,255,255,0.5)',
-        borderBottom: activeTab === tabId ? '2px solid #818cf8' : '2px solid transparent',
+        color: activeTab === tabId ? 'var(--brand-primary)' : 'rgba(255,255,255,0.5)',
+        borderBottom: activeTab === tabId ? '2px solid var(--brand-primary)' : '2px solid transparent',
         cursor: 'pointer',
         fontWeight: 600,
         fontSize: '14px',
@@ -135,20 +135,18 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
 
     const content = (
         <>
-            <div style={{ padding: '0 32px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ padding: '24px 0 12px', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff', letterSpacing: '-0.02em' }}>PRSK <span style={{ color: '#818cf8', fontWeight: 600 }}>People</span></h1>
-                        <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>PA40</span>
+            <div style={{ padding: '0 32px', borderBottom: '1px solid var(--border)', background: 'transparent' }}>
+                <div style={{ padding: '32px 0 24px', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>HRMS</h1>
+                        <span style={{ fontSize: '10px', fontWeight: 600, background: 'var(--bg-elevated)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '4px', textTransform: 'uppercase', border: '1px solid var(--border)' }}>Module PA40</span>
                     </div>
                 </div>
                 <div style={{ 
                     display: 'flex', 
-                    gap: '4px', 
+                    gap: '24px', 
                     overflowX: 'auto', 
-                    paddingBottom: '12px',
-                    maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                    paddingBottom: '0',
                 }} className="hide-scrollbar">
                     {[
                         { id: 'dashboard', label: 'Overview' },
@@ -181,23 +179,23 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'dashboard' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             {/* KPIs */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                                 {[
-                                    { label: 'Total Headcount', val: stats?.totalEmp || 0, icon: Users, bg: 'rgba(99,102,241,0.12)', c: '#818cf8' },
-                                    { label: 'Present Today', val: stats?.presentToday || 0, icon: Clock, bg: 'rgba(16,185,129,0.12)', c: '#34d399' },
-                                    { label: 'On Leave', val: stats?.onLeave || 0, icon: Calendar, bg: 'rgba(245,158,11,0.12)', c: '#fbbf24' },
-                                    { label: 'Leave Requests', val: stats?.pendingLeaves || 0, icon: FileText, bg: 'rgba(239,68,68,0.12)', c: '#f87171' },
-                                    { label: 'Pending WFH', val: stats?.pendingWfh || 0, icon: Clock, bg: 'rgba(6,182,212,0.12)', c: '#22d3ee' },
+                                    { label: 'Total Headcount', val: stats?.totalEmp || 0, icon: Users },
+                                    { label: 'Present Today', val: stats?.presentToday || 0, icon: Clock },
+                                    { label: 'On Leave', val: stats?.onLeave || 0, icon: Calendar },
+                                    { label: 'Leave Requests', val: stats?.pendingLeaves || 0, icon: FileText },
+                                    { label: 'Pending WFH', val: stats?.pendingWfh || 0, icon: Briefcase },
                                 ].map((kpi, i) => {
                                     const Icon = kpi.icon;
                                     return (
-                                        <div key={i} style={{ background: 'rgba(255,255,255,0.04)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Icon size={24} color={kpi.c} />
+                                        <div key={i} className="kpi-card hover-glow" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', animationDelay: `${i * 50}ms`, background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Icon size={18} color="var(--text-secondary)" />
                                             </div>
                                             <div>
-                                                <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{kpi.label}</p>
-                                                <p style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{kpi.val}</p>
+                                                <p style={{ margin: '0 0 2px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>{kpi.label}</p>
+                                                <p style={{ margin: 0, fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{kpi.val}</p>
                                             </div>
                                         </div>
                                     )
@@ -206,28 +204,28 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
 
                             {/* Charts Row */}
                             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '8px' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 24px', color: '#fff' }}>Organization Growth (YTD)</h3>
+                                <div className="glass-card hover-glow" style={{ padding: '24px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 24px', color: 'var(--text-primary)' }}>Organization Growth (YTD)</h3>
                                     <div style={{ height: '300px' }}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={headcountData}>
                                                 <defs>
                                                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
-                                                        <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
+                                                        <stop offset="5%" stopColor="var(--brand-primary)" stopOpacity={0.3}/>
+                                                        <stop offset="95%" stopColor="var(--brand-primary)" stopOpacity={0}/>
                                                     </linearGradient>
                                                 </defs>
                                                 <XAxis dataKey="month" stroke="rgba(255,255,255,0.3)" fontSize={12} tickLine={false} axisLine={false} />
                                                 <YAxis stroke="rgba(255,255,255,0.3)" fontSize={12} tickLine={false} axisLine={false} />
-                                                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: '#1e293b' }} itemStyle={{color: '#fff'}}/>
-                                                <Area type="monotone" dataKey="count" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                                                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: '#1e293b' }} itemStyle={{color: 'var(--text-primary)'}}/>
+                                                <Area type="monotone" dataKey="count" stroke="var(--brand-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
                                             </AreaChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
 
                                 <div style={{ background: 'rgba(255,255,255,0.04)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 24px', color: '#fff' }}>Department Breakdown</h3>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 24px', color: 'var(--text-primary)' }}>Department Breakdown</h3>
                                     {deptData.length > 0 ? (
                                         <div style={{ height: '300px' }}>
                                             <ResponsiveContainer width="100%" height="100%">
@@ -235,12 +233,12 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                                                     <Pie data={deptData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
                                                         {deptData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                                     </Pie>
-                                                    <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: '#1e293b' }} itemStyle={{color: '#fff'}}/>
+                                                    <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: '#1e293b' }} itemStyle={{color: 'var(--text-primary)'}}/>
                                                 </PieChart>
                                             </ResponsiveContainer>
                                         </div>
                                     ) : (
-                                        <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
+                                        <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
                                             No department data available.
                                         </div>
                                     )}
@@ -248,29 +246,28 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                             </div>
 
                             {/* Approvals Row */}
-                            <div style={{ background: 'rgba(255,255,255,0.04)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <div className="glass-card" style={{ padding: '24px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#fff' }}>Pending Approvals</h3>
-                                    <span style={{ fontSize: '12px', color: '#818cf8', fontWeight: 600, cursor: 'pointer' }} onClick={() => setActiveTab('leave')}>View All</span>
+                                    <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>Pending Approvals</h3>
+                                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => setActiveTab('leave')}>View All</span>
                                 </div>
                                 {leaves.filter(l => l.status === 'pending').slice(0,4).length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {leaves.filter(l => l.status === 'pending').slice(0,4).map(l => (
-                                            <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                                            <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px' }}>
                                                 <div>
-                                                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff' }}>
-                                                        {/* Fixed: look up employee name by id instead of non-existent employee_name field */}
+                                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
                                                         {employees.find(e => e.id === l.employee_id)?.name || l.employee_id || 'Unknown'}
                                                     </p>
-                                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{l.leave_type} ({l.from_date} to {l.to_date})</p>
+                                                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{l.leave_type} ({l.from_date} to {l.to_date})</p>
                                                 </div>
-                                                <span className="badge-red">Review Required</span>
+                                                <span style={{ fontSize: '11px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontWeight: 500 }}>Review</span>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div style={{ padding: '32px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                        <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>No pending requests 🎉</p>
+                                    <div style={{ padding: '32px', textAlign: 'center', background: 'var(--bg-base)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
+                                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>No pending requests.</p>
                                     </div>
                                 )}
                             </div>

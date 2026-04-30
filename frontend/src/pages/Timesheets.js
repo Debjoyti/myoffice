@@ -59,7 +59,7 @@ const Timesheets = ({ user, onLogout }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                 <h1 className="page-title">Timesheets</h1>
-                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px' }}>CAT2</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px' }}>CAT2</span>
               </div>
               <p className="page-subtitle">Track time spent on tasks and projects</p>
             </div>
@@ -80,12 +80,12 @@ const Timesheets = ({ user, onLogout }) => {
                   {timesheets.map(ts => (
                     <tr key={ts.id}>
                       <td style={{ color: 'rgba(255,255,255,0.7)' }}>{new Date(ts.date).toLocaleDateString()}</td>
-                      <td style={{ fontWeight: 600, color: '#fff' }}>{getProjectName(ts.project_id)}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{getProjectName(ts.project_id)}</td>
                       <td>{getTaskName(ts.task_id)}</td>
-                      <td style={{ color: 'rgba(255,255,255,0.4)', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <td style={{ color: 'var(--text-secondary)', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {ts.description || '—'}
                       </td>
-                      <td style={{ fontWeight: 700, color: '#818cf8' }}>{ts.hours}h</td>
+                      <td style={{ fontWeight: 700, color: 'var(--brand-primary)' }}>{ts.hours}h</td>
                       <td>
                         <span className="badge-blue">{ts.status}</span>
                       </td>
@@ -106,7 +106,7 @@ const Timesheets = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '500px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0 }}>Log Time</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Log Time</h2>
               <button onClick={() => setShowModal(false)} className="icon-btn"><X /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

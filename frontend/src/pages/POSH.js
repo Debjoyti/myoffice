@@ -8,7 +8,7 @@ const API = `${BACKEND_URL}/api`;
 
 const STATUS_CONFIG = {
   "Under Review": { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  "Investigating": { color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+  "Investigating": { color: 'var(--brand-primary)', bg: 'rgba(94, 106, 210, 0.1)' },
   "Action Taken": { color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
   "Closed": { color: '#6b7280', bg: 'rgba(107,114,128,0.1)' }
 };
@@ -64,26 +64,26 @@ const POSH = ({ user, isSubComponent }) => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Shield size={24} color="#f43f5e" />
-            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: '#fff' }}>POSH Compliance & Reporting</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>POSH Compliance & Reporting</h2>
           </div>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', margin: '4px 0 0' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '4px 0 0' }}>
             Internal Complaints Committee (ICC) secure reporting. All reports are strictly confidential.
           </p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-dark-primary" style={{ background: '#f43f5e', border: 'none', color: '#fff' }}>
+        <button onClick={() => setShowModal(true)} className="btn-dark-primary" style={{ background: '#f43f5e', border: 'none', color: 'var(--text-primary)' }}>
           File Confidential Report
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {[
-          { label: 'Total Reports', val: complaints.length, c: '#6366f1' },
+          { label: 'Total Reports', val: complaints.length, c: 'var(--brand-primary)' },
           { label: 'Under Review', val: complaints.filter(c => c.status === 'Under Review').length, c: '#f59e0b' },
-          { label: 'Investigating', val: complaints.filter(c => c.status === 'Investigating').length, c: '#6366f1' },
+          { label: 'Investigating', val: complaints.filter(c => c.status === 'Investigating').length, c: 'var(--brand-primary)' },
           { label: 'Resolved/Closed', val: complaints.filter(c => ['Action Taken', 'Closed'].includes(c.status)).length, c: '#10b981' },
         ].map((k, i) => (
-          <div key={i} className="dark-card" style={{ padding: '20px' }}>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px', fontWeight: 600 }}>{k.label}</p>
+          <div key={i} className="glass-card" style={{ padding: '20px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 600 }}>{k.label}</p>
             <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: k.c }}>{k.val}</p>
           </div>
         ))}
@@ -96,13 +96,13 @@ const POSH = ({ user, isSubComponent }) => {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {complaints.map(c => (
-            <div key={c.id} className="dark-card" style={{ padding: '20px' }}>
+            <div key={c.id} className="glass-card" style={{ padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '4px 8px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-primary)', background: 'rgba(94, 106, 210, 0.1)', padding: '4px 8px', borderRadius: '4px' }}>
                     {c.id}
                   </span>
-                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     Reported on: {new Date(c.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -117,18 +117,18 @@ const POSH = ({ user, isSubComponent }) => {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
                 <div>
-                  <p style={{ fontSize: '11px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', margin: '0 0 4px', fontWeight: 700 }}>Accused / Subject</p>
-                  <p style={{ fontSize: '14px', color: '#fff', margin: 0, fontWeight: 600 }}>{c.accused_name}</p>
+                  <p style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)', margin: '0 0 4px', fontWeight: 700 }}>Accused / Subject</p>
+                  <p style={{ fontSize: '14px', color: 'var(--text-primary)', margin: 0, fontWeight: 600 }}>{c.accused_name}</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '11px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', margin: '0 0 4px', fontWeight: 700 }}>Incident Description & Details</p>
+                  <p style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)', margin: '0 0 4px', fontWeight: 700 }}>Incident Description & Details</p>
                   <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.5 }}>{c.description}</p>
                 </div>
               </div>
 
               {isAdmin && (
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>ICC Action:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>ICC Action:</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {Object.keys(STATUS_CONFIG).map(status => (
                       <button 
@@ -136,7 +136,7 @@ const POSH = ({ user, isSubComponent }) => {
                         onClick={() => updateStatus(c.id, status)}
                         disabled={c.status === status}
                         style={{ 
-                          padding: '6px 12px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)',
+                          padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border)',
                           background: c.status === status ? 'rgba(255,255,255,0.1)' : 'transparent',
                           color: c.status === status ? '#fff' : 'rgba(255,255,255,0.5)',
                           fontSize: '11px', fontWeight: 600, cursor: c.status === status ? 'default' : 'pointer'
@@ -159,9 +159,9 @@ const POSH = ({ user, isSubComponent }) => {
             <div className="dark-modal-header" style={{ borderBottom: '1px solid rgba(244,63,94,0.2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Shield color="#f43f5e" size={20} />
-                <h2 style={{ color: '#fff', margin: 0, fontSize: '18px' }}>File ICC Report (Confidential)</h2>
+                <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '18px' }}>File ICC Report (Confidential)</h2>
               </div>
-              <button onClick={() => setShowModal(false)} className="icon-btn" style={{ color: 'rgba(255,255,255,0.4)' }}>✕</button>
+              <button onClick={() => setShowModal(false)} className="icon-btn" style={{ color: 'var(--text-secondary)' }}>✕</button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ background: 'rgba(244,63,94,0.1)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(244,63,94,0.2)' }}>

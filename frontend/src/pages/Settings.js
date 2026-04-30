@@ -92,8 +92,8 @@ const Settings = ({ user, onLogout }) => {
                         onClick={() => setActiveTab(item.id)}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
-                            background: activeTab === item.id ? 'rgba(99,102,241,0.1)' : 'transparent',
-                            color: activeTab === item.id ? '#818cf8' : 'rgba(255,255,255,0.4)',
+                            background: activeTab === item.id ? 'rgba(94, 106, 210, 0.1)' : 'transparent',
+                            color: activeTab === item.id ? 'var(--brand-primary)' : 'rgba(255,255,255,0.4)',
                             border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
                             fontWeight: 600, transition: 'all 0.2s'
                         }}
@@ -104,21 +104,21 @@ const Settings = ({ user, onLogout }) => {
             </div>
 
             {/* Content for Settings */}
-            <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '40px' }}>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '20px', padding: '40px' }}>
                 {loading ? <div className="dark-loading">Loading settings...</div> : settings && (
                     <>
                         {activeTab === 'general' && (
                             <div className="fade-in">
-                                <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Feature & Module Configurations</h2>
+                                <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', margin: '0 0 24px' }}>Feature & Module Configurations</h2>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '600px' }}>
                                     <div>
                                         <label className="dark-label" style={{ marginBottom: '12px', display: 'block' }}>Feature Toggles</label>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             {Object.entries(settings.feature_toggles || {}).map(([key, value]) => (
                                                 <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px' }}>
-                                                    <span style={{ color: '#fff', textTransform: 'capitalize' }}>{key.replace('_', ' ')}</span>
+                                                    <span style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>{key.replace('_', ' ')}</span>
                                                     <div style={{ cursor: 'pointer' }} onClick={() => updateFeatureToggle(key, !value)}>
-                                                        {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="rgba(255,255,255,0.4)" size={24} />}
+                                                        {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="var(--text-secondary)" size={24} />}
                                                     </div>
                                                 </div>
                                             ))}
@@ -132,10 +132,10 @@ const Settings = ({ user, onLogout }) => {
                                                 const isEnabled = (settings.enabled_modules || []).includes(module);
                                                 return (
                                                     <div key={module} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => updateEnabledModule(module, !isEnabled)}>
-                                                        <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: `2px solid ${isEnabled ? '#6366f1' : 'rgba(255,255,255,0.2)'}`, background: isEnabled ? '#6366f1' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                            {isEnabled && <CheckSquare size={14} color="#fff" />}
+                                                        <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: `2px solid ${isEnabled ? 'var(--brand-primary)' : 'rgba(255,255,255,0.2)'}`, background: isEnabled ? 'var(--brand-primary)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            {isEnabled && <CheckSquare size={14} color="var(--text-primary)" />}
                                                         </div>
-                                                        <span style={{ color: '#fff' }}>{module}</span>
+                                                        <span style={{ color: 'var(--text-primary)' }}>{module}</span>
                                                     </div>
                                                 );
                                             })}
@@ -151,15 +151,15 @@ const Settings = ({ user, onLogout }) => {
 
                         {activeTab === 'notifications' && (
                             <div className="fade-in">
-                                <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Notification Preferences</h2>
+                                <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', margin: '0 0 24px' }}>Notification Preferences</h2>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '600px' }}>
                                     {Object.entries(settings.notification_settings || {}).map(([key, value]) => (
                                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '8px' }}>
                                             <div>
-                                                <div style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize' }}>{key.replace('_', ' ')}</div>
+                                                <div style={{ color: 'var(--text-primary)', fontWeight: 500, textTransform: 'capitalize' }}>{key.replace('_', ' ')}</div>
                                             </div>
                                             <div style={{ cursor: 'pointer' }} onClick={() => updateNotification(key, !value)}>
-                                                {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="rgba(255,255,255,0.4)" size={24} />}
+                                                {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="var(--text-secondary)" size={24} />}
                                             </div>
                                         </div>
                                     ))}
@@ -172,13 +172,13 @@ const Settings = ({ user, onLogout }) => {
 
                         {activeTab === 'localization' && (
                             <div className="fade-in">
-                                <h2 style={{ color: '#fff', fontSize: '20px', margin: '0 0 24px' }}>Integrations & External Configs</h2>
+                                <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', margin: '0 0 24px' }}>Integrations & External Configs</h2>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '600px' }}>
                                     {Object.entries(settings.integration_configs || {}).map(([key, value]) => (
                                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '8px' }}>
-                                            <div style={{ color: '#fff', fontWeight: 500, textTransform: 'capitalize' }}>{key.replace('_', ' ')} Integration</div>
+                                            <div style={{ color: 'var(--text-primary)', fontWeight: 500, textTransform: 'capitalize' }}>{key.replace('_', ' ')} Integration</div>
                                             <div style={{ cursor: 'pointer' }} onClick={() => updateIntegration(key, !value)}>
-                                                {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="rgba(255,255,255,0.4)" size={24} />}
+                                                {value ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="var(--text-secondary)" size={24} />}
                                             </div>
                                         </div>
                                     ))}
@@ -191,11 +191,11 @@ const Settings = ({ user, onLogout }) => {
 
                         {activeTab !== 'general' && activeTab !== 'notifications' && activeTab !== 'localization' && (
                             <div style={{ textAlign: 'center', padding: '60px' }}>
-                                <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                                <div style={{ width: '64px', height: '64px', background: 'var(--bg-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                                     <SettingsIcon size={32} color="rgba(255,255,255,0.2)" />
                                 </div>
-                                <h3 style={{ color: '#fff', fontSize: '18px', margin: '0 0 8px' }}>Coming Soon</h3>
-                                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>This configuration tab will be available in future releases.</p>
+                                <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', margin: '0 0 8px' }}>Coming Soon</h3>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>This configuration tab will be available in future releases.</p>
                             </div>
                         )}
                     </>

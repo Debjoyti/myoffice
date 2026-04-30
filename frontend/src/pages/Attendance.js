@@ -155,10 +155,10 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
           <p className="page-subtitle">Track employee attendance records</p>
           {(user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'hr') && (
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-              <button onClick={() => setActiveTab('attendance')} style={{ background: 'none', border: 'none', color: activeTab === 'attendance' ? '#fff' : '#9ca3af', borderBottom: activeTab === 'attendance' ? '2px solid #818cf8' : 'none', paddingBottom: '4px', cursor: 'pointer' }}>Daily Records</button>
-              <button onClick={() => setActiveTab('sessions')} style={{ background: 'none', border: 'none', color: activeTab === 'sessions' ? '#fff' : '#9ca3af', borderBottom: activeTab === 'sessions' ? '2px solid #818cf8' : 'none', paddingBottom: '4px', cursor: 'pointer' }}>AI Sessions</button>
-              <button onClick={() => setActiveTab('anomalies')} style={{ background: 'none', border: 'none', color: activeTab === 'anomalies' ? '#fff' : '#9ca3af', borderBottom: activeTab === 'anomalies' ? '2px solid #818cf8' : 'none', paddingBottom: '4px', cursor: 'pointer' }}>
-                Anomaly Flags {anomalies.length > 0 && <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>{anomalies.length}</span>}
+              <button onClick={() => setActiveTab('attendance')} style={{ background: 'none', border: 'none', color: activeTab === 'attendance' ? '#fff' : '#9ca3af', borderBottom: activeTab === 'attendance' ? '2px solid var(--brand-primary)' : 'none', paddingBottom: '4px', cursor: 'pointer' }}>Daily Records</button>
+              <button onClick={() => setActiveTab('sessions')} style={{ background: 'none', border: 'none', color: activeTab === 'sessions' ? '#fff' : '#9ca3af', borderBottom: activeTab === 'sessions' ? '2px solid var(--brand-primary)' : 'none', paddingBottom: '4px', cursor: 'pointer' }}>AI Sessions</button>
+              <button onClick={() => setActiveTab('anomalies')} style={{ background: 'none', border: 'none', color: activeTab === 'anomalies' ? '#fff' : '#9ca3af', borderBottom: activeTab === 'anomalies' ? '2px solid var(--brand-primary)' : 'none', paddingBottom: '4px', cursor: 'pointer' }}>
+                Anomaly Flags {anomalies.length > 0 && <span style={{ background: '#ef4444', color: 'var(--text-primary)', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>{anomalies.length}</span>}
               </button>
             </div>
           )}
@@ -195,7 +195,7 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
         attendance.length === 0 ? (
           <div className="dark-empty">
             <p style={{ marginBottom: '12px' }}>No attendance records found</p>
-            <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Mark attendance</button>
+            <button onClick={() => setShowModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Mark attendance</button>
           </div>
         ) : (
           <div className="dark-table-wrap fade-in">
@@ -206,7 +206,7 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
               <tbody>
                 {attendance.map(att => (
                   <tr key={att.id} data-testid={`attendance-row-${att.id}`}>
-                    <td style={{ color: '#fff', fontWeight: 600 }}>{getEmployeeName(att.employee_id)}</td>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getEmployeeName(att.employee_id)}</td>
                     <td>{new Date(att.date).toLocaleDateString('en-IN')}</td>
                     <td>{att.check_in || '—'}</td>
                     <td>{att.check_out || '—'}</td>
@@ -229,7 +229,7 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
               <tbody>
                 {sessions.map(s => (
                   <tr key={s.id}>
-                    <td style={{ color: '#fff', fontWeight: 600 }}>{getEmployeeName(s.employee_id)}</td>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getEmployeeName(s.employee_id)}</td>
                     <td>{new Date(s.start_time).toLocaleString('en-IN')}</td>
                     <td>{s.last_heartbeat ? new Date(s.last_heartbeat).toLocaleString('en-IN') : '—'}</td>
                     <td>{s.end_time ? new Date(s.end_time).toLocaleString('en-IN') : '—'}</td>
@@ -256,7 +256,7 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
             <tbody>
               {anomalies.map(a => (
                 <tr key={a.id}>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>{getEmployeeName(a.employee_id)}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getEmployeeName(a.employee_id)}</td>
                   <td>{new Date(a.timestamp).toLocaleString('en-IN')}</td>
                   <td>
                     {a.reason === 'ip_change' ? 'IP Changed mid-session' : a.reason === 'long_idle' ? 'Extended Idle Period' : a.reason}
@@ -274,10 +274,10 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay" style={{ zIndex: 1000 }}>
           <div className="dark-modal" style={{ maxWidth: '400px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }}>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }}>
                 {faceAction === 'start' ? 'Start AI Session' : 'End AI Session'}
               </h2>
-              <button onClick={() => setShowFaceModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <button onClick={() => setShowFaceModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <div style={{ padding: '24px' }}>
               <FaceVerification onVerified={handleFaceVerified} />
@@ -289,8 +289,8 @@ const Attendance = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="mark-attendance-modal-title">Mark Attendance</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="mark-attendance-modal-title">Mark Attendance</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>

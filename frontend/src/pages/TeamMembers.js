@@ -68,7 +68,7 @@ const TeamMembers = ({ user, onLogout }) => {
               {/* Active Members */}
               <div className="dark-card fade-in" style={{ overflow: 'hidden' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                  <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 600, margin: 0 }}>Active Members ({members.length})</h2>
+                  <h2 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600, margin: 0 }}>Active Members ({members.length})</h2>
                 </div>
                 {members.length === 0 ? (
                   <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '14px' }}>No active members</div>
@@ -78,12 +78,12 @@ const TeamMembers = ({ user, onLogout }) => {
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--brand-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
                         {member.name.charAt(0)}
                       </div>
                       <div>
-                        <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600, margin: 0 }}>{member.name}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: 0 }}>{member.email}</p>
+                        <p style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, margin: 0 }}>{member.name}</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>{member.email}</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -102,7 +102,7 @@ const TeamMembers = ({ user, onLogout }) => {
               {invites.filter(i => i.status === 'pending').length > 0 && (
                 <div className="dark-card fade-in" style={{ overflow: 'hidden' }}>
                   <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(245,158,11,0.06)' }}>
-                    <h2 style={{ color: '#fff', fontSize: '15px', fontWeight: 600, margin: 0 }}>
+                    <h2 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600, margin: 0 }}>
                       Pending Invitations ({invites.filter(i => i.status === 'pending').length})
                     </h2>
                   </div>
@@ -113,8 +113,8 @@ const TeamMembers = ({ user, onLogout }) => {
                           <Mail size={18} color="#fbbf24" />
                         </div>
                         <div>
-                          <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600, margin: 0 }}>{invite.email}</p>
-                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: 0 }}>Invited {new Date(invite.created_at).toLocaleDateString('en-IN')}</p>
+                          <p style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, margin: 0 }}>{invite.email}</p>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>Invited {new Date(invite.created_at).toLocaleDateString('en-IN')}</p>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24' }}>
@@ -133,8 +133,8 @@ const TeamMembers = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '440px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }}>Invite Team Member</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }}>Invite Team Member</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleInvite} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
@@ -150,7 +150,7 @@ const TeamMembers = ({ user, onLogout }) => {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+              <div style={{ background: 'rgba(94, 106, 210, 0.1)', border: '1px solid rgba(94, 106, 210, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
                   The invitation will be sent to this email with a secure link to join your organization.
                 </p>

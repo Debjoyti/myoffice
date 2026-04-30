@@ -51,7 +51,7 @@ const Toggle = ({ value, onChange }) => (
 
 const Field = ({ label, children, col }) => (
   <div style={{ gridColumn: col ? `span ${col}` : undefined }}>
-    <label style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
     {children}
   </div>
 );
@@ -70,7 +70,7 @@ const InputField = ({ label, field, formData, setFormData, type = 'text', col, p
   </Field>
 );
 
-const SectionHeader = ({ title, color = '#818cf8' }) => (
+const SectionHeader = ({ title, color = 'var(--brand-primary)' }) => (
   <div style={{ gridColumn: '1/-1', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '4px', marginTop: '8px' }}>
     <h3 style={{ margin: 0, fontSize: '12px', color, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{title}</h3>
   </div>
@@ -256,7 +256,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
       ) : filtered.length === 0 ? (
         <div className="dark-empty">
           <p style={{ marginBottom: '12px' }}>{searchQ ? 'No results found' : 'No employees found'}</p>
-          {!searchQ && <button onClick={openAdd} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first employee</button>}
+          {!searchQ && <button onClick={openAdd} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first employee</button>}
         </div>
       ) : (
         <div className="dark-table-wrap fade-in">
@@ -274,28 +274,28 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                       {emp.photo ? (
                         <img src={emp.photo} alt={emp.name} style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
                       ) : (
-                        <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>
+                        <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>
                           {emp.name?.charAt(0)}
                         </div>
                       )}
                       <div>
-                        <div style={{ color: '#fff', fontSize: '13px', fontWeight: 600 }}>{emp.name}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{emp.email}</div>
+                        <div style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>{emp.name}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{emp.email}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{emp.emp_id || '—'}</td>
+                  <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{emp.emp_id || '—'}</td>
                   <td>
                     <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>{emp.department}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{emp.designation}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{emp.designation}</div>
                   </td>
-                  <td style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{emp.date_of_joining || '—'}</td>
+                  <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{emp.date_of_joining || '—'}</td>
                   <td><span style={{ fontSize: '11px', color: '#10b981', textTransform: 'capitalize' }}>{emp.skill_category || 'skilled'}</span></td>
-                  <td style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{emp.pan_number || '—'}</td>
+                  <td style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{emp.pan_number || '—'}</td>
                   <td><span className={emp.status === 'active' ? 'badge-green' : 'badge-amber'}>{emp.status}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      <button onClick={() => openEdit(emp)} style={{ color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: 'none', borderRadius: '7px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}>
+                      <button onClick={() => openEdit(emp)} style={{ color: 'var(--brand-primary)', background: 'rgba(94, 106, 210, 0.1)', border: 'none', borderRadius: '7px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}>
                         <Edit2 size={12} /> Edit
                       </button>
                       <button onClick={() => handleDelete(emp.id)} data-testid={`delete-employee-${emp.id}`} style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '7px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}>
@@ -317,12 +317,12 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
             {/* Modal Header */}
             <div style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div>
-                <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-employee-modal-title">
+                <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-employee-modal-title">
                   {editId ? 'Edit Employee Profile' : 'Add New Employee'}
                 </h2>
                 <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>Complete all sections for a full employee record</p>
               </div>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
                 <X size={22} />
               </button>
             </div>
@@ -342,9 +342,9 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
               {activeTab === 'personal' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {/* Auto-fill from Document */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: 'rgba(99,102,241,0.1)', borderRadius: '12px', border: '1px dashed rgba(99,102,241,0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: 'rgba(94, 106, 210, 0.1)', borderRadius: '12px', border: '1px dashed rgba(99,102,241,0.3)' }}>
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#818cf8' }}>Auto-fill via OCR</p>
+                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: 'var(--brand-primary)' }}>Auto-fill via OCR</p>
                       <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Upload a CV or Aadhaar card to automatically fill out details.</p>
                     </div>
                     <div style={{ position: 'relative' }}>
@@ -357,7 +357,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
 
                   {/* Photo */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ position: 'relative', width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    <div style={{ position: 'relative', width: '72px', height: '72px', borderRadius: '50%', background: 'var(--bg-elevated)', border: '2px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                       {formData.photo ? <img src={formData.photo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Plus size={22} style={{ opacity: 0.3 }} />}
                       <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                     </div>
@@ -499,11 +499,11 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
               {/* ── LEAVE CONFIG ── */}
               {activeTab === 'leave' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
                     Configure individual leave entitlements. These will be reflected in the employee portal and payroll module.
                   </p>
                   {[
-                    { label: 'Earned Leave (EL) / Privilege Leave (PL)', key: 'leave_el', color: '#818cf8' },
+                    { label: 'Earned Leave (EL) / Privilege Leave (PL)', key: 'leave_el', color: 'var(--brand-primary)' },
                     { label: 'Casual Leave (CL)', key: 'leave_cl', color: '#10b981' },
                     { label: 'Sick Leave (SL)', key: 'leave_sl', color: '#f59e0b' },
                     { label: 'Maternity Leave (ML) — Female only', key: 'leave_ml', color: '#f472b6' },
@@ -515,11 +515,11 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                         <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', display: 'block', marginBottom: '4px' }}>Days / Year</label>
                         <input type="number" className="dark-input" value={formData[item.key] || 0} onChange={e => setFormData({ ...formData, [item.key]: parseInt(e.target.value) || 0 })} style={{ fontSize: '13px', height: '34px', textAlign: 'center' }} />
                       </div>
-                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>days/year</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>days/year</span>
                     </div>
                   ))}
-                  <div style={{ padding: '14px 18px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Note: Maternity Leave only appears in offer letter for female employees. Display in offer letter → Yes / No (as per sex field)</p>
+                  <div style={{ padding: '14px 18px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)' }}>Note: Maternity Leave only appears in offer letter for female employees. Display in offer letter → Yes / No (as per sex field)</p>
                   </div>
                 </div>
               )}
@@ -527,7 +527,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
               {/* ── EDUCATION ── */}
               {activeTab === 'education' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Add academic qualifications. Each row = one qualification.</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Add academic qualifications. Each row = one qualification.</p>
                   <div className="dark-table-wrap" style={{ maxHeight: 'none' }}>
                     <table style={{ fontSize: '12px' }}>
                       <thead>
@@ -545,7 +545,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                       <tbody>
                         {(formData.education || []).map((row, i) => (
                           <tr key={i}>
-                            <td style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontWeight: 600 }}>{i + 1}</td>
+                            <td style={{ color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>{i + 1}</td>
                             {['school', 'degree', 'field_of_study'].map(f => (
                               <td key={f}>
                                 <input value={row[f] || ''} onChange={e => updateEducation(i, f, e.target.value)} className="dark-input" style={{ fontSize: '12px', height: '32px', minWidth: '100px' }} />
@@ -569,7 +569,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                       </tbody>
                     </table>
                   </div>
-                  <button type="button" onClick={addEducationRow} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, alignSelf: 'flex-start' }}>
+                  <button type="button" onClick={addEducationRow} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--brand-primary)', background: 'rgba(94, 106, 210, 0.1)', border: '1px solid rgba(94, 106, 210, 0.2)', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, alignSelf: 'flex-start' }}>
                     <Plus size={14} /> Add Education Row
                   </button>
                 </div>
@@ -578,7 +578,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
               {/* ── SKILLS / CERTS ── */}
               {activeTab === 'skills' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Add professional certifications and skills. Each row = one certification.</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Add professional certifications and skills. Each row = one certification.</p>
                   <div className="dark-table-wrap" style={{ maxHeight: 'none' }}>
                     <table style={{ fontSize: '12px' }}>
                       <thead>
@@ -589,7 +589,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
                       <tbody>
                         {(formData.skills || []).map((row, i) => (
                           <tr key={i}>
-                            <td style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontWeight: 600 }}>{i + 1}</td>
+                            <td style={{ color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>{i + 1}</td>
                             <td><input value={row.cert_name || ''} onChange={e => updateSkill(i, 'cert_name', e.target.value)} className="dark-input" style={{ fontSize: '12px', height: '32px', minWidth: '140px' }} placeholder="e.g. AWS Solutions Architect" /></td>
                             <td><input value={row.cert_number || ''} onChange={e => updateSkill(i, 'cert_number', e.target.value)} className="dark-input" style={{ fontSize: '12px', height: '32px', minWidth: '100px' }} /></td>
                             <td><input type="date" value={row.grant_date || ''} onChange={e => updateSkill(i, 'grant_date', e.target.value)} className="dark-input" style={{ fontSize: '12px', height: '32px' }} /></td>
@@ -613,7 +613,7 @@ const Employees = ({ user, onLogout, isSubComponent }) => {
               {/* ── BANK DETAILS ── */}
               {activeTab === 'bank' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
                     Bank details are used for salary transfer. After employee exit, all balance is cleared to Account Department.
                   </p>
                   <div style={grid2Style}>

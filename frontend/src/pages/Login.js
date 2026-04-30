@@ -47,179 +47,59 @@ const Login = ({ onLogin }) => {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+      background: 'var(--bg-base)',
       position: 'relative',
-      overflow: 'hidden',
+      padding: '24px'
     }}>
-      {/* Animated background orbs */}
+      {/* Background Glow */}
       <div style={{
-        position: 'absolute', top: '-20%', left: '-10%',
+        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         width: '600px', height: '600px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-        animation: 'float 8s ease-in-out infinite',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-20%', right: '-10%',
-        width: '700px', height: '700px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)',
-        animation: 'float 10s ease-in-out infinite reverse',
-      }} />
-      <div style={{
-        position: 'absolute', top: '40%', right: '20%',
-        width: '300px', height: '300px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%)',
-        animation: 'float 6s ease-in-out infinite',
+        background: 'radial-gradient(circle, rgba(94, 106, 210, 0.08) 0%, transparent 70%)',
+        pointerEvents: 'none', zIndex: 0
       }} />
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-30px) scale(1.05); }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        .login-input {
-          width: 100%;
-          padding: 14px 16px;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 12px;
-          color: #fff;
-          font-size: 15px;
-          font-family: inherit;
-          outline: none;
-          transition: all 0.2s;
-          box-sizing: border-box;
-        }
-        .login-input::placeholder { color: rgba(255,255,255,0.35); }
-        .login-input:focus {
-          border-color: rgba(99,102,241,0.8);
-          background: rgba(99,102,241,0.08);
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-        }
-        .login-btn {
-          width: 100%;
-          padding: 14px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 600;
-          font-family: inherit;
-          cursor: pointer;
-          transition: all 0.2s;
-          position: relative;
-          overflow: hidden;
-        }
-        .login-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 8px 25px rgba(99,102,241,0.45);
-        }
-        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .feature-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 50px;
-          color: rgba(255,255,255,0.7);
-          font-size: 13px;
-        }
-      `}</style>
-
-      {/* Left panel — branding */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        padding: '60px', maxWidth: '560px',
-        animation: 'slideUp 0.6s ease forwards',
+        width: '100%', maxWidth: '400px',
+        zIndex: 10,
       }}>
-        <div style={{ marginBottom: '48px' }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
           <div style={{
-            width: '56px', height: '56px', borderRadius: '16px',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            width: '48px', height: '48px', borderRadius: '12px',
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '24px',
-            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+            boxShadow: 'var(--shadow-sm)', position: 'relative'
           }}>
-            <span style={{ color: 'white', fontSize: '24px', fontWeight: 800 }}>B</span>
+            <span style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: 800 }}>M</span>
+            <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px', background: 'var(--brand-primary)', borderRadius: '50%', border: '2px solid var(--bg-elevated)' }} />
           </div>
-          <h1 style={{
-            fontSize: '42px', fontWeight: 800, color: '#fff',
-            lineHeight: 1.2, margin: '0 0 12px',
-            letterSpacing: '-0.02em',
-          }}>
-            Run your office<br />
-            <span style={{
-              background: 'linear-gradient(135deg, #818cf8, #c4b5fd)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>smarter, faster.</span>
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '17px', lineHeight: 1.6, margin: 0 }}>
-            Complete office management — HR, payroll, projects, CRM, inventory and more, all in one platform.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          {['👥 HR & Attendance', '📊 Analytics', '💼 Projects', '🎯 CRM', '🏪 Stores', '💰 Expenses'].map(f => (
-            <span key={f} className="feature-pill">{f}</span>
-          ))}
-        </div>
-
-        <div style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', margin: 0 }}>
-            Trusted by 500+ companies across India
-          </p>
-        </div>
-      </div>
-
-      {/* Right panel — form */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flex: 1, padding: '40px',
-      }}>
-        <div style={{
-          width: '100%', maxWidth: '420px',
-          background: 'rgba(255,255,255,0.04)',
-          backdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '24px',
-          padding: '40px',
-          animation: 'slideUp 0.8s ease forwards',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.4)',
-        }}>
-          <div style={{ marginBottom: '32px' }}>
-            <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 700, margin: '0 0 6px' }}>
-              {isRegister ? 'Create your account' : 'Welcome back'}
+        <div className="glass-card" style={{ padding: '32px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '24px', margin: '0 0 8px' }}>
+              {isRegister ? 'Create an account' : 'Welcome back'}
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '14px', margin: 0 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
               {isRegister
-                ? 'Get started with a free account today'
-                : 'Sign in to your PRSK workspace'}
+                ? 'Enter your details to get started'
+                : 'Enter your credentials to access your workspace'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {isRegister && (
                 <div>
-                  <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
-                    Full Name
-                  </label>
+                  <label className="dark-label">Full Name</label>
                   <input
                     type="text"
                     required
-                    className="login-input"
+                    className="dark-input"
                     placeholder="John Doe"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -228,13 +108,11 @@ const Login = ({ onLogin }) => {
                 </div>
               )}
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
-                  Email address
-                </label>
+                <label className="dark-label">Email address</label>
                 <input
                   type="email"
                   required
-                  className="login-input"
+                  className="dark-input"
                   placeholder="you@company.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -242,13 +120,11 @@ const Login = ({ onLogin }) => {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
-                  Password
-                </label>
+                <label className="dark-label">Password</label>
                 <input
                   type="password"
                   required
-                  className="login-input"
+                  className="dark-input"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -259,11 +135,11 @@ const Login = ({ onLogin }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="login-btn"
+                className="btn-dark-primary"
                 data-testid="auth-submit-btn"
-                style={{ marginTop: '8px' }}
+                style={{ width: '100%', marginTop: '8px', padding: '10px' }}
               >
-                {loading ? 'Please wait...' : (isRegister ? 'Create Account' : 'Sign In')}
+                {loading ? 'Please wait...' : (isRegister ? 'Sign Up' : 'Log In')}
               </button>
             </div>
           </form>
@@ -277,53 +153,53 @@ const Login = ({ onLogin }) => {
               data-testid="toggle-auth-mode"
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: 'rgba(255,255,255,0.45)', fontSize: '14px', fontFamily: 'inherit',
+                color: 'var(--text-secondary)', fontSize: '13px', fontFamily: 'inherit',
               }}
             >
               {isRegister
-                ? <>Already have an account? <span style={{ color: '#818cf8', fontWeight: 600 }}>Sign In</span></>
-                : <>New here? <span style={{ color: '#818cf8', fontWeight: 600 }}>Create a free account</span></>}
+                ? <>Already have an account? <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Log In</span></>
+                : <>Don't have an account? <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Sign Up</span></>}
             </button>
           </div>
-
-          {!isRegister && (
-            <div style={{
-              marginTop: '20px', padding: '16px',
-              background: 'rgba(99,102,241,0.08)',
-              border: '1px solid rgba(99,102,241,0.25)',
-              borderRadius: '12px',
-            }}>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: 600, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                🚀 Quick Demo Login
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {DEMO_USERS.map(u => (
-                  <button
-                    key={u.email}
-                    type="button"
-                    onClick={() => fillDemo(u.email, u.password)}
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
-                      color: 'rgba(255,255,255,0.7)',
-                      fontSize: '12px',
-                      padding: '7px 12px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                  >
-                    <span style={{ color: '#818cf8', fontWeight: 600 }}>{u.label}</span>{' '}— {u.email}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
+
+        {!isRegister && (
+          <div style={{
+            marginTop: '24px', padding: '20px',
+            background: 'var(--bg-card)',
+            border: '1px dashed var(--border)',
+            borderRadius: '8px',
+          }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Demo Credentials
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {DEMO_USERS.map(u => (
+                <button
+                  key={u.email}
+                  type="button"
+                  onClick={() => fillDemo(u.email, u.password)}
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '12px',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-hover)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                >
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{u.label}</span>{' '}— {u.email}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

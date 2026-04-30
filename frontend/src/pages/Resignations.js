@@ -85,8 +85,8 @@ const Resignations = ({ user }) => {
         <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', margin: 0 }}>Resignations & F&F</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', margin: '4px 0 0' }}>Manage employee exits and final settlements natively.</p>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Resignations & F&F</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0' }}>Manage employee exits and final settlements natively.</p>
                 </div>
                 <button onClick={() => setShowModal(true)} style={{ padding: '8px 16px', background: 'rgba(244,63,94,0.1)', color: '#f43f5e', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <LogOut size={16} /> Apply for Resignation
@@ -94,36 +94,36 @@ const Resignations = ({ user }) => {
             </div>
 
             {loading ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>Loading data...</div>
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading data...</div>
             ) : resignations.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                    <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)' }}>No resignations on record. 🎉</p>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>No resignations on record. 🎉</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '16px' }}>
                     {resignations.map(r => (
-                        <div key={r.id} style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
+                        <div key={r.id} style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#fff' }}>{r.employee_name}</h3>
+                                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{r.employee_name}</h3>
                                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 700, background: r.status === 'approved' ? 'rgba(16,185,129,0.1)' : r.status === 'rejected' ? 'rgba(244,63,94,0.1)' : 'rgba(245,158,11,0.1)', color: r.status === 'approved' ? '#34d399' : r.status === 'rejected' ? '#fb7185' : '#fbbf24' }}>
                                             {r.status}
                                         </span>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Reason: {r.reason}</p>
-                                    <div style={{ display: 'flex', gap: '24px', marginTop: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+                                    <div style={{ display: 'flex', gap: '24px', marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                                         <span>Req. Date: <b>{r.resignation_date}</b></span>
                                         <span>Last Day: <b>{r.last_working_day || 'TBD'}</b></span>
                                         <span>Notice: <b>{r.notice_period_days} Days</b></span>
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <p style={{ margin: '0 0 8px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>F&F Status</p>
+                                    <p style={{ margin: '0 0 8px', fontSize: '12px', color: 'var(--text-secondary)' }}>F&F Status</p>
                                     {r.fnf_status === 'calculated' ? (
                                         <div>
                                             <p style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#22d3ee' }}>₹{r.fnf_amount.toLocaleString()}</p>
-                                            <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>Calculated Settled Amount</p>
+                                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>Calculated Settled Amount</p>
                                             {r.fnf_breakdown && (
                                                 <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(34,211,238,0.05)', borderRadius: '6px', textAlign: 'left', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
                                                     {Object.entries(r.fnf_breakdown).map(([k,v]) => (
@@ -135,7 +135,7 @@ const Resignations = ({ user }) => {
                                             )}
                                         </div>
                                     ) : (
-                                        <span style={{ fontSize: '12px', padding: '4px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', color: 'rgba(255,255,255,0.4)' }}>Pending Calculation</span>
+                                        <span style={{ fontSize: '12px', padding: '4px 10px', background: 'var(--bg-elevated)', borderRadius: '20px', color: 'var(--text-secondary)' }}>Pending Calculation</span>
                                     )}
                                 </div>
                             </div>
@@ -163,12 +163,12 @@ const Resignations = ({ user }) => {
 
             {showModal && createPortal(
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
-                    <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', zIndex: 100000 }}>
-                        <h3 style={{ marginTop: 0, color: '#fff', fontSize: '18px' }}>Apply for Resignation</h3>
+                    <div style={{ background: '#0a0a0a', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', zIndex: 100000 }}>
+                        <h3 style={{ marginTop: 0, color: 'var(--text-primary)', fontSize: '18px' }}>Apply for Resignation</h3>
                         <form onSubmit={handleApply} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Employee</label>
-                                <select required value={formData.employee_id} onChange={e => setFormData({...formData, employee_id: e.target.value})} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                                <select required value={formData.employee_id} onChange={e => setFormData({...formData, employee_id: e.target.value})} style={{ width: '100%', padding: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', outline: 'none' }}>
                                     <option value="" style={{ background: '#1e293b' }}>Select Employee</option>
                                     {employees.map(emp => (
                                         <option key={emp.id} value={emp.id} style={{ background: '#1e293b' }}>{emp.name}</option>
@@ -177,19 +177,19 @@ const Resignations = ({ user }) => {
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Reason</label>
-                                <textarea required value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', outline: 'none' }} rows={3} placeholder="Reason for resignation..." />
+                                <textarea required value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} style={{ width: '100%', padding: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', outline: 'none' }} rows={3} placeholder="Reason for resignation..." />
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Resignation Date</label>
-                                <input type="date" required value={formData.resignation_date} onChange={e => setFormData({...formData, resignation_date: e.target.value})} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', outline: 'none' }} />
+                                <input type="date" required value={formData.resignation_date} onChange={e => setFormData({...formData, resignation_date: e.target.value})} style={{ width: '100%', padding: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', outline: 'none' }} />
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Expected Last Working Day</label>
-                                <input type="date" required value={formData.last_working_day} onChange={e => setFormData({...formData, last_working_day: e.target.value})} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', outline: 'none' }} />
+                                <input type="date" required value={formData.last_working_day} onChange={e => setFormData({...formData, last_working_day: e.target.value})} style={{ width: '100%', padding: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', outline: 'none' }} />
                             </div>
                             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '10px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
-                                <button type="submit" style={{ flex: 1, padding: '10px', background: '#f43f5e', border: 'none', color: '#fff', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Submit</button>
+                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '10px', background: 'none', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+                                <button type="submit" style={{ flex: 1, padding: '10px', background: '#f43f5e', border: 'none', color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Submit</button>
                             </div>
                         </form>
                     </div>

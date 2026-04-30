@@ -68,7 +68,7 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                 <h1 className="page-title">Recruitment (ATS)</h1>
-                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px' }}>PA40</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px' }}>PA40</span>
               </div>
               <p className="page-subtitle">Manage job openings and track candidates</p>
             </div>
@@ -91,13 +91,13 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
           <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0' }}>
             <button 
               onClick={() => setActiveTab('jobs')} 
-              style={{ padding: '12px 20px', background: 'transparent', border: 'none', borderBottom: activeTab === 'jobs' ? '2px solid #6366f1' : 'none', color: activeTab === 'jobs' ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '12px 20px', background: 'transparent', border: 'none', borderBottom: activeTab === 'jobs' ? '2px solid var(--brand-primary)' : 'none', color: activeTab === 'jobs' ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 600, cursor: 'pointer' }}
             >
               Open Roles ({jobs.length})
             </button>
             <button 
               onClick={() => setActiveTab('candidates')} 
-              style={{ padding: '12px 20px', background: 'transparent', border: 'none', borderBottom: activeTab === 'candidates' ? '2px solid #6366f1' : 'none', color: activeTab === 'candidates' ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '12px 20px', background: 'transparent', border: 'none', borderBottom: activeTab === 'candidates' ? '2px solid var(--brand-primary)' : 'none', color: activeTab === 'candidates' ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 600, cursor: 'pointer' }}
             >
               Candidates ({candidates.length})
             </button>
@@ -108,21 +108,21 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
           ) : activeTab === 'jobs' ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }} className="fade-in">
               {jobs.map(job => (
-                <div key={job.id} className="dark-card" style={{ padding: '24px' }}>
+                <div key={job.id} className="glass-card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>{job.id}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>{job.id}</span>
                     <span className="badge-green">{job.status}</span>
                   </div>
-                  <h3 style={{ color: '#fff', fontSize: '18px', margin: '0 0 8px', fontWeight: 700 }}>{job.title}</h3>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', margin: '0 0 20px' }}>{job.department} • {job.location}</p>
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', margin: '0 0 8px', fontWeight: 700 }}>{job.title}</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 20px' }}>{job.department} • {job.location}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Users size={14} color="#818cf8" />
-                      <span style={{ fontSize: '13px', color: '#fff', fontWeight: 600 }}>
+                      <Users size={14} color="var(--brand-primary)" />
+                      <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>
                         {candidates.filter(c => c.job_id === job.id).length} Applicants
                       </span>
                     </div>
-                    <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Posted {new Date(job.created_at).toLocaleDateString()}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Posted {new Date(job.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               ))}
@@ -136,7 +136,7 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
                 <tbody>
                   {candidates.map(c => (
                     <tr key={c.id}>
-                      <td style={{ fontWeight: 600, color: '#fff' }}>{c.name}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</td>
                       <td>{jobs.find(j => j.id === c.job_id)?.title || 'Unknown'}</td>
                       <td>{c.email}</td>
                       <td>{new Date(c.created_at).toLocaleDateString()}</td>
@@ -154,7 +154,7 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '600px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0 }}>Step 1: Open New Role</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Step 1: Open New Role</h2>
               <button onClick={() => setShowJobModal(false)} className="icon-btn"><X /></button>
             </div>
             <form onSubmit={handleCreateJob} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -190,7 +190,7 @@ const Recruitment = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '400px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0 }}>Add Applicant</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Add Applicant</h2>
               <button onClick={() => setShowCandidateModal(false)} className="icon-btn"><X /></button>
             </div>
             <form onSubmit={handleAddCandidate} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -167,7 +167,7 @@ const Expenses = ({ user, onLogout }) => {
           {/* KPI Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
             {[
-              { label: 'Total Expenses', value: `₹${totalExpenses.toLocaleString('en-IN')}`, sub: `${expenses.length} entries`, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', icon: TrendingUp, testId: 'total-expenses-card' },
+              { label: 'Total Expenses', value: `₹${totalExpenses.toLocaleString('en-IN')}`, sub: `${expenses.length} entries`, color: 'var(--brand-primary)', bg: 'rgba(99,102,241,0.12)', icon: TrendingUp, testId: 'total-expenses-card' },
               { label: 'Pending Approval', value: `₹${pendingAmount.toLocaleString('en-IN')}`, sub: `${pendingExpenses.length} pending`, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Clock, testId: 'pending-expenses-card' },
               { label: 'Approved', value: `₹${approvedAmount.toLocaleString('en-IN')}`, sub: `${approvedExpenses.length} approved`, color: '#10b981', bg: 'rgba(16,185,129,0.12)', icon: CheckCircle, testId: null },
               { label: 'Rejected', value: expenses.filter(e => e.status === 'rejected').length, sub: 'claims declined', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: XCircle, testId: null },
@@ -182,7 +182,7 @@ const Expenses = ({ user, onLogout }) => {
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: '0 0 2px' }}>{kpi.label}</p>
                   <p style={{ color: kpi.color, fontSize: '22px', fontWeight: 800, margin: '0 0 2px' }}>{kpi.value}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: 0 }}>{kpi.sub}</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: 0 }}>{kpi.sub}</p>
                 </div>
               );
             })}
@@ -190,18 +190,18 @@ const Expenses = ({ user, onLogout }) => {
 
           {/* Filters */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-card)', borderRadius: '10px', padding: '4px' }}>
               {['all', 'submitted', 'manager_approved', 'approved', 'rejected', 'paid', 'flagged'].map(s => (
                 <button key={s} onClick={() => setFilterStatus(s)}
                   style={{ padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s',
-                    background: filterStatus === s ? 'rgba(99,102,241,0.2)' : 'transparent',
-                    color: filterStatus === s ? '#818cf8' : 'rgba(255,255,255,0.45)' }}>
+                    background: filterStatus === s ? 'rgba(94, 106, 210, 0.2)' : 'transparent',
+                    color: filterStatus === s ? 'var(--brand-primary)' : 'rgba(255,255,255,0.45)' }}>
                   {s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
             </div>
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'rgba(255,255,255,0.7)', padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }}>
+              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '10px', color: 'rgba(255,255,255,0.7)', padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }}>
               <option value="all">All Categories</option>
               {categories.map(c => <option key={c.name} value={c.name} style={{ background: '#1e293b' }}>{c.name.charAt(0).toUpperCase() + c.name.slice(1)}</option>)}
             </select>
@@ -212,7 +212,7 @@ const Expenses = ({ user, onLogout }) => {
           ) : filteredExpenses.length === 0 ? (
             <div className="dark-empty">
               <p style={{ marginBottom: '12px' }}>No expenses found matching filters</p>
-              <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Submit your first expense</button>
+              <button onClick={() => setShowModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Submit your first expense</button>
             </div>
           ) : (
             <div className="dark-table-wrap fade-in">
@@ -225,7 +225,7 @@ const Expenses = ({ user, onLogout }) => {
                 <tbody>
                   {filteredExpenses.map(exp => (
                     <tr key={exp.id} data-testid={`expense-row-${exp.id}`}>
-                      <td style={{ color: '#fff', fontWeight: 600 }}>
+                      <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                         {getEmployeeName(exp.employee_id)}
                         {exp.ai_score < 7.0 && <span title={exp.ai_flags?.join(', ')} style={{ marginLeft: '6px', color: '#ef4444', fontSize: '10px' }}>⚠️ Flag</span>}
                       </td>
@@ -235,7 +235,7 @@ const Expenses = ({ user, onLogout }) => {
                           <span style={{ textTransform: 'capitalize' }}>{exp.category}</span>
                         </span>
                       </td>
-                      <td style={{ color: '#fff', fontWeight: 700 }}>₹{exp.amount.toLocaleString('en-IN')}</td>
+                      <td style={{ color: 'var(--text-primary)', fontWeight: 700 }}>₹{exp.amount.toLocaleString('en-IN')}</td>
                       <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.description || '—'}</td>
                       <td>{new Date(exp.date).toLocaleDateString('en-IN')}</td>
                       <td>{statusBadge(exp.status)}</td>
@@ -289,8 +289,8 @@ const Expenses = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '500px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-expense-modal-title">Submit Expense</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-expense-modal-title">Submit Expense</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
@@ -343,7 +343,7 @@ const Expenses = ({ user, onLogout }) => {
                   </select>
                 </div>
               </div>
-              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(94, 106, 210, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                 <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: 0 }}>🤖 AI will scan the receipt to detect fraud, limit breaches, and duplicates before manager and finance approval.</p>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>

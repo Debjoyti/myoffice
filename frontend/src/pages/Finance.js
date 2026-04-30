@@ -17,7 +17,7 @@ const getCashFlowAdvice = (invoices, expenses) => {
   if (overdueCount > 0) return { type: 'warning', msg: `${overdueCount} invoice${overdueCount > 1 ? 's' : ''} overdue — immediate follow-up required for cash flow`, color: '#f59e0b' };
   if (totalInvoiced > 0 && paidAmount / totalInvoiced < 0.5) return { type: 'warning', msg: 'Less than 50% of invoiced amount collected — accelerate collections', color: '#f43f5e' };
   if (totalInvoiced > 100000) return { type: 'positive', msg: 'Strong invoice pipeline! Consider offering early payment discounts to accelerate inflow', color: '#10b981' };
-  return { type: 'info', msg: 'Build invoice pipeline — aim for 30-day payment cycles with Net-30 terms', color: '#6366f1' };
+  return { type: 'info', msg: 'Build invoice pipeline — aim for 30-day payment cycles with Net-30 terms', color: 'var(--brand-primary)' };
 };
 
 const Finance = ({ user, onLogout }) => {
@@ -195,7 +195,7 @@ const Finance = ({ user, onLogout }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                 <h1 className="page-title">Finance & Books</h1>
-                <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', fontFamily: 'JetBrains Mono, monospace' }}>FB01</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px', fontFamily: 'JetBrains Mono, monospace' }}>FB01</span>
                 <span className="ai-badge"><Sparkles size={9} /> AI Forecasting</span>
               </div>
               <p className="page-subtitle">Invoices, customers, vendors & AI cash flow intelligence</p>
@@ -209,7 +209,7 @@ const Finance = ({ user, onLogout }) => {
           {/* KPI Strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }} className="stagger">
             {[
-              { label: 'Total Invoiced', value: `₹${(totalInvoiced / 100000).toFixed(1)}L`, icon: Receipt, color: '#6366f1' },
+              { label: 'Total Invoiced', value: `₹${(totalInvoiced / 100000).toFixed(1)}L`, icon: Receipt, color: 'var(--brand-primary)' },
               { label: 'Amount Collected', value: `₹${(paidAmount / 100000).toFixed(1)}L`, icon: CheckCircle2, color: '#10b981' },
               { label: 'Collection Rate', value: `${collectionRate}%`, icon: TrendingUp, color: collectionRate > 70 ? '#10b981' : '#f59e0b' },
               { label: 'Overdue Invoices', value: overdueInvoices.length, icon: AlertTriangle, color: overdueInvoices.length > 0 ? '#f43f5e' : '#10b981' },
@@ -254,10 +254,10 @@ const Finance = ({ user, onLogout }) => {
                         const isOverdue = inv.status !== 'paid' && new Date(inv.due_date) < new Date();
                         return (
                           <tr key={inv.id}>
-                            <td style={{ color: '#818cf8', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{inv.invoice_number}</td>
-                            <td style={{ color: '#fff', fontWeight: 600 }}>{getCustomerName(inv.customer_id)}</td>
-                            <td style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>₹{(inv.total_amount * 0.85).toLocaleString()}</td>
-                            <td style={{ color: '#fff', fontWeight: 700 }}>₹{(inv.total_amount || 0).toLocaleString()}</td>
+                            <td style={{ color: 'var(--brand-primary)', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>{inv.invoice_number}</td>
+                            <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getCustomerName(inv.customer_id)}</td>
+                            <td style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>₹{(inv.total_amount * 0.85).toLocaleString()}</td>
+                            <td style={{ color: 'var(--text-primary)', fontWeight: 700 }}>₹{(inv.total_amount || 0).toLocaleString()}</td>
                             <td>
                               <span className={inv.status === 'paid' ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-amber'}>
                                 {inv.status === 'paid' ? '✓ Paid' : isOverdue ? '⚠ Overdue' : inv.status}
@@ -289,13 +289,13 @@ const Finance = ({ user, onLogout }) => {
               {activeTab === 'customers' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                   {customers.map(cust => (
-                    <div key={cust.id} className="dark-card" style={{ padding: '20px' }}>
+                    <div key={cust.id} className="glass-card" style={{ padding: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         <div style={{ width: '40px', height: '40px', background: 'rgba(99,102,241,0.12)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Users size={18} color="#818cf8" />
+                          <Users size={18} color="var(--brand-primary)" />
                         </div>
                         <div>
-                          <h3 style={{ color: '#fff', margin: 0, fontSize: '14px', fontWeight: 700 }}>{cust.name}</h3>
+                          <h3 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '14px', fontWeight: 700 }}>{cust.name}</h3>
                           <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '11px' }}>{cust.contact_person}</p>
                         </div>
                       </div>
@@ -319,11 +319,11 @@ const Finance = ({ user, onLogout }) => {
               {activeTab === 'vendors' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
                   {vendors.map(v => (
-                    <div key={v.id} className="dark-card" style={{ padding: '20px' }}>
+                    <div key={v.id} className="glass-card" style={{ padding: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         <div style={{ width: '40px', height: '40px', background: 'rgba(245,158,11,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🏭</div>
                         <div>
-                          <h3 style={{ color: '#fff', margin: 0, fontSize: '14px', fontWeight: 700 }}>{v.name}</h3>
+                          <h3 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '14px', fontWeight: 700 }}>{v.name}</h3>
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'rgba(245,158,11,0.1)', color: '#fbbf24', fontWeight: 600 }}>{v.category || 'General'}</span>
                         </div>
                       </div>
@@ -346,7 +346,7 @@ const Finance = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '700px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0, fontSize: '18px', fontWeight: 800 }}>Create Invoice</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '18px', fontWeight: 800 }}>Create Invoice</h2>
               <button onClick={() => setShowInvoiceModal(false)} className="icon-btn"><X size={16} /></button>
             </div>
             <form onSubmit={handleInvoiceSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -394,12 +394,12 @@ const Finance = ({ user, onLogout }) => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <label className="dark-label" style={{ margin: 0 }}>Line Items</label>
-                  <button type="button" onClick={addItem} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', borderRadius: '7px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  <button type="button" onClick={addItem} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(94, 106, 210, 0.1)', border: '1px solid rgba(94, 106, 210, 0.2)', color: 'var(--brand-primary)', borderRadius: '7px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                     <Plus size={12} /> Add Line
                   </button>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '3fr 60px 90px 80px 100px 32px', gap: '1px', background: 'rgba(255,255,255,0.05)', padding: '8px 12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '3fr 60px 90px 80px 100px 32px', gap: '1px', background: 'var(--bg-elevated)', padding: '8px 12px' }}>
                     {['Description', 'Qty', 'Rate (₹)', 'GST %', 'Amount', ''].map((h, i) => (
                       <p key={i} style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</p>
                     ))}
@@ -428,14 +428,14 @@ const Finance = ({ user, onLogout }) => {
                     <div style={{ display: 'flex', justifyContent: 'flex-end', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
                       <div style={{ display: 'flex', gap: '32px' }}>
                         <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Subtotal:</span>
-                        <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, minWidth: '80px', textAlign: 'right' }}>₹{subtotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600, minWidth: '80px', textAlign: 'right' }}>₹{subtotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                       </div>
                       <div style={{ display: 'flex', gap: '32px' }}>
                         <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>GST Total:</span>
                         <span style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 600, minWidth: '80px', textAlign: 'right' }}>₹{gstTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                       </div>
                       <div style={{ display: 'flex', gap: '32px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px', marginTop: '4px' }}>
-                        <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>Grand Total:</span>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 700 }}>Grand Total:</span>
                         <span style={{ color: '#34d399', fontSize: '16px', fontWeight: 900, minWidth: '80px', textAlign: 'right' }}>₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                       </div>
                     </div>
@@ -462,7 +462,7 @@ const Finance = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0, fontSize: '18px', fontWeight: 800 }}>Add Customer</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '18px', fontWeight: 800 }}>Add Customer</h2>
               <button onClick={() => setShowCustomerModal(false)} className="icon-btn"><X size={16} /></button>
             </div>
             <form onSubmit={handleCustomerSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -493,7 +493,7 @@ const Finance = ({ user, onLogout }) => {
           <div className="dark-modal-overlay">
             <div className="dark-modal" style={{ maxWidth: '500px' }}>
               <div className="dark-modal-header">
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#fff' }}>Record Payment</h3>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Record Payment</h3>
                 <button onClick={() => setShowPaymentModal(false)} className="icon-btn"><X size={20} /></button>
               </div>
 

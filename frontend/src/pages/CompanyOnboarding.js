@@ -35,7 +35,7 @@ function imageToBase64(file) {
 
 function CompanyCard({ company, onView, onDelete }) {
   const initials = company.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
-  const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#ef4444'];
+  const colors = ['var(--brand-primary)', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#ef4444'];
   const colorIdx = company.name ? company.name.charCodeAt(0) % colors.length : 0;
   const color = colors[colorIdx];
 
@@ -54,15 +54,15 @@ function CompanyCard({ company, onView, onDelete }) {
       {/* Logo / Initials */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
         {company.logo ? (
-          <img src={company.logo} alt="logo" style={{ width: '52px', height: '52px', borderRadius: '14px', objectFit: 'contain', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }} />
+          <img src={company.logo} alt="logo" style={{ width: '52px', height: '52px', borderRadius: '14px', objectFit: 'contain', background: 'rgba(255,255,255,0.08)', border: '1px solid var(--border)' }} />
         ) : (
           <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: `linear-gradient(135deg, ${color}33, ${color}11)`, border: `1px solid ${color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color }}>
             {initials}
           </div>
         )}
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <p style={{ color: '#fff', fontWeight: 700, fontSize: '15px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company.name}</p>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: '2px 0 0' }}>{company.industry || 'No industry set'}</p>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '15px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company.name}</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: '2px 0 0' }}>{company.industry || 'No industry set'}</p>
         </div>
         <span style={{ fontSize: '10px', padding: '3px 10px', borderRadius: '99px', fontWeight: 700, background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
           Active
@@ -73,20 +73,20 @@ function CompanyCard({ company, onView, onDelete }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
         {company.email && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <Mail size={12} color="rgba(255,255,255,0.3)" />
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{company.email}</span>
+            <Mail size={12} color="var(--text-muted)" />
+            <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{company.email}</span>
           </div>
         )}
         {company.phone && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <Phone size={12} color="rgba(255,255,255,0.3)" />
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{company.phone}</span>
+            <Phone size={12} color="var(--text-muted)" />
+            <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{company.phone}</span>
           </div>
         )}
         {(company.city || company.state) && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <MapPin size={12} color="rgba(255,255,255,0.3)" />
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{[company.city, company.state].filter(Boolean).join(', ')}</span>
+            <MapPin size={12} color="var(--text-muted)" />
+            <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{[company.city, company.state].filter(Boolean).join(', ')}</span>
           </div>
         )}
       </div>
@@ -94,7 +94,7 @@ function CompanyCard({ company, onView, onDelete }) {
       {/* Tax badges */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
         {company.pan_number && (
-          <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.2)', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(94, 106, 210, 0.1)', color: 'var(--brand-primary)', border: '1px solid rgba(94, 106, 210, 0.2)', fontFamily: 'monospace' }}>
             PAN: {company.pan_number}
           </span>
         )}
@@ -112,7 +112,7 @@ function CompanyCard({ company, onView, onDelete }) {
 
       {/* Stamp thumbnail */}
       {company.stamp && (
-        <div style={{ marginBottom: '16px', padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+        <div style={{ marginBottom: '16px', padding: '8px', background: 'var(--bg-card)', borderRadius: '10px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
           <img src={company.stamp} alt="stamp" style={{ maxHeight: '48px', opacity: 0.7, filter: 'brightness(0.9)' }} />
           <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: '4px 0 0' }}>Company Stamp</p>
         </div>
@@ -153,7 +153,7 @@ function UploadBox({ label, value, onChange, accept = 'image/*', hint }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <Upload size={24} color="rgba(255,255,255,0.2)" />
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Click to upload {label}</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Click to upload {label}</span>
             {hint && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>{hint}</span>}
           </div>
         )}
@@ -181,11 +181,11 @@ function FormField({ label, value, onChange, placeholder, type = 'text', mono })
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         style={{
-          width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '10px', color: '#fff', fontSize: mono ? '13px' : '14px', fontFamily: mono ? 'monospace' : 'inherit',
+          width: '100%', padding: '10px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+          borderRadius: '10px', color: 'var(--text-primary)', fontSize: mono ? '13px' : '14px', fontFamily: mono ? 'monospace' : 'inherit',
           outline: 'none', boxSizing: 'border-box', letterSpacing: mono ? '0.05em' : 'normal'
         }}
-        onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.background = 'rgba(99,102,241,0.07)'; }}
+        onFocus={e => { e.target.style.borderColor = 'var(--brand-primary)'; e.target.style.background = 'rgba(99,102,241,0.07)'; }}
         onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
       />
     </div>
@@ -197,7 +197,7 @@ function SelectField({ label, value, onChange, options }) {
     <div>
       <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)} style={{
-        width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+        width: '100%', padding: '10px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)',
         borderRadius: '10px', color: value ? '#fff' : 'rgba(255,255,255,0.4)', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
       }}>
         <option value="">Select…</option>
@@ -222,7 +222,7 @@ function PlantList({ plants, onChange }) {
   };
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
       <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '12px' }}>Plant Codes</label>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         <input
@@ -231,18 +231,18 @@ function PlantList({ plants, onChange }) {
           placeholder="e.g. Plant 1"
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && addPlant()}
-          style={{ flex: 1, padding: '8px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
+          style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px' }}
         />
-        <button onClick={addPlant} style={{ padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+        <button onClick={addPlant} style={{ padding: '8px 16px', background: 'var(--brand-primary)', color: 'var(--text-primary)', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
           Add Plant
         </button>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
         {plants.length === 0 && <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px', margin: 0 }}>No plants added yet</p>}
         {plants.map((p, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px' }}>
-            <span style={{ color: '#818cf8', fontSize: '12px', fontWeight: 600 }}>{p.plant_code}</span>
-            <X size={14} color="#818cf8" style={{ cursor: 'pointer' }} onClick={() => removePlant(i)} />
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(94, 106, 210, 0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px' }}>
+            <span style={{ color: 'var(--brand-primary)', fontSize: '12px', fontWeight: 600 }}>{p.plant_code}</span>
+            <X size={14} color="var(--brand-primary)" style={{ cursor: 'pointer' }} onClick={() => removePlant(i)} />
           </div>
         ))}
       </div>
@@ -408,9 +408,9 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
     // Step 1: Statutory Details (ESI/UAN/E-Way)
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-      <div style={{ padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)', gridColumn: '1/-1' }}>
+      <div style={{ padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '12px', border: '1px solid rgba(94, 106, 210, 0.15)', gridColumn: '1/-1' }}>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, margin: '0 0 4px' }}>Compliance & Statutory Identifiers</p>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: 0 }}>These details are used for payroll and government portal integrations.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: 0 }}>These details are used for payroll and government portal integrations.</p>
       </div>
       <FormField label="Company ESI Account No." placeholder="ESI account number" {...field('esi_account_no')} mono />
       <FormField label="Company UAN Account No." placeholder="UAN account number" {...field('uan_account_no')} mono />
@@ -442,20 +442,20 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
     // Step 4: Team Onboarding
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)' }}>
+      <div style={{ padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '12px', border: '1px solid rgba(94, 106, 210, 0.15)' }}>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, margin: '0 0 4px' }}>Bulk AI Employee Onboarding</p>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: '0 0 12px' }}>Paste any text containing employee names, emails, roles, etc. Our AI will extract and structure them.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: '0 0 12px' }}>Paste any text containing employee names, emails, roles, etc. Our AI will extract and structure them.</p>
         <textarea
           value={aiPrompt}
           onChange={e => setAiPrompt(e.target.value)}
           placeholder="e.g. John Doe, john@example.com, Developer... \n Jane Smith, jane@example.com, HR"
-          style={{ width: '100%', minHeight: '100px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '12px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', resize: 'vertical' }}
+          style={{ width: '100%', minHeight: '100px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', resize: 'vertical' }}
         />
         <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
           <button
             onClick={handleParseAI}
             disabled={parsingAI}
-            style={{ padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: parsingAI ? 'not-allowed' : 'pointer' }}
+            style={{ padding: '8px 16px', background: 'var(--brand-primary)', color: 'var(--text-primary)', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: parsingAI ? 'not-allowed' : 'pointer' }}
           >
             {parsingAI ? 'Extracting...' : 'Extract from Text'}
           </button>
@@ -470,7 +470,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
             />
             <button
               disabled={parsingAI}
-              style={{ padding: '8px 16px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: parsingAI ? 'not-allowed' : 'pointer' }}
+              style={{ padding: '8px 16px', background: 'rgba(94, 106, 210, 0.2)', color: 'var(--brand-primary)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: parsingAI ? 'not-allowed' : 'pointer' }}
             >
               Upload CSV/Excel
             </button>
@@ -479,11 +479,11 @@ const CompanyOnboarding = ({ user, onLogout }) => {
       </div>
 
       {form.employees.length > 0 && (
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', overflowX: 'auto' }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', overflowX: 'auto' }}>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, margin: '0 0 12px' }}>Extracted Employees ({form.employees.length})</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
-              <tr style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <tr style={{ color: 'var(--text-secondary)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <th style={{ padding: '8px' }}>Name</th>
                 <th style={{ padding: '8px' }}>Email</th>
                 <th style={{ padding: '8px' }}>Department</th>
@@ -495,16 +495,16 @@ const CompanyOnboarding = ({ user, onLogout }) => {
               {form.employees.map((emp, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '4px' }}>
-                    <input type="text" value={emp.name} onChange={e => updateParsedEmployee(idx, 'name', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                    <input type="text" value={emp.name} onChange={e => updateParsedEmployee(idx, 'name', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px' }} />
                   </td>
                   <td style={{ padding: '4px' }}>
-                    <input type="text" value={emp.email} onChange={e => updateParsedEmployee(idx, 'email', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                    <input type="text" value={emp.email} onChange={e => updateParsedEmployee(idx, 'email', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px' }} />
                   </td>
                   <td style={{ padding: '4px' }}>
-                    <input type="text" value={emp.department} onChange={e => updateParsedEmployee(idx, 'department', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                    <input type="text" value={emp.department} onChange={e => updateParsedEmployee(idx, 'department', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px' }} />
                   </td>
                   <td style={{ padding: '4px' }}>
-                    <input type="text" value={emp.designation} onChange={e => updateParsedEmployee(idx, 'designation', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '12px' }} />
+                    <input type="text" value={emp.designation} onChange={e => updateParsedEmployee(idx, 'designation', e.target.value)} style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px' }} />
                   </td>
                   <td style={{ padding: '4px' }}>
                     <X size={14} color="#f87171" style={{ cursor: 'pointer' }} onClick={() => removeParsedEmployee(idx)} />
@@ -519,7 +519,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
   ];
 
   return (
-    <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a' }}>
+    <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: 'var(--bg-base)' }}>
       <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
@@ -531,7 +531,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
               position: 'fixed', top: '24px', right: '24px', zIndex: 9999,
               padding: '12px 20px', borderRadius: '12px', fontWeight: 700, fontSize: '14px',
               background: toast.type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(16,185,129,0.95)',
-              color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '8px'
+              color: 'var(--text-primary)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '8px'
             }}>
               {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
               {toast.msg}
@@ -542,10 +542,10 @@ const CompanyOnboarding = ({ user, onLogout }) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
             <div>
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', margin: '0 0 4px' }}>Business Suite</p>
-              <h1 style={{ color: '#fff', fontSize: '28px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Building2 size={28} color="#6366f1" /> Company Onboarding
+              <h1 style={{ color: 'var(--text-primary)', fontSize: '28px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Building2 size={28} color="var(--brand-primary)" /> Company Onboarding
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', margin: '6px 0 0' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '6px 0 0' }}>
                 Register and manage all client & partner company profiles in one place
               </p>
             </div>
@@ -553,7 +553,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
               onClick={() => { setShowForm(true); setStep(0); setForm(EMPTY_FORM); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px',
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none',
+                background: 'var(--brand-primary)', color: 'var(--text-primary)', border: 'none',
                 borderRadius: '12px', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
                 boxShadow: '0 4px 20px rgba(99,102,241,0.4)'
               }}
@@ -565,7 +565,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
           {/* Stats Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
             {[
-              { label: 'Total Companies', value: companies.length, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', emoji: '🏢' },
+              { label: 'Total Companies', value: companies.length, color: 'var(--brand-primary)', bg: 'rgba(99,102,241,0.12)', emoji: '🏢' },
               { label: 'Active', value: companies.filter(c => c.status === 'active').length, color: '#10b981', bg: 'rgba(16,185,129,0.12)', emoji: '✅' },
               { label: 'With GST', value: companies.filter(c => c.gst_number).length, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', emoji: '📋' },
               { label: 'With Logo', value: companies.filter(c => c.logo).length, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', emoji: '🎨' },
@@ -576,7 +576,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
                     {s.emoji}
                   </div>
                 </div>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: '0 0 4px' }}>{s.label}</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: '0 0 4px' }}>{s.label}</p>
                 <p style={{ color: s.color, fontSize: '28px', fontWeight: 800, margin: 0 }}>{s.value}</p>
               </div>
             ))}
@@ -585,34 +585,34 @@ const CompanyOnboarding = ({ user, onLogout }) => {
           {/* Search */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={16} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+              <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
                 placeholder="Search companies by name, industry, city…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
-                  width: '100%', padding: '12px 14px 12px 42px', background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '14px',
+                  width: '100%', padding: '12px 14px 12px 42px', background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '14px',
                   outline: 'none', boxSizing: 'border-box'
                 }}
               />
             </div>
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '13px', whiteSpace: 'nowrap' }}>
               {filtered.length} of {companies.length} companies
             </span>
           </div>
 
           {/* Company Grid */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '80px', color: 'rgba(255,255,255,0.3)' }}>
+            <div style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: '40px', marginBottom: '12px' }}>⏳</div>
               <p>Loading company profiles…</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px', color: 'rgba(255,255,255,0.3)' }}>
+            <div style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
               <Building2 size={56} color="rgba(255,255,255,0.1)" style={{ marginBottom: '16px' }} />
-              <p style={{ fontSize: '18px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', margin: '0 0 8px' }}>
+              <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 8px' }}>
                 {search ? 'No companies match your search' : 'No companies onboarded yet'}
               </p>
               <p style={{ fontSize: '14px' }}>Click "Onboard New Company" to get started</p>
@@ -630,15 +630,15 @@ const CompanyOnboarding = ({ user, onLogout }) => {
       {/* ──── NEW COMPANY MODAL ──── */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '24px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '24px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
             {/* Modal Header */}
             <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 800, margin: 0 }}>Onboard Company - Basic Detail</h2>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: '4px 0 0' }}>Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
+                <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 800, margin: 0 }}>Onboard Company - Basic Detail</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0' }}>Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
               </div>
-              <button onClick={() => { setShowForm(false); setStep(0); }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}>
+              <button onClick={() => { setShowForm(false); setStep(0); }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}>
                 <X size={18} />
               </button>
             </div>
@@ -654,8 +654,8 @@ const CompanyOnboarding = ({ user, onLogout }) => {
                     <div style={{
                       width: '24px', height: '24px', borderRadius: '50%', fontSize: '11px', fontWeight: 800,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: i < step ? '#10b981' : i === step ? '#6366f1' : 'rgba(255,255,255,0.08)',
-                      color: '#fff'
+                      background: i < step ? '#10b981' : i === step ? 'var(--brand-primary)' : 'rgba(255,255,255,0.08)',
+                      color: 'var(--text-primary)'
                     }}>
                       {i < step ? '✓' : i + 1}
                     </div>
@@ -675,7 +675,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
             <div style={{ padding: '16px 28px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 onClick={() => step === 0 ? setShowForm(false) : setStep(s => s - 1)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'rgba(255,255,255,0.7)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '10px', color: 'rgba(255,255,255,0.7)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
               >
                 <ChevronLeft size={16} /> {step === 0 ? 'Cancel' : 'Back'}
               </button>
@@ -683,7 +683,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
                 {step < STEPS.length - 1 && (
                   <button
                     onClick={() => setStep(s => s + 1)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '10px', color: '#818cf8', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: 'rgba(94, 106, 210, 0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '10px', color: 'var(--brand-primary)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
                   >
                     Next <ChevronRight size={16} />
                   </button>
@@ -692,7 +692,7 @@ const CompanyOnboarding = ({ user, onLogout }) => {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 22px', background: saving ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 22px', background: saving ? 'rgba(99,102,241,0.5)' : 'var(--brand-primary)', border: 'none', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '14px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}
                   >
                     <CheckCircle size={16} /> {saving ? 'Saving…' : 'Onboard Company'}
                   </button>
@@ -706,23 +706,23 @@ const CompanyOnboarding = ({ user, onLogout }) => {
       {/* ──── VIEW COMPANY MODAL ──── */}
       {viewCompany && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '24px', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflow: 'auto' }}>
+          <div style={{ background: 'var(--bg-base)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '24px', width: '100%', maxWidth: '640px', maxHeight: '90vh', overflow: 'auto' }}>
 
             <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 {viewCompany.logo ? (
                   <img src={viewCompany.logo} alt="logo" style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'contain', background: 'rgba(255,255,255,0.08)' }} />
                 ) : (
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: '#818cf8' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(94, 106, 210, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, color: 'var(--brand-primary)' }}>
                     {viewCompany.name?.slice(0, 2).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 800, margin: 0 }}>{viewCompany.name}</h2>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: '2px 0 0' }}>{viewCompany.industry || '—'}</p>
+                  <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 800, margin: 0 }}>{viewCompany.name}</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '2px 0 0' }}>{viewCompany.industry || '—'}</p>
                 </div>
               </div>
-              <button onClick={() => setViewCompany(null)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}>
+              <button onClick={() => setViewCompany(null)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}>
                 <X size={18} />
               </button>
             </div>
@@ -738,15 +738,15 @@ const CompanyOnboarding = ({ user, onLogout }) => {
               ].filter(f => f.value).map((f, i) => (
                 <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '14px' }}>
                   <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', fontWeight: 700, width: '90px', flexShrink: 0, paddingTop: '2px' }}>{f.label}</span>
-                  <span style={{ color: '#fff', fontSize: '14px' }}>{f.value}</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: '14px' }}>{f.value}</span>
                 </div>
               ))}
 
               {/* Tax IDs */}
               {(viewCompany.pan_number || viewCompany.gst_number || viewCompany.cin_number) && (
-                <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '14px', border: '1px solid rgba(99,102,241,0.15)' }}>
+                <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(99,102,241,0.06)', borderRadius: '14px', border: '1px solid rgba(94, 106, 210, 0.15)' }}>
                   <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 700, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tax & Legal IDs</p>
-                  {viewCompany.pan_number && <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}><span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', width: '40px' }}>PAN</span><span style={{ color: '#818cf8', fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{viewCompany.pan_number}</span></div>}
+                  {viewCompany.pan_number && <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}><span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', width: '40px' }}>PAN</span><span style={{ color: 'var(--brand-primary)', fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{viewCompany.pan_number}</span></div>}
                   {viewCompany.gst_number && <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}><span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', width: '40px' }}>GST</span><span style={{ color: '#34d399', fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{viewCompany.gst_number}</span></div>}
                   {viewCompany.cin_number && <div style={{ display: 'flex', gap: '12px' }}><span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', width: '40px' }}>CIN</span><span style={{ color: '#fbbf24', fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{viewCompany.cin_number}</span></div>}
                 </div>
@@ -754,8 +754,8 @@ const CompanyOnboarding = ({ user, onLogout }) => {
 
               {/* Stamp */}
               {viewCompany.stamp && (
-                <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
-                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Official Stamp / Seal</p>
+                <div style={{ marginTop: '20px', padding: '20px', background: 'var(--bg-card)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Official Stamp / Seal</p>
                   <img src={viewCompany.stamp} alt="stamp" style={{ maxHeight: '120px', maxWidth: '100%', filter: 'drop-shadow(0 0 8px rgba(99,102,241,0.3))' }} />
                 </div>
               )}

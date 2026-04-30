@@ -147,7 +147,7 @@ const TripMap = ({ locations = [], isLive = false, destination = null }) => {
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 height: '100%', color: '#475569', fontWeight: 600, fontSize: '14px',
-                background: '#0f172a', borderRadius: '20px'
+                background: 'var(--bg-base)', borderRadius: '20px'
             }}>
                 Loading Map...
             </div>
@@ -313,7 +313,7 @@ const TravelTracker = ({ user, onLogout }) => {
     const syncLabels = { idle: 'Idle', syncing: 'Syncing...', ok: 'Live', error: 'Error' };
 
     return (
-        <div style={{ display: 'flex', fontFamily: "'Inter', sans-serif", minHeight: '100vh', background: '#0f172a' }}>
+        <div style={{ display: 'flex', fontFamily: "'Inter', sans-serif", minHeight: '100vh', background: 'var(--bg-base)' }}>
             <Sidebar
                 user={user} onLogout={onLogout}
                 activePage="travel-tracker"
@@ -332,8 +332,8 @@ const TravelTracker = ({ user, onLogout }) => {
                     flexShrink: 0
                 }}>
                     <div>
-                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: '0 0 2px' }}>Track & Explore</p>
-                        <h1 style={{ color: '#fff', fontSize: '26px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 2px' }}>Track & Explore</p>
+                        <h1 style={{ color: 'var(--text-primary)', fontSize: '26px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
                             Travel Tracker 🌍
                         </h1>
                     </div>
@@ -352,7 +352,7 @@ const TravelTracker = ({ user, onLogout }) => {
                             onClick={() => setShowNewTripModal(true)}
                             disabled={isTracking}
                             style={{
-                                background: isTracking ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                                background: isTracking ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #3b82f6, var(--brand-primary))',
                                 color: isTracking ? '#475569' : '#fff',
                                 border: 'none', padding: '10px 20px', borderRadius: '12px',
                                 fontWeight: 700, fontSize: '14px', cursor: isTracking ? 'not-allowed' : 'pointer',
@@ -374,7 +374,7 @@ const TravelTracker = ({ user, onLogout }) => {
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <Activity size={18} color="#3b82f6" />
-                            <span style={{ color: '#fff', fontWeight: 700 }}>{activeTrip.title}</span>
+                            <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{activeTrip.title}</span>
                             <span style={{ color: '#475569', fontSize: '13px' }}>·</span>
                             <span style={{ color: '#64748b', fontSize: '13px' }}>{liveLocations.length} points tracked</span>
                         </div>
@@ -425,7 +425,7 @@ const TravelTracker = ({ user, onLogout }) => {
                             >
                                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '10px' }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <p style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {trip.title}
                                         </p>
                                         <p style={{ color: '#475569', fontSize: '11px', margin: '2px 0 0' }}>
@@ -443,7 +443,7 @@ const TravelTracker = ({ user, onLogout }) => {
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    <span style={{ background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ background: 'var(--bg-elevated)', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <Clock size={11} /> {getDuration(trip.start_time, trip.end_time)}
                                     </span>
                                     <button
@@ -454,7 +454,7 @@ const TravelTracker = ({ user, onLogout }) => {
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); shareTrip(trip.id); }}
-                                        style={{ background: 'rgba(99,102,241,0.1)', border: 'none', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', color: '#818cf8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                        style={{ background: 'rgba(94, 106, 210, 0.1)', border: 'none', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', color: 'var(--brand-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                                     >
                                         <Share2 size={11} /> Share
                                     </button>
@@ -494,9 +494,9 @@ const TravelTracker = ({ user, onLogout }) => {
                         {/* Map overlays */}
                         {viewTrip && (
                             <div style={{ position: 'absolute', top: '36px', right: '36px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <div style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 16px' }}>
+                                <div style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(12px)', border: '1px solid var(--border)', borderRadius: '14px', padding: '12px 16px' }}>
                                     <p style={{ color: '#475569', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 4px' }}>Viewing Trip</p>
-                                    <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: 0 }}>{viewTrip.title}</p>
+                                    <p style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', margin: 0 }}>{viewTrip.title}</p>
                                     <p style={{ color: '#64748b', fontSize: '11px', margin: '2px 0 0' }}>{viewLocations.length} route points</p>
                                     {isLive && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
@@ -507,7 +507,7 @@ const TravelTracker = ({ user, onLogout }) => {
                                 </div>
                                 <button
                                     onClick={() => { setViewTrip(null); setViewLocations([]); }}
-                                    style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#94a3b8', padding: '8px 14px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+                                    style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(12px)', border: '1px solid var(--border)', borderRadius: '10px', color: '#94a3b8', padding: '8px 14px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
                                 >
                                     <X size={14} /> Close
                                 </button>
@@ -532,9 +532,9 @@ const TravelTracker = ({ user, onLogout }) => {
                     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
                 }}>
-                    <div style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', padding: '36px', width: '440px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+                    <div style={{ background: '#1e293b', border: '1px solid var(--border)', borderRadius: '24px', padding: '36px', width: '440px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '28px' }}>
-                            <h2 style={{ color: '#fff', fontWeight: 800, margin: 0, fontSize: '20px' }}>🚀 Start New Trip</h2>
+                            <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: 0, fontSize: '20px' }}>🚀 Start New Trip</h2>
                             <button onClick={() => setShowNewTripModal(false)} style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer' }}>
                                 <X size={22} />
                             </button>
@@ -549,8 +549,8 @@ const TravelTracker = ({ user, onLogout }) => {
                             placeholder="e.g. Road Trip to Manali"
                             style={{
                                 display: 'block', width: '100%', marginTop: '8px', marginBottom: '16px',
-                                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                color: '#fff', padding: '12px 16px', borderRadius: '12px', fontSize: '15px',
+                                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '15px',
                                 outline: 'none', boxSizing: 'border-box',
                             }}
                         />
@@ -564,8 +564,8 @@ const TravelTracker = ({ user, onLogout }) => {
                             placeholder="e.g. Manali, Himachal Pradesh"
                             style={{
                                 display: 'block', width: '100%', marginTop: '8px', marginBottom: '24px',
-                                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                color: '#fff', padding: '12px 16px', borderRadius: '12px', fontSize: '15px',
+                                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '15px',
                                 outline: 'none', boxSizing: 'border-box',
                             }}
                         />
@@ -579,13 +579,13 @@ const TravelTracker = ({ user, onLogout }) => {
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button
                                 onClick={() => setShowNewTripModal(false)}
-                                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', padding: '12px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}
+                                style={{ flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: '#94a3b8', padding: '12px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={startTrip}
-                                style={{ flex: 2, background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 20px rgba(59,130,246,0.3)' }}
+                                style={{ flex: 2, background: 'linear-gradient(135deg, #3b82f6, var(--brand-primary))', color: 'var(--text-primary)', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 20px rgba(59,130,246,0.3)' }}
                             >
                                 <Navigation size={18} /> Start Tracking
                             </button>

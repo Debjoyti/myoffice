@@ -81,7 +81,7 @@ const AssetManagement = ({ user, onLogout }) => {
 
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} size={16} />
+              <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
               <input
                 type="text"
                 placeholder="Search by name, type, or serial number..."
@@ -105,8 +105,8 @@ const AssetManagement = ({ user, onLogout }) => {
                 <tbody>
                   {filteredAssets.map(asset => (
                     <tr key={asset.id}>
-                      <td style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{asset.id}</td>
-                      <td style={{ fontWeight: 600, color: '#fff' }}>
+                      <td style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700 }}>{asset.id}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           {getIcon(asset.type)} {asset.name}
                         </div>
@@ -137,7 +137,7 @@ const AssetManagement = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '500px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0 }}>Register Asset</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Register Asset</h2>
               <button onClick={() => setShowModal(false)} className="icon-btn"><X /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

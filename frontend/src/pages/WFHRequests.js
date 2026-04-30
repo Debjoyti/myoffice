@@ -71,28 +71,28 @@ const WFHRequests = ({ user, isSubComponent }) => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Home size={24} color="#06b6d4" />
-            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: '#fff' }}>Work From Home</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Work From Home</h2>
           </div>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', margin: '4px 0 0' }}>Request and manage remote work days</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '4px 0 0' }}>Request and manage remote work days</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-dark-primary" style={{ background: '#06b6d4', border: 'none', color: '#fff' }}>
+        <button onClick={() => setShowModal(true)} className="btn-dark-primary" style={{ background: '#06b6d4', border: 'none', color: 'var(--text-primary)' }}>
           Apply for WFH
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div className="dark-card" style={{ padding: '20px', borderLeft: '3px solid #f59e0b' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px', fontWeight: 600 }}>My Pending Requests</p>
+        <div className="glass-card" style={{ padding: '20px', borderLeft: '3px solid #f59e0b' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 600 }}>My Pending Requests</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: '#f59e0b' }}>{myPending}</p>
         </div>
-        <div className="dark-card" style={{ padding: '20px', borderLeft: '3px solid #10b981' }}>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px', fontWeight: 600 }}>My Approved WFH</p>
+        <div className="glass-card" style={{ padding: '20px', borderLeft: '3px solid #10b981' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 600 }}>My Approved WFH</p>
           <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: '#10b981' }}>{myApproved}</p>
         </div>
         {isAdmin && (
-          <div className="dark-card" style={{ padding: '20px', borderLeft: '3px solid #6366f1', background: 'rgba(99,102,241,0.05)' }}>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px', fontWeight: 600 }}>Team Approvals Pending</p>
-            <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: '#818cf8' }}>{teamPending}</p>
+          <div className="glass-card" style={{ padding: '20px', borderLeft: '3px solid var(--brand-primary)', background: 'rgba(99,102,241,0.05)' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 600 }}>Team Approvals Pending</p>
+            <p style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--brand-primary)' }}>{teamPending}</p>
           </div>
         )}
       </div>
@@ -122,11 +122,11 @@ const WFHRequests = ({ user, isSubComponent }) => {
                 
                 return (
                   <tr key={r.id}>
-                    <td><span style={{ fontFamily: 'monospace', color: '#818cf8' }}>{r.id.split('-')[1]}</span></td>
-                    {isAdmin && <td style={{ fontWeight: 600, color: '#fff' }}>{r.employee_name}</td>}
+                    <td><span style={{ fontFamily: 'monospace', color: 'var(--brand-primary)' }}>{r.id.split('-')[1]}</span></td>
+                    {isAdmin && <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{r.employee_name}</td>}
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar size={14} color="rgba(255,255,255,0.3)" />
+                        <Calendar size={14} color="var(--text-muted)" />
                         {start.toLocaleDateString()} to {end.toLocaleDateString()}
                       </div>
                     </td>
@@ -143,7 +143,7 @@ const WFHRequests = ({ user, isSubComponent }) => {
                             <button onClick={() => updateStatus(r.id, 'approved')} style={{ padding: '4px 12px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Approve</button>
                             <button onClick={() => updateStatus(r.id, 'rejected')} style={{ padding: '4px 12px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Reject</button>
                           </div>
-                        ) : <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Actioned</span>}
+                        ) : <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Actioned</span>}
                       </td>
                     )}
                   </tr>
@@ -158,8 +158,8 @@ const WFHRequests = ({ user, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '500px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0 }}>Apply for Work From Home</h2>
-              <button onClick={() => setShowModal(false)} className="icon-btn" style={{ color: 'rgba(255,255,255,0.4)' }}>✕</button>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>Apply for Work From Home</h2>
+              <button onClick={() => setShowModal(false)} className="icon-btn" style={{ color: 'var(--text-secondary)' }}>✕</button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

@@ -65,7 +65,7 @@ const AuditLogs = ({ user, onLogout }) => {
 
           <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} size={16} />
+              <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
               <input
                 type="text"
                 placeholder="Search by user or action..."
@@ -76,7 +76,7 @@ const AuditLogs = ({ user, onLogout }) => {
               />
             </div>
             <div style={{ position: 'relative', width: '200px' }}>
-                <Filter style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} size={16} />
+                <Filter style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
                 <select
                   className="dark-input"
                   style={{ paddingLeft: '40px' }}
@@ -105,8 +105,8 @@ const AuditLogs = ({ user, onLogout }) => {
                 <tbody>
                   {logs.map((log, i) => (
                     <tr key={i}>
-                      <td style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{new Date(log.created_at).toLocaleString()}</td>
-                      <td style={{ fontWeight: 600, color: '#fff' }}>{log.user_email}</td>
+                      <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{new Date(log.created_at).toLocaleString()}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.user_email}</td>
                       <td>
                         <span className="badge-blue" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>{log.action}</span>
                       </td>
@@ -137,7 +137,7 @@ const AuditLogs = ({ user, onLogout }) => {
           )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
               Showing {logs.length} records {skip > 0 ? `(offset ${skip})` : ''}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>

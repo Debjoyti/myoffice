@@ -95,7 +95,7 @@ const SaasAdmin = ({ user, onLogout }) => {
     };
 
     return (
-        <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: '#0f172a' }}>
+        <div style={{ display: 'flex', fontFamily: "'Inter', -apple-system, sans-serif", minHeight: '100vh', background: 'var(--bg-base)' }}>
             <Sidebar
                 user={user}
                 onLogout={onLogout}
@@ -111,27 +111,27 @@ const SaasAdmin = ({ user, onLogout }) => {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
                         <div>
                             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '14px', margin: '0 0 4px' }}>SAAS Administration</p>
-                            <h1 style={{ color: '#fff', fontSize: '32px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+                            <h1 style={{ color: 'var(--text-primary)', fontSize: '32px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
                                 Client Management 🛡️
                             </h1>
                         </div>
                         <div style={{
                             display: 'flex', alignItems: 'center', gap: '12px',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border)',
                             borderRadius: '50px', padding: '8px 16px 8px 8px',
                         }}>
                             <div style={{
                                 width: '36px', height: '36px', borderRadius: '50%',
                                 background: 'linear-gradient(135deg, #ef4444, #f97316)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#fff', fontWeight: 700, fontSize: '14px',
+                                color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px',
                             }}>
                                 SA
                             </div>
                             <div>
-                                <p style={{ color: '#fff', fontSize: '13px', fontWeight: 600, margin: 0 }}>{user?.name}</p>
-                                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', margin: 0, textTransform: 'capitalize' }}>Superadmin</p>
+                                <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, margin: 0 }}>{user?.name}</p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '11px', margin: 0, textTransform: 'capitalize' }}>Superadmin</p>
                             </div>
                         </div>
                     </div>
@@ -139,30 +139,30 @@ const SaasAdmin = ({ user, onLogout }) => {
                     <div style={{ marginBottom: '24px' }}>
                         <button
                             onClick={() => setIsAdding(!isAdding)}
-                            style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                            style={{ background: 'var(--brand-primary)', color: 'var(--text-primary)', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                             {isAdding ? 'Cancel' : '+ Add New Client'}
                         </button>
                     </div>
 
                     {isAdding && (
                         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
-                            <h2 style={{ color: '#fff', marginTop: 0 }}>Add New Client</h2>
+                            <h2 style={{ color: 'var(--text-primary)', marginTop: 0 }}>Add New Client</h2>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                                <input placeholder="Client Name" value={newClient.name} onChange={e => setNewClient({ ...newClient, name: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-                                <input placeholder="Email" type="email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-                                <input placeholder="Password" type="password" value={newClient.password} onChange={e => setNewClient({ ...newClient, password: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-                                <input placeholder="Max Employees" type="number" value={newClient.max_employees} onChange={e => setNewClient({ ...newClient, max_employees: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-                                <input placeholder="Max Projects" type="number" value={newClient.max_projects} onChange={e => setNewClient({ ...newClient, max_projects: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-                                <input placeholder="Max Companies" type="number" value={newClient.max_companies} onChange={e => setNewClient({ ...newClient, max_companies: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Client Name" value={newClient.name} onChange={e => setNewClient({ ...newClient, name: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Email" type="email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Password" type="password" value={newClient.password} onChange={e => setNewClient({ ...newClient, password: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Max Employees" type="number" value={newClient.max_employees} onChange={e => setNewClient({ ...newClient, max_employees: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Max Projects" type="number" value={newClient.max_projects} onChange={e => setNewClient({ ...newClient, max_projects: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px' }} />
+                                <input placeholder="Max Companies" type="number" value={newClient.max_companies} onChange={e => setNewClient({ ...newClient, max_companies: e.target.value })} style={{ flex: 1, minWidth: '200px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px' }} />
                                 <div style={{ width: '100%' }}>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '8px' }}>Subscription End Date</p>
-                                    <input type="date" value={newClient.subscription_end_date} onChange={e => setNewClient({ ...newClient, subscription_end_date: e.target.value })} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '8px', width: '200px' }} />
+                                    <input type="date" value={newClient.subscription_end_date} onChange={e => setNewClient({ ...newClient, subscription_end_date: e.target.value })} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '8px', width: '200px' }} />
                                 </div>
                                 <div style={{ width: '100%', marginTop: '12px' }}>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '8px' }}>Enable Services</p>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
                                         {ALL_SERVICES.map(service => (
-                                            <label key={service.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
+                                            <label key={service.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontSize: '13px', cursor: 'pointer' }}>
                                                 <input
                                                     type="checkbox"
                                                     checked={newClient.enabled_services.includes(service.id)}
@@ -179,13 +179,13 @@ const SaasAdmin = ({ user, onLogout }) => {
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={handleCreateClient} style={{ marginTop: '16px', background: '#10b981', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save Client</button>
+                            <button onClick={handleCreateClient} style={{ marginTop: '16px', background: '#10b981', color: 'var(--text-primary)', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save Client</button>
                         </div>
                     )}
 
                     {/* Body */}
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: '60px', color: 'rgba(255,255,255,0.4)' }}>Loading clients...</div>
+                        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>Loading clients...</div>
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
                             {clients.map(client => (
@@ -220,51 +220,51 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{
                         width: '40px', height: '40px', borderRadius: '10px',
-                        background: 'rgba(99,102,241,0.15)',
+                        background: 'rgba(94, 106, 210, 0.15)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                         <Shield size={20} color="#8b5cf6" />
                     </div>
                     <div>
-                        <h3 style={{ color: '#fff', margin: '0 0 4px', fontSize: '16px', fontWeight: '600' }}>{client.name || 'Anonymous Client'}</h3>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', margin: 0, fontSize: '12px' }}>{client.email}</p>
+                        <h3 style={{ color: 'var(--text-primary)', margin: '0 0 4px', fontSize: '16px', fontWeight: '600' }}>{client.name || 'Anonymous Client'}</h3>
+                        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '12px' }}>{client.email}</p>
                     </div>
                 </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '10px' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Users size={12} /> Employees
                     </p>
-                    <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>
-                        {client.usage?.employees || 0} <span style={{ color: 'rgba(255,255,255,0.3)' }}>/ {limits.max_employees || '∞'}</span>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '600', margin: 0 }}>
+                        {client.usage?.employees || 0} <span style={{ color: 'var(--text-muted)' }}>/ {limits.max_employees || '∞'}</span>
                     </p>
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '10px' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Briefcase size={12} /> Projects
                     </p>
-                    <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>
-                        {client.usage?.projects || 0} <span style={{ color: 'rgba(255,255,255,0.3)' }}>/ {limits.max_projects || '∞'}</span>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '600', margin: 0 }}>
+                        {client.usage?.projects || 0} <span style={{ color: 'var(--text-muted)' }}>/ {limits.max_projects || '∞'}</span>
                     </p>
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '10px' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Shield size={12} /> Companies
                     </p>
-                    <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>
-                        {client.usage?.companies || 0} <span style={{ color: 'rgba(255,255,255,0.3)' }}>/ {limits.max_companies || '∞'}</span>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '600', margin: 0 }}>
+                        {client.usage?.companies || 0} <span style={{ color: 'var(--text-muted)' }}>/ {limits.max_companies || '∞'}</span>
                     </p>
                 </div>
             </div>
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
-                <h4 style={{ color: '#fff', fontSize: '13px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                <h4 style={{ color: 'var(--text-primary)', fontSize: '13px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
                     Subscription Limits
                     <button
                         onClick={() => setIsEditing(!isEditing)}
-                        style={{ background: 'transparent', border: 'none', color: '#6366f1', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        style={{ background: 'transparent', border: 'none', color: 'var(--brand-primary)', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Edit2 size={12} /> {isEditing ? 'Cancel' : 'Edit'}
                     </button>
                 </h4>
@@ -279,8 +279,8 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     onChange={e => setEmpLimit(e.target.value)}
                                     placeholder="e.g. 50"
                                     style={{
-                                        flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                        color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
+                                        flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
                                     }}
                                 />
                             </div>
@@ -292,8 +292,8 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     onChange={e => setCompLimit(e.target.value)}
                                     placeholder="e.g. 5"
                                     style={{
-                                        flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                        color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
+                                        flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
                                     }}
                                 />
                             </div>
@@ -305,8 +305,8 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     onChange={e => setProjLimit(e.target.value)}
                                     placeholder="e.g. 10"
                                     style={{
-                                        flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                        color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
+                                        flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
                                     }}
                                 />
                             </div>
@@ -317,8 +317,8 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     value={subEndDate}
                                     onChange={e => setSubEndDate(e.target.value)}
                                     style={{
-                                        flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                        color: '#fff', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
+                                        flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', outline: 'none'
                                     }}
                                 />
                             </div>
@@ -326,7 +326,7 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                 <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '6px' }}>Enabled Services</p>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                                     {ALL_SERVICES.map(service => (
-                                        <label key={service.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '11px', cursor: 'pointer' }}>
+                                        <label key={service.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontSize: '11px', cursor: 'pointer' }}>
                                             <input
                                                 type="checkbox"
                                                 checked={enabledServices.includes(service.id)}
@@ -354,7 +354,7 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                                     setIsEditing(false);
                                 }}
                                 style={{
-                                    marginTop: '12px', background: '#6366f1', color: '#fff', border: 'none',
+                                    marginTop: '12px', background: 'var(--brand-primary)', color: 'var(--text-primary)', border: 'none',
                                     padding: '8px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', cursor: 'pointer'
                                 }}>
                                 Save Changes
@@ -363,22 +363,22 @@ const ClientCard = ({ client, onUpdate, ALL_SERVICES }) => {
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                            <span style={{ background: 'var(--bg-elevated)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
                                 Employees: {limits.max_employees || 'Unlimited'}
                             </span>
-                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                            <span style={{ background: 'var(--bg-elevated)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
                                 Projects: {limits.max_projects || 'Unlimited'}
                             </span>
-                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                            <span style={{ background: 'var(--bg-elevated)', padding: '4px 10px', borderRadius: '50px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
                                 Companies: {limits.max_companies || 'Unlimited'}
                             </span>
                         </div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
                             Expires: {client.subscription_end_date ? new Date(client.subscription_end_date).toLocaleDateString() : 'Never'}
                         </div>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
                             {client.enabled_services?.map(s => (
-                                <span key={s} style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', fontSize: '10px' }}>
+                                <span key={s} style={{ background: 'rgba(94, 106, 210, 0.1)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px', fontSize: '10px' }}>
                                     {s}
                                 </span>
                             ))}

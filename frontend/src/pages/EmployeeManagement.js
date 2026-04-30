@@ -16,8 +16,8 @@ const EmployeeManagement = ({ user, onLogout }) => {
         padding: '16px 12px',
         border: 'none',
         background: 'none',
-        color: activeTab === tabId ? '#818cf8' : 'rgba(255,255,255,0.5)',
-        borderBottom: activeTab === tabId ? '2px solid #818cf8' : '2px solid transparent',
+        color: activeTab === tabId ? 'var(--brand-primary)' : 'rgba(255,255,255,0.5)',
+        borderBottom: activeTab === tabId ? '2px solid var(--brand-primary)' : '2px solid transparent',
         cursor: 'pointer',
         fontWeight: 600,
         fontSize: '14px',
@@ -31,10 +31,10 @@ const EmployeeManagement = ({ user, onLogout }) => {
                 <div style={{ padding: '0 32px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
                     <div style={{ padding: '24px 0 16px', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff' }}>Employee Management</h1>
-                          <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>PA30</span>
+                          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Employee Management</h1>
+                          <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>PA30</span>
                         </div>
-                        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>Manage employees, attendance, and leave records in one place</p>
+                        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>Manage employees, attendance, and leave records in one place</p>
                     </div>
                     <div style={{ display: 'flex', gap: '20px' }}>
                         <button style={getTabStyle('employees')} onClick={() => setActiveTab('employees')}>Employees</button>

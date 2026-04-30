@@ -58,7 +58,7 @@ const Inventory = ({ user, onLogout, isSubComponent }) => {
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
         {[
-          { label: 'Total Items', value: totalItems, color: '#818cf8', testId: 'total-items-card' },
+          { label: 'Total Items', value: totalItems, color: 'var(--brand-primary)', testId: 'total-items-card' },
           { label: 'Total Value', value: `₹${totalValue.toLocaleString('en-IN')}`, color: '#34d399', testId: 'total-value-card' },
         ].map(c => (
           <div key={c.label} className="dark-card fade-in" style={{ padding: '20px' }} data-testid={c.testId}>
@@ -73,7 +73,7 @@ const Inventory = ({ user, onLogout, isSubComponent }) => {
       ) : items.length === 0 ? (
         <div className="dark-empty">
           <p style={{ marginBottom: '12px' }}>No inventory items found</p>
-          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first item</button>
+          <button onClick={() => setShowModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Add your first item</button>
         </div>
       ) : (
         <div className="dark-table-wrap fade-in">
@@ -84,11 +84,11 @@ const Inventory = ({ user, onLogout, isSubComponent }) => {
             <tbody>
               {items.map(item => (
                 <tr key={item.id} data-testid={`inventory-row-${item.id}`}>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>{item.name}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{item.name}</td>
                   <td style={{ textTransform: 'capitalize' }}>{item.category}</td>
-                  <td style={{ color: '#fff' }}>{item.quantity}</td>
+                  <td style={{ color: 'var(--text-primary)' }}>{item.quantity}</td>
                   <td>{item.unit}</td>
-                  <td style={{ color: '#fff' }}>₹{item.price_per_unit.toLocaleString('en-IN')}</td>
+                  <td style={{ color: 'var(--text-primary)' }}>₹{item.price_per_unit.toLocaleString('en-IN')}</td>
                   <td style={{ color: '#34d399', fontWeight: 600 }}>₹{(item.quantity * item.price_per_unit).toLocaleString('en-IN')}</td>
                   <td>{item.location || '—'}</td>
                 </tr>
@@ -101,8 +101,8 @@ const Inventory = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-inventory-modal-title">Add Inventory Item</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-inventory-modal-title">Add Inventory Item</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>

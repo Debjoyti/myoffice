@@ -71,7 +71,7 @@ function App() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: '#05070f',
+        background: 'var(--bg-base)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -80,13 +80,14 @@ function App() {
       }}>
         <div style={{
           width: '56px', height: '56px',
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
           borderRadius: '16px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+          boxShadow: 'var(--shadow-lg)',
           animation: 'pulse-glow 2s ease-in-out infinite',
         }}>
-          <span style={{ color: '#fff', fontWeight: 900, fontSize: '22px' }}>B</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '22px' }}>M</span>
         </div>
         <div style={{
           display: 'flex', gap: '6px', alignItems: 'center',
@@ -94,12 +95,12 @@ function App() {
           {[0, 1, 2].map(i => (
             <div key={i} style={{
               width: '6px', height: '6px', borderRadius: '50%',
-              background: '#6366f1',
+              background: 'var(--brand-primary)',
               animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
             }} />
           ))}
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', fontWeight: 500, margin: 0 }}>Loading BizOps...</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, margin: 0 }}>Loading MyOffice...</p>
       </div>
     );
   }

@@ -13,7 +13,7 @@ const API = `${BACKEND_URL}/api`;
 const SectionCard = ({ title, icon: Icon, color, children, defaultOpen = false }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
       <button onClick={() => setOpen(!open)} style={{
         width: '100%', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '14px',
         background: 'none', border: 'none', cursor: 'pointer', borderBottom: open ? '1px solid rgba(255,255,255,0.07)' : 'none'
@@ -21,8 +21,8 @@ const SectionCard = ({ title, icon: Icon, color, children, defaultOpen = false }
         <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Icon size={18} color={color} />
         </div>
-        <span style={{ fontSize: '15px', fontWeight: 700, color: '#fff', flex: 1, textAlign: 'left' }}>{title}</span>
-        {open ? <ChevronDown size={18} color="rgba(255,255,255,0.3)" /> : <ChevronRight size={18} color="rgba(255,255,255,0.3)" />}
+        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>{title}</span>
+        {open ? <ChevronDown size={18} color="var(--text-muted)" /> : <ChevronRight size={18} color="var(--text-muted)" />}
       </button>
       {open && <div style={{ padding: '24px' }}>{children}</div>}
     </div>
@@ -142,20 +142,20 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#fff' }}>
-            HR <span style={{ color: '#818cf8' }}>Control Panel</span>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>
+            HR <span style={{ color: 'var(--brand-primary)' }}>Control Panel</span>
           </h1>
-          <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Enterprise HR administration — Full control, no system enforcement</p>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>Enterprise HR administration — Full control, no system enforcement</p>
         </div>
-        <button onClick={() => setShowFieldModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '10px', color: '#818cf8', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+        <button onClick={() => setShowFieldModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'rgba(94, 106, 210, 0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '10px', color: 'var(--brand-primary)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
           <Plus size={16} /> Add Custom Field
         </button>
       </div>
 
       {/* Display All Employee Details */}
-      <SectionCard title="Employee Database Overview" icon={Users} color="#818cf8" defaultOpen>
+      <SectionCard title="Employee Database Overview" icon={Users} color="var(--brand-primary)" defaultOpen>
         {loading ? (
-          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px' }}>Loading...</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading...</div>
         ) : (
           <div className="dark-table-wrap" style={{ maxHeight: '280px', overflowY: 'auto' }}>
             <table style={{ fontSize: '12px' }}>
@@ -165,21 +165,21 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
               <tbody>
                 {employees.map(emp => (
                   <tr key={emp.id}>
-                    <td style={{ fontWeight: 600, color: '#fff' }}>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
                           {emp.name?.charAt(0) || '?'}
                         </div>
                         {emp.name}
                       </div>
                     </td>
-                    <td style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{emp.emp_id || '—'}</td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{emp.emp_id || '—'}</td>
                     <td>{emp.department}</td>
                     <td style={{ color: 'rgba(255,255,255,0.6)' }}>{emp.designation}</td>
                     <td><span className={emp.status === 'active' ? 'badge-green' : 'badge-amber'} style={{ fontSize: '10px' }}>{emp.status}</span></td>
-                    <td style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', textTransform: 'capitalize' }}>{emp.skill_category || 'skilled'}</td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '11px', textTransform: 'capitalize' }}>{emp.skill_category || 'skilled'}</td>
                     <td>
-                      <button onClick={() => generateExperienceLetter(emp)} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>
+                      <button onClick={() => generateExperienceLetter(emp)} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--brand-primary)', background: 'rgba(94, 106, 210, 0.1)', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>
                         <FileText size={12} /> Exp Letter
                       </button>
                     </td>
@@ -187,7 +187,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
                 ))}
               </tbody>
             </table>
-            {employees.length === 0 && <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>No employees found</div>}
+            {employees.length === 0 && <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>No employees found</div>}
           </div>
         )}
       </SectionCard>
@@ -196,14 +196,14 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       <SectionCard title="1 · Generate Salary Slip" icon={FileText} color="#10b981">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '16px', alignItems: 'end' }}>
           <div>
-            <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee</label>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee</label>
             <select className="dark-input" value={slipEmployee} onChange={e => setSlipEmployee(e.target.value)} style={{ fontSize: '13px' }}>
               <option value="">— All Employees —</option>
               {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Month / Year</label>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Month / Year</label>
             <input type="month" className="dark-input" value={slipMonth} onChange={e => setSlipMonth(e.target.value)} style={{ fontSize: '13px' }} />
           </div>
           <button onClick={() => { toast.info('Navigate to Payroll Engine to configure and generate salary slips'); }}
@@ -211,7 +211,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
             <Download size={16} /> Generate Slip
           </button>
         </div>
-        <p style={{ margin: '12px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+        <p style={{ margin: '12px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
           Tip: Month/Attendance Percentage will be factored in. Joining letter auto-created after first salary slip generation.
         </p>
       </SectionCard>
@@ -221,7 +221,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       {/* 2. Requests (Leave / Gate Pass) */}
       <SectionCard title="2 · Request (Leave & Gate Pass)" icon={CheckCircle} color="#22d3ee">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Manage Leave constraints and Official/Personal Gate Passes. Two-level senior approval required.</p>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Manage Leave constraints and Official/Personal Gate Passes. Two-level senior approval required.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             {[{ label: 'Leave Request', desc: 'SL / CL / EL / Without Pay / Matr Leave', color: '#22d3ee' },
               { label: 'Official Gate Pass', desc: 'Out time & In time logging', color: '#fbbf24' },
@@ -229,7 +229,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
             ].map((item, i) => (
               <div key={i} style={{ padding: '16px', background: `${item.color}0d`, borderRadius: '12px', border: `1px solid ${item.color}30`, cursor: 'pointer' }} onClick={() => toast.info(`Opened ${item.label} portal`)}>
                 <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: item.color }}>{item.label}</p>
-                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{item.desc}</p>
+                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)' }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -248,14 +248,14 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       </SectionCard>
 
       {/* 4. Display */}
-      <SectionCard title="4 · Display Pending Activity" icon={ClipboardList} color="#818cf8">
-        <div style={{ padding: '16px', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)' }}>
+      <SectionCard title="4 · Display Pending Activity" icon={ClipboardList} color="var(--brand-primary)">
+        <div style={{ padding: '16px', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(94, 106, 210, 0.15)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) auto', gap: '20px', alignItems: 'center' }}>
             <div>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>View aggregated Gate Pass & Pending Leaves per month/year.</p>
-              <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Monitors SL, CL, EL, WPL, Matr quotas across departments.</p>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Monitors SL, CL, EL, WPL, Matr quotas across departments.</p>
             </div>
-            <button onClick={() => toast.success('Display dashboard opened')} style={{ padding: '8px 18px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={() => toast.success('Display dashboard opened')} style={{ padding: '8px 18px', background: 'rgba(94, 106, 210, 0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: 'var(--brand-primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
               Launch Display Dashboard →
             </button>
           </div>
@@ -266,7 +266,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       <SectionCard title="5 · POSH Compliance & Reporting" icon={ClipboardList} color="#f87171">
         <div style={{ padding: '16px', background: 'rgba(239,68,68,0.05)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.15)' }}>
           <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>POSH Reports are displayed without employee reporting name to protect complainant identity.</p>
-          <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Navigate to the POSH module in HRMS → Compliance tab to view, manage, and generate reports.</p>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Navigate to the POSH module in HRMS → Compliance tab to view, manage, and generate reports.</p>
           <button onClick={() => toast.info('Navigate to HRMS → Compliance tab')} style={{ marginTop: '12px', padding: '8px 18px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: '#f87171', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
             Open POSH Reports →
           </button>
@@ -277,7 +277,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       <SectionCard title="6 · Resignation Management" icon={FileText} color="#ef4444">
         <div style={{ padding: '16px', background: 'rgba(239,68,68,0.05)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.15)' }}>
           <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Employee resignation details, notice period (display company rule) and last date.</p>
-          <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>After two-senior approval, it transfers to Account Department.</p>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>After two-senior approval, it transfers to Account Department.</p>
           <button onClick={() => toast.info('Navigate to Resignation Module')} style={{ marginTop: '12px', padding: '8px 18px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: '#ef4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
             Manage Resignations →
           </button>
@@ -287,24 +287,24 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       {/* 7. HR Create Leave Detail */}
       <SectionCard title="7 · HR Create Leave Configuration" icon={Calendar} color="#10b981">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Configure leave types and auto-generation after attendance. Rows 4–6 are custom leave types HR can define.</p>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Configure leave types and auto-generation after attendance. Rows 4–6 are custom leave types HR can define.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
               { key: 'cl', label: 'CL Generate', labelFull: 'Casual Leave (CL)', days: leaveConfig.cl_days, afterKey: 'cl_after_attendance', daysKey: 'cl_days' },
               { key: 'el', label: 'EL Generate', labelFull: 'Earned Leave (EL) / Privilege Leave (PL)', days: leaveConfig.el_days, afterKey: 'el_after_attendance', daysKey: 'el_days' },
               { key: 'sl', label: 'SL Generate', labelFull: 'Sick Leave (SL)', days: leaveConfig.sl_days, afterKey: 'sl_after_attendance', daysKey: 'sl_days' },
             ].map(item => (
-              <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 100px', gap: '12px', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 100px', gap: '12px', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-card)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#fff' }}>{item.label}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{item.labelFull}</p>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>{item.labelFull}</p>
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '4px' }}>Days</label>
+                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Days</label>
                   <input type="number" className="dark-input" value={leaveConfig[item.daysKey]} onChange={e => setLeaveConfig({ ...leaveConfig, [item.daysKey]: parseInt(e.target.value) || 0 })} style={{ fontSize: '13px', height: '34px', textAlign: 'center' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '4px' }}>After Att.</label>
+                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>After Att.</label>
                   <input type="number" className="dark-input" value={leaveConfig[item.afterKey]} onChange={e => setLeaveConfig({ ...leaveConfig, [item.afterKey]: parseInt(e.target.value) || 1 })} style={{ fontSize: '13px', height: '34px', textAlign: 'center' }} />
                 </div>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>months after attendance</div>
@@ -316,7 +316,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#f472b6' }}>Maternity Leave (ML)</p>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Only for female employees (sex = Female). Display in offer letter: yes/no</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>Only for female employees (sex = Female). Display in offer letter: yes/no</p>
                 </div>
                 <div style={{ display: 'flex', align: 'center', gap: '12px' }}>
                   <input type="number" placeholder="Days" defaultValue="180" className="dark-input" style={{ width: '80px', fontSize: '13px', height: '34px', textAlign: 'center' }} />
@@ -329,7 +329,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
             <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Leave Without Pay (LWP)</p>
-                <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>HR-approved basis only</p>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>HR-approved basis only</p>
               </div>
               <Toggle value={leaveConfig.lwp_enabled} onChange={v => setLeaveConfig({ ...leaveConfig, lwp_enabled: v })} label="Enabled" small />
             </div>
@@ -344,19 +344,19 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       {/* 8. Festival Gift */}
       <SectionCard title="8 · Festival Gift Management" icon={Gift} color="#f59e0b">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Configure festival gift amounts by post/designation. Fill every year before the festival date.</p>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Configure festival gift amounts by post/designation. Fill every year before the festival date.</p>
           {festivalGifts.map((g, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px auto', gap: '12px', alignItems: 'center', padding: '12px 16px', background: 'rgba(245,158,11,0.05)', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.15)' }}>
               <div>
-                <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '4px' }}>Festival</label>
+                <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Festival</label>
                 <input className="dark-input" value={g.festival} onChange={e => { const n = [...festivalGifts]; n[i].festival = e.target.value; setFestivalGifts(n); }} style={{ fontSize: '13px', height: '34px' }} />
               </div>
               <div>
-                <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '4px' }}>Amount (₹) — Fill Every Year</label>
+                <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Amount (₹) — Fill Every Year</label>
                 <input type="number" className="dark-input" value={g.amount} onChange={e => { const n = [...festivalGifts]; n[i].amount = e.target.value; setFestivalGifts(n); }} style={{ fontSize: '13px', height: '34px' }} />
               </div>
               <div>
-                <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '4px' }}>As per Post</label>
+                <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>As per Post</label>
                 <select className="dark-input" value={g.byPost} onChange={e => { const n = [...festivalGifts]; n[i].byPost = e.target.value === 'true'; setFestivalGifts(n); }} style={{ fontSize: '13px', height: '34px' }}>
                   <option value="true">Yes</option><option value="false">No</option>
                 </select>
@@ -400,21 +400,21 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       <SectionCard title="10 · Overtime Tracker" icon={Clock} color="#f472b6">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Employee</label>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Employee</label>
             <select className="dark-input" value={overtimeConfig.employee} onChange={e => setOvertimeConfig({ ...overtimeConfig, employee: e.target.value })} style={{ fontSize: '13px' }}>
               <option value="all">All Employees</option>
               {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr auto auto 1fr 1fr', gap: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>From:</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>From:</span>
             <select className="dark-input" style={{ fontSize: '12px', height: '34px' }} value={overtimeConfig.fromMonth} onChange={e => setOvertimeConfig({ ...overtimeConfig, fromMonth: e.target.value })}>
               <option value="">Month</option>
               {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i) => <option key={i} value={i+1}>{m}</option>)}
             </select>
             <input type="number" placeholder="Year" className="dark-input" style={{ fontSize: '12px', height: '34px' }} value={overtimeConfig.fromYear} onChange={e => setOvertimeConfig({ ...overtimeConfig, fromYear: e.target.value })} />
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>→</span>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>To:</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>→</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>To:</span>
             <select className="dark-input" style={{ fontSize: '12px', height: '34px' }} value={overtimeConfig.toMonth} onChange={e => setOvertimeConfig({ ...overtimeConfig, toMonth: e.target.value })}>
               <option value="">Month</option>
               {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i) => <option key={i} value={i+1}>{m}</option>)}
@@ -433,8 +433,8 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>PAN Card Size Format</label>
-              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '3px', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>PAN Card Size Format</label>
+              <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '10px', padding: '3px', border: '1px solid var(--border)' }}>
                 {['standard', 'credit-card', 'A4'].map(size => (
                   <button key={size} onClick={() => setIdCardConfig({ ...idCardConfig, panCardSize: size })} style={{
                     flex: 1, padding: '7px 4px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, textTransform: 'capitalize',
@@ -452,7 +452,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
           </div>
           <div style={{ padding: '16px', background: 'rgba(167,139,250,0.06)', borderRadius: '14px', border: '1px solid rgba(167,139,250,0.15)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#a78bfa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID Card Preview</p>
-            <div style={{ background: 'linear-gradient(135deg,#4f46e5,#4338ca)', borderRadius: '10px', padding: '16px', color: '#fff' }}>
+            <div style={{ background: 'linear-gradient(135deg,#4f46e5,#4338ca)', borderRadius: '10px', padding: '16px', color: 'var(--text-primary)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 {idCardConfig.showPhoto && <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700 }}>A</div>}
                 <div>
@@ -475,12 +475,12 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       {/* 12. Printout All Documents */}
       <SectionCard title="12 · Printout All Documents" icon={FileText} color="#f59e0b">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
             Select employee to generate legally formatted documents (Experience Letter, Offer Letter, etc.).
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'end' }}>
             <div>
-              <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Select Employee</label>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Select Employee</label>
               <select className="dark-input" id="document-emp-select" style={{ fontSize: '13px' }}>
                 <option value="">— Select Employee —</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name} — {e.designation}</option>)}
@@ -540,8 +540,8 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       </SectionCard>
 
       {/* 15. Employee Promotion */}
-      <SectionCard title="15 · Employee Promotion Detail" icon={Star} color="#6366f1">
-        <div style={{ padding: '16px', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <SectionCard title="15 · Employee Promotion Detail" icon={Star} color="var(--brand-primary)">
+        <div style={{ padding: '16px', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(94, 106, 210, 0.15)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
               <label className="dark-label">Select Employee</label>
@@ -559,8 +559,8 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
               <label className="dark-label">New Amount (₹)</label>
               <input type="number" className="dark-input" placeholder="0" />
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', paddingBottom: '10px' }}>Per Month</div>
-            <button onClick={() => toast.success('Promotion recorded')} style={{ padding: '10px 18px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: '#818cf8', fontSize: '12px', fontWeight: 600, cursor: 'pointer', height: '36px' }}>Update Record</button>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', paddingBottom: '10px' }}>Per Month</div>
+            <button onClick={() => toast.success('Promotion recorded')} style={{ padding: '10px 18px', background: 'rgba(94, 106, 210, 0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', color: 'var(--brand-primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', height: '36px' }}>Update Record</button>
           </div>
         </div>
       </SectionCard>
@@ -599,7 +599,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name} (Current: 1 Plant)</option>)}
               </select>
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', paddingBottom: '10px', textAlign: 'center' }}>→</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '14px', paddingBottom: '10px', textAlign: 'center' }}>→</div>
             <div>
               <label className="dark-label">To (Select Plant / Company Code)</label>
               <select className="dark-input">
@@ -612,16 +612,16 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
       </SectionCard>
 
       {/* Custom Fields (existing) */}
-      <SectionCard title="Custom HR Fields" icon={Plus} color="#6366f1">
+      <SectionCard title="Custom HR Fields" icon={Plus} color="var(--brand-primary)">
         {loading ? (
-          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Loading...</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading...</div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
             {fields.map(f => (
-              <div key={f.id} style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div key={f.id} style={{ padding: '16px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, color: '#fff' }}>{f.field_name}</p>
-                  <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'capitalize' }}>{f.field_type} · {f.applies_to}</p>
+                  <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.field_name}</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{f.field_type} · {f.applies_to}</p>
                   <span className={f.is_required ? 'badge-green' : 'badge-amber'} style={{ fontSize: '10px' }}>{f.is_required ? 'Required' : 'Optional'}</span>
                 </div>
                 <button onClick={() => deleteField(f.id)} style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '7px', padding: '5px', cursor: 'pointer' }}>
@@ -629,7 +629,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
                 </button>
               </div>
             ))}
-            {fields.length === 0 && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>No custom fields yet. Click "Add Custom Field" to create one.</div>}
+            {fields.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No custom fields yet. Click "Add Custom Field" to create one.</div>}
           </div>
         )}
       </SectionCard>
@@ -639,8 +639,8 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }}>Add Custom HR Field</h2>
-              <button onClick={() => setShowFieldModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }}>Add Custom HR Field</h2>
+              <button onClick={() => setShowFieldModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={addField} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
@@ -668,7 +668,7 @@ const HRConfig = ({ user, onLogout, isSubComponent }) => {
                 </select>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input type="checkbox" id="req-field" style={{ width: '16px', height: '16px', accentColor: '#6366f1', cursor: 'pointer' }} checked={fieldForm.is_required} onChange={e => setFieldForm({ ...fieldForm, is_required: e.target.checked })} />
+                <input type="checkbox" id="req-field" style={{ width: '16px', height: '16px', accentColor: 'var(--brand-primary)', cursor: 'pointer' }} checked={fieldForm.is_required} onChange={e => setFieldForm({ ...fieldForm, is_required: e.target.checked })} />
                 <label htmlFor="req-field" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>Required field</label>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>

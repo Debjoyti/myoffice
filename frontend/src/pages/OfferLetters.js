@@ -65,14 +65,14 @@ const OfferLetters = ({ user, onLogout, isSubComponent }) => {
             </div>
 
             <div style={{ position: 'relative', marginBottom: '32px', maxWidth: '500px' }}>
-                <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input type="text" placeholder="Search by name, email, phone or unique ID..."
                     className="dark-input" style={{ paddingLeft: '48px', fontSize: '14px', height: '48px', borderRadius: '14px' }}
                     value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
 
             {loading ? (
-                <div style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '40px' }}>Loading records...</div>
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px' }}>Loading records...</div>
             ) : (
                 <div className="dark-table-wrap fade-in">
                     <table>
@@ -89,12 +89,12 @@ const OfferLetters = ({ user, onLogout, isSubComponent }) => {
                                 <tr key={offer.id}>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 600 }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>
                                                 {getInitials(offer.name)}
                                             </div>
                                             <div>
-                                                <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{offer.name}</div>
-                                                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{offer.email}</div>
+                                                <div style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>{offer.name}</div>
+                                                <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{offer.email}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -110,10 +110,10 @@ const OfferLetters = ({ user, onLogout, isSubComponent }) => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => handleDownload(offer)} title="Download PDF" style={{ width: '34px', height: '34px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <button onClick={() => handleDownload(offer)} title="Download PDF" style={{ width: '34px', height: '34px', background: 'var(--bg-elevated)', border: 'none', borderRadius: '10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 <Download size={16} />
                                             </button>
-                                            <button title="Edit Offer" style={{ width: '34px', height: '34px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <button title="Edit Offer" style={{ width: '34px', height: '34px', background: 'var(--bg-elevated)', border: 'none', borderRadius: '10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 <Edit2 size={16} />
                                             </button>
                                         </div>

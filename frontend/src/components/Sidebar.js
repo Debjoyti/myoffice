@@ -167,41 +167,34 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
 
   const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U';
 
-  // Group color accent
-  const groupColors = {
-    'Personal & Work': '#06b6d4',
-    'Sales & Projects': '#10b981',
-    'HR & Operations': '#4f46e5',
-    'Finance & Assets': '#f59e0b',
-    'Administration': '#e11d48',
-  };
-
   return (
     <>
       {/* Mobile toggle */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-lg lg:hidden"
+        style={{ position: 'fixed', top: '16px', left: '16px', zIndex: 50, padding: '8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '6px' }}
+        className="lg:hidden"
         data-testid="sidebar-toggle"
       >
-        {isSidebarOpen ? <X size={20} className="text-slate-100" /> : <Menu size={20} className="text-slate-100" />}
+        {isSidebarOpen ? <X size={20} color="#fff" /> : <Menu size={20} color="#fff" />}
       </button>
 
       {/* Sidebar panel */}
       <div
-        className={`fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{ background: 'var(--bg-base)', borderRight: '1px solid var(--border)' }}
+        className={`fixed lg:sticky top-0 left-0 z-40 w-64 h-screen flex flex-col shrink-0 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg relative">
-                <span className="text-white font-bold text-lg">B</span>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
+        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <span style={{ color: '#000', fontWeight: '800', fontSize: '18px' }}>M</span>
+                <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '8px', height: '8px', background: 'var(--brand-primary)', borderRadius: '50%', border: '2px solid var(--bg-base)' }} />
               </div>
               <div>
-                <h1 className="text-slate-100 text-lg font-bold m-0 tracking-tight" data-testid="sidebar-title">PRSK</h1>
-                <p className="text-slate-400 text-xs m-0 tracking-wider uppercase font-medium">Enterprise AI</p>
+                <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: '0', letterSpacing: '-0.02em' }} data-testid="sidebar-title">MyOffice</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: '0', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: '500' }}>Enterprise</p>
               </div>
             </div>
             {/* Notification center in sidebar header */}
@@ -210,31 +203,30 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
         </div>
 
         {/* AI Command Bar */}
-        <div style={{ padding: '12px 14px 8px', position: 'relative' }}>
+        <div style={{ padding: '16px 16px 8px', position: 'relative' }}>
           <div style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-              {commandFocused ? <Sparkles size={14} color="#818cf8" /> : <Search size={14} color="rgba(255,255,255,0.25)" />}
+            <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              {commandFocused ? <Sparkles size={14} color="var(--brand-primary)" /> : <Search size={14} color="var(--text-muted)" />}
             </div>
             <input
               ref={commandInputRef}
               type="text"
-              placeholder="Search or T-Code... ⌘K"
+              placeholder="Search or jump to... ⌘K"
               value={commandInput}
               onChange={(e) => setCommandInput(e.target.value)}
               onFocus={() => setCommandFocused(true)}
               onBlur={() => setTimeout(() => { setCommandFocused(false); if (!commandInput) setCommandResults([]); }, 150)}
               onKeyDown={handleCommandKeyDown}
+              className="dark-input"
               style={{
-                width: '100%', background: commandFocused ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${commandFocused ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                borderRadius: '10px', padding: '9px 10px 9px 34px', color: '#fff', fontSize: '12px',
-                fontWeight: 500, outline: 'none', transition: 'all 0.2s ease',
-                boxShadow: commandFocused ? '0 0 0 3px rgba(99,102,241,0.1)' : 'none',
-                fontFamily: 'Inter, sans-serif',
+                paddingLeft: '34px',
+                paddingRight: '24px',
+                height: '36px',
+                fontSize: '13px'
               }}
             />
             {commandInput && (
-              <button onClick={() => { setCommandInput(''); setCommandResults([]); }} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: '2px' }}>
+              <button onClick={() => { setCommandInput(''); setCommandResults([]); }} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
                 <X size={12} />
               </button>
             )}
@@ -243,78 +235,61 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
           {/* Autocomplete dropdown */}
           {commandResults.length > 0 && (
             <div style={{
-              position: 'absolute', top: 'calc(100% - 4px)', left: '14px', right: '14px', zIndex: 60,
-              background: '#0c1525', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px',
-              padding: '6px', boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
-              animation: 'fadeInUp 0.15s ease',
+              position: 'absolute', top: 'calc(100% + 4px)', left: '16px', right: '16px', zIndex: 60,
+              background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '8px',
+              padding: '6px', boxShadow: 'var(--shadow-lg)'
             }}>
               {commandResults.map((item, idx) => {
                 const Icon = item.icon;
                 return (
-                  <button key={item.id} onClick={() => handleCommandSelect(item)} style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '9px 10px', borderRadius: '8px', background: idx === 0 ? 'rgba(99,102,241,0.1)' : 'transparent',
-                    border: 'none', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-                    onMouseLeave={e => e.currentTarget.style.background = idx === 0 ? 'rgba(99,102,241,0.1)' : 'transparent'}
+                  <button key={item.id} onClick={() => handleCommandSelect(item)} className="sidebar-link" style={{ width: '100%', border: 'none', cursor: 'pointer', background: idx === 0 ? 'rgba(255,255,255,0.04)' : 'transparent', textAlign: 'left' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                    onMouseLeave={e => e.currentTarget.style.background = idx === 0 ? 'rgba(255,255,255,0.04)' : 'transparent'}
                   >
-                    <Icon size={14} color="#818cf8" />
-                    <span style={{ flex: 1, color: '#fff', fontSize: '12.5px', fontWeight: 600 }}>{item.label}</span>
-                    <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'JetBrains Mono, monospace' }}>{item.tcode}</span>
-                    <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
+                    <Icon size={14} style={{ color: 'var(--brand-primary)' }} />
+                    <span style={{ flex: 1, color: '#fff' }}>{item.label}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{item.tcode}</span>
                   </button>
                 );
               })}
-              <div style={{ padding: '6px 10px 2px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '4px' }}>
-                <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0, textAlign: 'center' }}>↵ to navigate · ESC to close</p>
-              </div>
             </div>
           )}
         </div>
 
         {/* Nav */}
-        <nav className="sidebar-nav" style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '16px' }} className="hide-scrollbar">
           {visibleGroups.map((group, idx) => {
             const isCollapsed = group.group ? collapsedGroups[group.group] : false;
             return (
-            <div key={idx} className="mb-4">
+            <div key={idx} style={{ marginBottom: '24px' }}>
               {group.group && (
                 <button
                   onClick={() => toggleGroup(group.group)}
-                  className="w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-slate-800/50 rounded-md transition-colors cursor-pointer border-none bg-transparent"
-                  style={{ color: groupColors[group.group] || '#94a3b8' }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', marginBottom: '8px', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-px opacity-50" style={{ background: groupColors[group.group] || '#94a3b8' }} />
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {group.group}
-                  </div>
-                  <ChevronRight size={12} className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`} />
+                  </span>
+                  <ChevronRight size={12} color="var(--text-muted)" style={{ transition: 'transform 0.2s', transform: isCollapsed ? 'rotate(0)' : 'rotate(90deg)' }} />
                 </button>
               )}
-              <div className={`space-y-0.5 overflow-hidden transition-all duration-300 ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100 mt-1'}`}>
+              <div style={{ overflow: 'hidden', transition: 'max-height 0.3s', maxHeight: isCollapsed ? '0' : '1000px' }}>
               {group.items.map((item) => {
                 const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path;
                 return (
                   <Link
                     key={item.id}
                     to={item.path}
                     data-testid={`nav-${item.id}`}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${isActive ? 'bg-indigo-600/10 text-indigo-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                    className={`sidebar-link ${isActive ? 'active' : ''}`}
+                    style={{ marginBottom: '2px' }}
                     onClick={() => {
                       if (window.innerWidth < 1024) setIsSidebarOpen(false);
                     }}
                   >
-                    <Icon size={18} className={`shrink-0 transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                    <div className="flex items-center justify-between w-full min-w-0">
-                      <span className={`text-sm truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
-                        {item.label}
-                      </span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded tracking-wider shrink-0 transition-opacity duration-200 ${isActive ? 'opacity-100 bg-indigo-500/20 text-indigo-300' : 'opacity-0 group-hover:opacity-100 bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>
-                        {item.tcode}
-                      </span>
-                    </div>
+                    <Icon size={16} />
+                    <span style={{ flex: 1 }}>{item.label}</span>
                   </Link>
                 );
               })}
@@ -323,37 +298,26 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
           )})}
         </nav>
 
-        {/* AI Insight strip */}
-        <div className="px-4 pb-4">
-          <div className="bg-indigo-900/30 border border-indigo-500/20 rounded-lg p-3 flex items-center gap-3">
-            <Sparkles size={16} className="text-indigo-400" />
-            <p className="text-slate-300 text-xs m-0 leading-relaxed">
-              <strong className="text-indigo-300 font-semibold">AI Assistant</strong> active — click ✨ to ask
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+        {/* Footer User Area */}
+        <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', borderRadius: '8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', marginBottom: '12px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: '600', border: '1px solid var(--border)' }}>
               {getInitials(user?.name)}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-slate-200 text-sm font-bold m-0 truncate" data-testid="user-name">{user?.name}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <p className="text-slate-400 text-xs m-0 capitalize">{user?.role}</p>
-              </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ color: '#fff', fontSize: '13px', fontWeight: '500', margin: '0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} data-testid="user-name">{user?.name}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: '2px 0 0', textTransform: 'capitalize' }}>{user?.role}</p>
             </div>
           </div>
           <button
             onClick={onLogout}
             data-testid="logout-btn"
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-sm font-semibold transition-all hover:bg-rose-500/20 hover:border-rose-500/30"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.15s ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'var(--bg-surface)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
           >
             <LogOut size={16} />
-            <span>Sign Out</span>
+            <span>Sign out</span>
           </button>
         </div>
       </div>
@@ -361,7 +325,8 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
       {/* Mobile backdrop */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-30 lg:hidden"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 30 }}
+          className="lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}

@@ -104,7 +104,7 @@ const PurchaseRequests = ({ user, onLogout, isSubComponent }) => {
       ) : requests.length === 0 ? (
         <div className="dark-empty">
           <p style={{ marginBottom: '12px' }}>No purchase requests found</p>
-          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase request</button>
+          <button onClick={() => setShowModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase request</button>
         </div>
       ) : (
         <div className="dark-table-wrap fade-in">
@@ -115,10 +115,10 @@ const PurchaseRequests = ({ user, onLogout, isSubComponent }) => {
             <tbody>
               {requests.map(req => (
                 <tr key={req.id} data-testid={`purchase-request-row-${req.id}`}>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(req.store_id)}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getStoreName(req.store_id)}</td>
                   <td>{getEmployeeName(req.requested_by)}</td>
                   <td>{req.items.length} items</td>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>₹{req.total_amount.toLocaleString('en-IN')}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>₹{req.total_amount.toLocaleString('en-IN')}</td>
                   <td>{statusBadge(req.status)}</td>
                   <td>
                     {req.status === 'pending' && user.role === 'admin' && (
@@ -144,8 +144,8 @@ const PurchaseRequests = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '680px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-purchase-request-modal-title">New Purchase Request</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-purchase-request-modal-title">New Purchase Request</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -188,7 +188,7 @@ const PurchaseRequests = ({ user, onLogout, isSubComponent }) => {
                   ))}
                 </div>
                 <button type="button" onClick={addItem}
-                  style={{ marginTop: '8px', color: '#818cf8', fontSize: '13px', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  style={{ marginTop: '8px', color: 'var(--brand-primary)', fontSize: '13px', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                   + Add another item
                 </button>
               </div>

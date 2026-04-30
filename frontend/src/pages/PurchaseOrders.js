@@ -111,7 +111,7 @@ const PurchaseOrders = ({ user, onLogout, isSubComponent }) => {
       ) : orders.length === 0 ? (
         <div className="dark-empty">
           <p style={{ marginBottom: '12px' }}>No purchase orders found</p>
-          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase order</button>
+          <button onClick={() => setShowModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first purchase order</button>
         </div>
       ) : (
         <div className="dark-table-wrap fade-in">
@@ -122,10 +122,10 @@ const PurchaseOrders = ({ user, onLogout, isSubComponent }) => {
             <tbody>
               {orders.map(order => (
                 <tr key={order.id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{order.id.slice(0, 8)}</td>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>{getStoreName(order.store_id)}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-secondary)' }}>{order.id.slice(0, 8)}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getStoreName(order.store_id)}</td>
                   <td>{order.supplier_name}</td>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>₹{order.total_amount.toLocaleString('en-IN')}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>₹{order.total_amount.toLocaleString('en-IN')}</td>
                   <td>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('en-IN') : '—'}</td>
                   <td><span className="badge-amber" style={{ textTransform: 'capitalize' }}>{order.status}</span></td>
                 </tr>
@@ -138,8 +138,8 @@ const PurchaseOrders = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }}>Create Purchase Order</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }}>Create Purchase Order</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>

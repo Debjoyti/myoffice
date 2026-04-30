@@ -76,7 +76,7 @@ const LeaveManagement = ({ user, onLogout, isSubComponent }) => {
       ) : leaves.length === 0 ? (
         <div className="dark-empty">
           <p style={{ marginBottom: '12px' }}>No leave requests found</p>
-          <button onClick={() => setShowModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Submit a leave request</button>
+          <button onClick={() => setShowModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Submit a leave request</button>
         </div>
       ) : (
         <div className="dark-table-wrap fade-in">
@@ -87,7 +87,7 @@ const LeaveManagement = ({ user, onLogout, isSubComponent }) => {
             <tbody>
               {leaves.map(leave => (
                 <tr key={leave.id} data-testid={`leave-row-${leave.id}`}>
-                  <td style={{ color: '#fff', fontWeight: 600 }}>{getEmployeeName(leave.employee_id)}</td>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getEmployeeName(leave.employee_id)}</td>
                   <td style={{ textTransform: 'capitalize' }}>{leave.leave_type}</td>
                   <td>{new Date(leave.from_date).toLocaleDateString('en-IN')}</td>
                   <td>{new Date(leave.to_date).toLocaleDateString('en-IN')}</td>
@@ -117,8 +117,8 @@ const LeaveManagement = ({ user, onLogout, isSubComponent }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="request-leave-modal-title">Request Leave</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="request-leave-modal-title">Request Leave</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>

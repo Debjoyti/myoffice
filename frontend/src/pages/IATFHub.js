@@ -156,7 +156,7 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
         return (
           <div className="grid grid-cols-1 gap-6">
             {filteredData.map(item => (
-              <div key={item.id} className="iatf-card" style={{ padding: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px' }}>
+              <div key={item.id} className="iatf-card" style={{ padding: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px' }}>
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">{item.process_name}</h3>
@@ -264,7 +264,7 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {[
-                { label: 'Total Kaizens', value: filteredData.length, color: '#6366f1' },
+                { label: 'Total Kaizens', value: filteredData.length, color: 'var(--brand-primary)' },
                 { label: 'Implemented', value: filteredData.filter(k => k.status === 'implemented').length, color: '#10b981' },
                 { label: 'Est. Savings', value: `₹${(filteredData.reduce((acc, k) => acc + (k.savings_estimated || 0), 0) / 1000).toFixed(1)}K`, color: '#f59e0b' },
               ].map((s, i) => (
@@ -348,7 +348,7 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
             
             <div className="grid grid-cols-1 gap-4">
               {[
-                { role: 'Quality Inspector', req: 'Diploma/BE', skills: [{s: 'SPC', l: 3}, {s: 'Drawing', l: 4}, {s: 'Micrometer', l: 4}], color: '#818cf8' },
+                { role: 'Quality Inspector', req: 'Diploma/BE', skills: [{s: 'SPC', l: 3}, {s: 'Drawing', l: 4}, {s: 'Micrometer', l: 4}], color: 'var(--brand-primary)' },
                 { role: 'Machine Operator', req: 'ITI/10th', skills: [{s: 'Set-up', l: 2}, {s: 'Safety', l: 4}, {s: '5S', l: 3}], color: '#10b981' },
                 { role: 'HR Admin', req: 'MBA/MSW', skills: [{s: 'Payroll', l: 4}, {s: 'Compliance', l: 3}, {s: 'Audit', l: 3}], color: '#f59e0b' },
               ].map((role, idx) => (
@@ -659,7 +659,7 @@ const IATFHub = ({ user, onLogout, isSubComponent }) => {
   if (isSubComponent) return pageContent;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#05070f', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-base)', fontFamily: "'Inter', sans-serif" }}>
       <Sidebar user={user} onLogout={onLogout} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       {pageContent}
     </div>

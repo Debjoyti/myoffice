@@ -17,8 +17,8 @@ const BusinessOrders = ({ user, onLogout }) => {
         padding: '16px 12px',
         border: 'none',
         background: 'none',
-        color: activeTab === tabId ? '#818cf8' : 'rgba(255,255,255,0.5)',
-        borderBottom: activeTab === tabId ? '2px solid #818cf8' : '2px solid transparent',
+        color: activeTab === tabId ? 'var(--brand-primary)' : 'rgba(255,255,255,0.5)',
+        borderBottom: activeTab === tabId ? '2px solid var(--brand-primary)' : '2px solid transparent',
         cursor: 'pointer',
         fontWeight: 600,
         fontSize: '14px',
@@ -32,10 +32,10 @@ const BusinessOrders = ({ user, onLogout }) => {
                 <div style={{ padding: '0 32px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
                     <div style={{ padding: '24px 0 16px', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff' }}>Business Orders</h1>
-                          <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>ME51N/ME21N</span>
+                          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Business Orders</h1>
+                          <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>ME51N/ME21N</span>
                         </div>
-                        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>Manage inventory, stores, purchase requests, and orders all in one place</p>
+                        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>Manage inventory, stores, purchase requests, and orders all in one place</p>
                     </div>
                     <div style={{ display: 'flex', gap: '20px' }}>
                         <button style={getTabStyle('inventory')} onClick={() => setActiveTab('inventory')}>Inventory</button>

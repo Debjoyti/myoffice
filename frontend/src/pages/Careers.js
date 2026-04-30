@@ -15,39 +15,38 @@ const Stars = ({ n }) => (
   </span>
 );
 
+import * as tf from '@tensorflow/tfjs';
+import * as blazeface from '@tensorflow-models/blazeface';
+
 export default function Careers({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('find_jobs');
   const [candidates, setCandidates] = useState(CANDIDATES);
   const [apiKey, setApiKey] = useState('');
-  import * as tf from '@tensorflow/tfjs';
-  import * as blazeface from '@tensorflow-models/blazeface';
 
-  const Careers = ({ user, onLogout }) => {
-    const [activeTab, setActiveTab] = useState(localStorage.getItem('careersActiveTab') || 'jobBoard');
-    const [jdText, setJdText] = useState('');
-    const [creatingJob, setCreatingJob] = useState(false);
+  const [jdText, setJdText] = useState('');
+  const [creatingJob, setCreatingJob] = useState(false);
 
-    useEffect(() => {
-      localStorage.setItem('careersActiveTab', activeTab);
-    }, [activeTab]);
-    const [jobs, setJobs] = useState([]);
-    const [selectedJob, setSelectedJob] = useState(null);
+  useEffect(() => {
+    localStorage.setItem('careersActiveTab', activeTab);
+  }, [activeTab]);
+  
+  const [jobs, setJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
 
-    const [applyForm, setApplyForm] = useState({
-      name: '',
-      email: '',
-      linkedin_url: '',
-      naukri_url: '',
-      skills: '',
-      colleague_rating: 0,
-      boss_rating: 0,
-      resume_text: ''
-    });
+  const [applyForm, setApplyForm] = useState({
+    name: '',
+    email: '',
+    linkedin_url: '',
+    naukri_url: '',
+    skills: '',
+    colleague_rating: 0,
+    boss_rating: 0,
+    resume_text: ''
+  });
 
-    const [currentCandidateId, setCurrentCandidateId] = useState(null);
-    const [interviewSession, setInterviewSession] = useState(null);
-    const [chatInput, setChatInput] = useState('');
-    const [candidates, setCandidates] = useState([]);
+  const [currentCandidateId, setCurrentCandidateId] = useState(null);
+  const [interviewSession, setInterviewSession] = useState(null);
+  const [chatInput, setChatInput] = useState('');
 
     // Anti-cheating refs
     const videoRef = useRef(null);
@@ -399,7 +398,7 @@ export default function Careers({ user, onLogout }) {
                 <span>{job.postedDays}d ago</span>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-                <button style={{ ...S.btn, flex: 1, background: C.blue, color: '#fff' }}>Quick Apply</button>
+                <button style={{ ...S.btn, flex: 1, background: C.blue, color: 'var(--text-primary)' }}>Quick Apply</button>
                 <button onClick={() => setJdModal(job)} style={{ ...S.btn, flex: 1, background: C.bg, color: C.text, border: `1px solid ${C.border}` }}>View JD</button>
               </div>
             </div>
@@ -525,7 +524,7 @@ export default function Careers({ user, onLogout }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
               <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: C.sub }}>×</button>
-              <button onClick={() => setInterviewing(true)} style={{ ...S.btn, background: C.blue, color: '#fff' }}>
+              <button onClick={() => setInterviewing(true)} style={{ ...S.btn, background: C.blue, color: 'var(--text-primary)' }}>
                 Schedule AI Interview
               </button>
             </div>
@@ -907,7 +906,7 @@ Return ONLY valid JSON:
                   <div style={{ textAlign: 'center' }}>
                     <h2 style={{ marginBottom: 8 }}>Ready for Round {round}: {roundNames[round]}</h2>
                     <p style={{ color: C.sub, marginBottom: 24 }}>The AI will ask up to 4 questions. Type "end" when you are finished.</p>
-                    <button onClick={startRound} disabled={loading} style={{ ...S.btn, background: C.blue, color: '#fff', fontSize: 16, padding: '12px 32px' }}>
+                    <button onClick={startRound} disabled={loading} style={{ ...S.btn, background: C.blue, color: 'var(--text-primary)', fontSize: 16, padding: '12px 32px' }}>
                       {loading ? 'Connecting...' : 'Start Round'}
                     </button>
                   </div>
@@ -915,7 +914,7 @@ Return ONLY valid JSON:
                   <div style={{ textAlign: 'center' }}>
                     <h2>All Rounds Completed</h2>
                     <p style={{ color: C.sub, marginBottom: 24 }}>Generating final scorecard and recommendations.</p>
-                    <button onClick={finalizeInterview} disabled={loading} style={{ ...S.btn, background: C.green, color: '#fff', fontSize: 16, padding: '12px 32px' }}>
+                    <button onClick={finalizeInterview} disabled={loading} style={{ ...S.btn, background: C.green, color: 'var(--text-primary)', fontSize: 16, padding: '12px 32px' }}>
                       {loading ? 'Analysing...' : 'View Final Results'}
                     </button>
                   </div>
@@ -956,7 +955,7 @@ Return ONLY valid JSON:
                       placeholder="Type your answer here..."
                       style={{ flex: 1, padding: '16px 20px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 15 }}
                     />
-                    <button type="submit" disabled={loading || scoring || !input.trim()} style={{ ...S.btn, background: C.blue, color: '#fff', padding: '0 32px' }}>
+                    <button type="submit" disabled={loading || scoring || !input.trim()} style={{ ...S.btn, background: C.blue, color: 'var(--text-primary)', padding: '0 32px' }}>
                       Send
                     </button>
                   </form>

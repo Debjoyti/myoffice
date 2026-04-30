@@ -63,9 +63,9 @@ const Card = ({ children, style }) => (
 
 const Btn = ({ onClick, children, variant = 'primary', small }) => {
   const styles = {
-    primary: { background: Z.primary, color: '#fff', border: 'none' },
+    primary: { background: Z.primary, color: 'var(--text-primary)', border: 'none' },
     secondary: { background: '#fff', color: Z.text, border: `1px solid ${Z.border}` },
-    danger: { background: Z.danger, color: '#fff', border: 'none' },
+    danger: { background: Z.danger, color: 'var(--text-primary)', border: 'none' },
   };
   return <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: small ? '6px 12px' : '8px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', ...styles[variant] }}>{children}</button>;
 };
@@ -241,7 +241,7 @@ export default function AccountantPortal({ user, onLogout }) {
     <div style={{ display: 'flex', height: '100vh', background: Z.bg, color: Z.text, fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
       <div style={{ width: '250px', background: Z.sidebar, borderRight: `1px solid ${Z.sidebarBorder}`, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <div style={{ padding: '24px 20px', borderBottom: `1px solid ${Z.sidebarBorder}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><div style={{ background: Z.primary, padding: '8px', borderRadius: '10px' }}><Calculator size={20} color="#fff" /></div><div><h1 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>PRSK Books</h1><p style={{ fontSize: '11px', color: Z.soft, margin: 0, fontWeight: 700 }}>ACCOUNTANT PORTAL</p></div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><div style={{ background: Z.primary, padding: '8px', borderRadius: '10px' }}><Calculator size={20} color="var(--text-primary)" /></div><div><h1 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>PRSK Books</h1><p style={{ fontSize: '11px', color: Z.soft, margin: 0, fontWeight: 700 }}>ACCOUNTANT PORTAL</p></div></div>
           <div style={{ background: '#fff', border: `1px solid ${Z.border}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}><span style={{ fontSize: '13px', fontWeight: 600 }}>{data.summary?.company?.name || 'My Organization'}</span><ChevronDown size={14} color={Z.soft} /></div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
@@ -254,7 +254,7 @@ export default function AccountantPortal({ user, onLogout }) {
             </div>
           ))}
         </div>
-        <div style={{ padding: '16px', borderTop: `1px solid ${Z.sidebarBorder}` }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: '#fff', border: `1px solid ${Z.border}`, borderRadius: '10px' }}><div style={{ background: Z.primary, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '12px' }}>{user?.name?.[0].toUpperCase()}</div><div style={{ flex: 1, overflow: 'hidden' }}><p style={{ margin: 0, fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name}</p></div><LogOut size={16} color={Z.soft} onClick={onLogout} style={{ cursor: 'pointer' }} /></div></div>
+        <div style={{ padding: '16px', borderTop: `1px solid ${Z.sidebarBorder}` }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: '#fff', border: `1px solid ${Z.border}`, borderRadius: '10px' }}><div style={{ background: Z.primary, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontWeight: 800, fontSize: '12px' }}>{user?.name?.[0].toUpperCase()}</div><div style={{ flex: 1, overflow: 'hidden' }}><p style={{ margin: 0, fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name}</p></div><LogOut size={16} color={Z.soft} onClick={onLogout} style={{ cursor: 'pointer' }} /></div></div>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <header style={{ height: '64px', background: Z.header, borderBottom: `1px solid ${Z.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>

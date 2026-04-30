@@ -181,10 +181,10 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#fff' }}>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>
             Payroll <span style={{ color: '#10b981' }}>Engine</span>
           </h1>
-          <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>
             HR-controlled salary structure · System suggests, HR decides
           </p>
         </div>
@@ -194,7 +194,7 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
             <FileText size={16} /> Salary Slip
           </button>
           <button onClick={() => { setEarnings(DEFAULT_EARNINGS.map(r => ({ ...r }))); setDeductions(DEFAULT_DEDUCTIONS.map(r => ({ ...r }))); toast.info('Reset to defaults'); }}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
             <RefreshCw size={15} /> Reset
           </button>
         </div>
@@ -209,12 +209,12 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
         }}>
           {windowStatus.inWindow ? <CheckCircle size={18} color={windowStatus.nearExpiry ? '#fbbf24' : '#10b981'} /> : <AlertTriangle size={18} color="#f87171" />}
           <div>
-            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
               {windowStatus.inWindow
                 ? windowStatus.nearExpiry ? `⚠️ Change window closes in ${windowStatus.daysLeft} day(s). Submit before ${validationEnd}.` : `✅ Change window open — ${windowStatus.daysLeft} days remaining`
                 : '🔒 Change window closed. Edits disabled until HR extends the window.'}
             </p>
-            {windowStatus.nearExpiry && <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Reminder: File required statutory notifications (PF, ESI, PT) before month end.</p>}
+            {windowStatus.nearExpiry && <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>Reminder: File required statutory notifications (PF, ESI, PT) before month end.</p>}
           </div>
         </div>
       )}
@@ -222,26 +222,26 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
       {/* Top Controls Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         {/* Left: Setup */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.07)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '13px', color: '#10b981', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Setup</h3>
           <div>
-            <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Employee</label>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Employee</label>
             <select className="dark-input" value={selectedEmp} onChange={e => setSelectedEmp(e.target.value)} style={{ fontSize: '13px' }}>
               <option value="">— Select Employee —</option>
               {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.emp_id || e.id.slice(0,8)})</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Yearly CTC (₹)</label>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Yearly CTC (₹)</label>
             <input type="number" className="dark-input" value={ctc} onChange={e => setCtc(e.target.value)} style={{ fontSize: '14px' }} />
-            <div style={{ marginTop: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-              Monthly: <span style={{ color: '#fff', fontWeight: 700 }}>₹{Math.round(monthlyGross).toLocaleString('en-IN')}</span>
+            <div style={{ marginTop: '6px', padding: '8px 12px', background: 'var(--bg-card)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Monthly: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>₹{Math.round(monthlyGross).toLocaleString('en-IN')}</span>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>City Type</label>
-              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '3px', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>City Type</label>
+              <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '10px', padding: '3px', border: '1px solid var(--border)' }}>
                 {['Metro', 'Non-Metro'].map(m => (
                   <button key={m} onClick={() => setIsMetro(m === 'Metro')} style={{
                     flex:1, padding: '7px 4px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600,
@@ -252,7 +252,7 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>HRA %</label>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>HRA %</label>
               <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', fontSize: '14px', color: '#10b981', fontWeight: 700 }}>
                 {isMetro ? '40%' : '30%'} of Basic
               </div>
@@ -261,7 +261,7 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
         </div>
 
         {/* Right: Toggles */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.07)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ margin: '0 0 4px', fontSize: '13px', color: '#10b981', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Statutory Toggles</h3>
           <Toggle value={pfEnabled} onChange={setPfEnabled} label="Provident Fund (PF) — 12% of Basic" />
           <Toggle value={esiEnabled} onChange={setEsiEnabled} label="ESI (Employee State Insurance)" />
@@ -277,14 +277,14 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
           <Toggle value={foodEnabled} onChange={setFoodEnabled} label="Food Allowance — ₹2,000/month" />
           {/* Validation Window */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '4px' }}>
-            <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Change Validation Window</label>
+            <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Change Validation Window</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div>
-                <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '4px' }}>Start Date</label>
+                <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Start Date</label>
                 <input type="date" className="dark-input" value={validationStart} onChange={e => setValidationStart(e.target.value)} style={{ fontSize: '12px', height: '34px' }} />
               </div>
               <div>
-                <label style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '4px' }}>End Date</label>
+                <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>End Date</label>
                 <input type="date" className="dark-input" value={validationEnd} onChange={e => setValidationEnd(e.target.value)} style={{ fontSize: '12px', height: '34px' }} />
               </div>
             </div>
@@ -293,14 +293,14 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
       </div>
 
       {/* SALARY FORMAT — BILATERAL TABLE */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
         {/* Section header */}
         <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#fff' }}>Salary Format</h3>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Salary Format</h3>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>Rows 1–4 auto-suggested · Unlimited custom rows · HR controlled</p>
           </div>
-          <div style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+          <div style={{ padding: '6px 14px', background: 'var(--bg-elevated)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
             System Suggestion Mode
           </div>
         </div>
@@ -308,14 +308,14 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
         {/* Table Header */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ padding: '12px 24px', display: 'grid', gridTemplateColumns: '28px 1fr 120px', gap: '8px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>#</span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Particulars (Earnings)</span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', textAlign: 'right' }}>Amount (₹)</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>#</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Particulars (Earnings)</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Amount (₹)</span>
           </div>
           <div style={{ padding: '12px 24px', display: 'grid', gridTemplateColumns: '28px 1fr 120px', gap: '8px', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>#</span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Particulars (Deductions)</span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', textAlign: 'right' }}>Amount (₹)</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>#</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Particulars (Deductions)</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Amount (₹)</span>
           </div>
         </div>
 
@@ -325,10 +325,10 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
             <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                 {earnings.map((earn, idx) => (
                     <div key={earn.id || idx} style={{ padding: '5px 16px 5px 20px', display: 'grid', gridTemplateColumns: '22px 1fr 100px 26px', gap: '7px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)' }}>
-                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontWeight: 600 }}>{idx + 1}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>{idx + 1}</span>
                         {earn.locked
                             ? <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{earn.name}</span>
-                            : <input value={earn.name} onChange={e => updateEarning(idx, 'name', e.target.value)} placeholder="Earning name" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '12px', outline: 'none', width: '100%' }} />
+                            : <input value={earn.name} onChange={e => updateEarning(idx, 'name', e.target.value)} placeholder="Earning name" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 8px', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', width: '100%' }} />
                         }
                         <input type="number" value={earn.amount || ''} onChange={e => updateEarning(idx, 'amount', parseFloat(e.target.value) || 0)} placeholder="0" style={{
                             background: earn.locked ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.04)',
@@ -352,10 +352,10 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
             <div>
                 {deductions.map((ded, idx) => (
                     <div key={ded.id || idx} style={{ padding: '5px 16px 5px 20px', display: 'grid', gridTemplateColumns: '22px 1fr 100px 26px', gap: '7px', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)' }}>
-                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontWeight: 600 }}>{idx + 1}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>{idx + 1}</span>
                         {ded.locked
                             ? <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{ded.name}</span>
-                            : <input value={ded.name} onChange={e => updateDeduction(idx, 'name', e.target.value)} placeholder="Deduction name" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '12px', outline: 'none', width: '100%' }} />
+                            : <input value={ded.name} onChange={e => updateDeduction(idx, 'name', e.target.value)} placeholder="Deduction name" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 8px', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', width: '100%' }} />
                         }
                         <input type="number" value={ded.amount || ''} onChange={e => updateDeduction(idx, 'amount', parseFloat(e.target.value) || 0)} placeholder="0" style={{
                             background: ded.locked ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.04)',
@@ -391,11 +391,11 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
         {/* Net Salary */}
         <div style={{ padding: '18px 24px', background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.08))', borderTop: '1px solid rgba(16,185,129,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Net Salary (Monthly)</p>
-            <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>Total Earnings − Total Deductions</p>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Net Salary (Monthly)</p>
+            <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--text-muted)' }}>Total Earnings − Total Deductions</p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '28px', fontWeight: 900, color: '#fff', letterSpacing: '-0.5px' }}>₹{Math.round(netSalary).toLocaleString('en-IN')}</div>
+            <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>₹{Math.round(netSalary).toLocaleString('en-IN')}</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Annual: ₹{Math.round(netSalary * 12).toLocaleString('en-IN')}</div>
           </div>
         </div>
@@ -404,7 +404,7 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
         <div style={{ padding: '12px 24px', background: 'rgba(244,63,94,0.06)', borderTop: '1px solid rgba(244,63,94,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={14} color="#f87171" />
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>After generating offer letter → <span style={{ color: '#f87171', fontWeight: 600 }}>Exit with Reason</span> must be documented</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>After generating offer letter → <span style={{ color: '#f87171', fontWeight: 600 }}>Exit with Reason</span> must be documented</span>
           </div>
           <button onClick={() => { if(!selectedEmp){toast.warning('Select an employee first'); return;} toast.info('Exit reason feature: Use Resignations module'); }}
             style={{ padding: '6px 16px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: '#f87171', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
@@ -415,22 +415,22 @@ const PayrollEngine = ({ user, onLogout, isSubComponent }) => {
 
       {/* Gratuity Settings (if enabled) */}
       {gratuityEnabled && (
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(99,102,241,0.2)', padding: '20px' }}>
-          <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: '#818cf8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gratuity Configuration</h3>
+        <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(94, 106, 210, 0.2)', padding: '20px' }}>
+          <h3 style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--brand-primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gratuity Configuration</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
             <div>
-              <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Formula (% of Basic)</label>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Formula (% of Basic)</label>
               <input type="number" className="dark-input" defaultValue="4.81" style={{ fontSize: '13px' }} />
-              <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>4.81% = statutory formula</p>
+              <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--text-muted)' }}>4.81% = statutory formula</p>
             </div>
             <div>
-              <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Effective Till</label>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Effective Till</label>
               <input type="date" className="dark-input" style={{ fontSize: '13px' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <div style={{ padding: '14px', background: 'rgba(99,102,241,0.08)', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.15)', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Monthly Gratuity</p>
-                <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#818cf8' }}>
+              <div style={{ padding: '14px', background: 'rgba(99,102,241,0.08)', borderRadius: '10px', border: '1px solid rgba(94, 106, 210, 0.15)', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'var(--text-secondary)' }}>Monthly Gratuity</p>
+                <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--brand-primary)' }}>
                   ₹{Math.round((earnings[0]?.amount || 0) * 0.0481).toLocaleString('en-IN')}
                 </p>
               </div>

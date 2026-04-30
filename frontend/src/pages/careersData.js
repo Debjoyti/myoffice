@@ -20,7 +20,7 @@ export const CANDIDATES = [
   {
     id:'c1', name:'Priya Sharma', title:'Senior ML Engineer', company:'Microsoft Research',
     location:'Bengaluru', experience:'6 years', education:'M.Tech · IIT Bombay · 2019',
-    skills:['Python','PyTorch','LLMs','RLHF','AWS','MLOps'], initials:'PS', color:'#6366f1',
+    skills:['Python','PyTorch','LLMs','RLHF','AWS','MLOps'], initials:'PS', color:'var(--brand-primary)',
     expectedSalary:'₹65L', rating:4.7,
     about:'Experienced ML engineer specialising in LLMs and RLHF. Previously at Google Brain leading fine-tuning pipelines for PaLM. 2 NeurIPS papers. Passionate about AI safety and model interpretability.',
     cvSummary:`PRIYA SHARMA  |  priya.sharma@email.com  |  +91-98765-43210\n${'─'.repeat(52)}\nEXPERIENCE\n  Microsoft Research India  · Senior ML Engineer  · 2022–Present\n    · Led multilingual RLHF pipeline (30+ languages)\n    · Reduced training cost 40% via gradient optimisation\n    · 2 papers at NeurIPS 2023\n  Google Brain  · ML Engineer  · 2019–2022\n    · Distributed training for PaLM (540B params)\n    · Evaluation harnesses for reasoning benchmarks\nEDUCATION\n  IIT Bombay   M.Tech CS   2017–2019   CGPA 9.2\n  IIT Roorkee  B.Tech CS   2013–2017   CGPA 8.9\nSKILLS\n  Python · PyTorch · JAX · RLHF · Distributed Training · MLOps · AWS`,

@@ -90,7 +90,7 @@ const Projects = ({ user, onLogout }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h1 className="page-title" data-testid="projects-title">Projects &amp; Tasks</h1>
-                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>CJ20N</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(94, 106, 210, 0.15)', color: 'var(--brand-primary)', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>CJ20N</span>
               </div>
               <p className="page-subtitle">Manage projects and track tasks</p>
             </div>
@@ -114,11 +114,11 @@ const Projects = ({ user, onLogout }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
               {/* Projects grid */}
               <div>
-                <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, margin: '0 0 14px' }}>Projects</h2>
+                <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 700, margin: '0 0 14px' }}>Projects</h2>
                 {projects.length === 0 ? (
                   <div className="dark-empty">
                     <p style={{ marginBottom: '12px' }}>No projects found</p>
-                    <button onClick={() => setShowProjectModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first project</button>
+                    <button onClick={() => setShowProjectModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first project</button>
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
@@ -128,8 +128,8 @@ const Projects = ({ user, onLogout }) => {
                         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.25)'; }}
                         onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
                       >
-                        <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>{project.name}</h3>
-                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: '0 0 14px', lineHeight: 1.5 }}>{project.description || 'No description'}</p>
+                        <h3 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 700, margin: '0 0 6px' }}>{project.name}</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 14px', lineHeight: 1.5 }}>{project.description || 'No description'}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ color: 'rgba(255,255,255,0.35)' }}>Start:</span>
@@ -153,11 +153,11 @@ const Projects = ({ user, onLogout }) => {
 
               {/* Tasks table */}
               <div>
-                <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, margin: '0 0 14px' }}>Tasks</h2>
+                <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 700, margin: '0 0 14px' }}>Tasks</h2>
                 {tasks.length === 0 ? (
                   <div className="dark-empty">
                     <p style={{ marginBottom: '12px' }}>No tasks found</p>
-                    <button onClick={() => setShowTaskModal(true)} style={{ color: '#818cf8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first task</button>
+                    <button onClick={() => setShowTaskModal(true)} style={{ color: 'var(--brand-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Create your first task</button>
                   </div>
                 ) : (
                   <div className="dark-table-wrap fade-in">
@@ -169,7 +169,7 @@ const Projects = ({ user, onLogout }) => {
                         {tasks.map(task => (
                           <tr key={task.id} data-testid={`task-row-${task.id}`}>
                             <td>
-                              <p style={{ color: '#fff', fontWeight: 600, margin: 0 }}>{task.title}</p>
+                              <p style={{ color: 'var(--text-primary)', fontWeight: 600, margin: 0 }}>{task.title}</p>
                               {task.due_date && <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>Due: {new Date(task.due_date).toLocaleDateString('en-IN')}</p>}
                             </td>
                             <td>{getProjectName(task.project_id)}</td>
@@ -201,8 +201,8 @@ const Projects = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-project-modal-title">Create Project</h2>
-              <button onClick={() => setShowProjectModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-project-modal-title">Create Project</h2>
+              <button onClick={() => setShowProjectModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleProjectSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
@@ -239,8 +239,8 @@ const Projects = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '480px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-task-modal-title">Create Task</h2>
-              <button onClick={() => setShowTaskModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}><X size={22} /></button>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, margin: 0 }} data-testid="add-task-modal-title">Create Task</h2>
+              <button onClick={() => setShowTaskModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={22} /></button>
             </div>
             <form onSubmit={handleTaskSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>

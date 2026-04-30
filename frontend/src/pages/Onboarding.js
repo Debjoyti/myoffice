@@ -68,26 +68,26 @@ const Onboarding = ({ user, onComplete }) => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', fontFamily: "'Inter', sans-serif" }}>
       <div style={{ maxWidth: '1080px', width: '100%' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '18px', marginBottom: '20px', boxShadow: '0 8px 28px rgba(99,102,241,0.4)' }}>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: '26px' }}>B</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', background: 'var(--brand-primary)', borderRadius: '18px', marginBottom: '20px', boxShadow: '0 8px 28px rgba(99,102,241,0.4)' }}>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '26px' }}>B</span>
           </div>
-          <h1 style={{ color: '#fff', fontSize: '36px', fontWeight: 800, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Welcome to BizOps! 🎉</h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '17px', margin: 0 }}>Choose the perfect plan for your organization</p>
+          <h1 style={{ color: 'var(--text-primary)', fontSize: '36px', fontWeight: 800, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Welcome to BizOps! 🎉</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '17px', margin: 0 }}>Choose the perfect plan for your organization</p>
         </div>
 
         {/* Billing Toggle */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
-          <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '5px' }}>
+          <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '14px', padding: '5px' }}>
             {['monthly', 'yearly'].map(cycle => (
               <button key={cycle} onClick={() => setBillingCycle(cycle)}
                 style={{
                   padding: '9px 24px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
-                  background: billingCycle === cycle ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                  background: billingCycle === cycle ? 'var(--brand-primary)' : 'transparent',
                   color: billingCycle === cycle ? '#fff' : 'rgba(255,255,255,0.45)',
                   boxShadow: billingCycle === cycle ? '0 4px 14px rgba(99,102,241,0.3)' : 'none',
                 }}>
@@ -120,15 +120,15 @@ const Onboarding = ({ user, onComplete }) => {
                 onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; } }}
               >
                 {plan.popular && (
-                  <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', padding: '5px 16px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
+                  <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'var(--brand-primary)', color: 'var(--text-primary)', padding: '5px 16px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(99,102,241,0.4)' }}>
                     MOST POPULAR
                   </div>
                 )}
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                  <h3 style={{ color: '#fff', fontSize: '22px', fontWeight: 700, margin: '0 0 10px' }}>{plan.name}</h3>
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '22px', fontWeight: 700, margin: '0 0 10px' }}>{plan.name}</h3>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
-                    <span style={{ color: '#fff', fontSize: '36px', fontWeight: 800 }}>₹{price.toLocaleString('en-IN')}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: '36px', fontWeight: 800 }}>₹{price.toLocaleString('en-IN')}</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                   </div>
                 </div>
 
@@ -145,7 +145,7 @@ const Onboarding = ({ user, onComplete }) => {
 
                 <button style={{
                   width: '100%', padding: '12px', borderRadius: '12px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
-                  background: isSelected ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.08)',
+                  background: isSelected ? 'var(--brand-primary)' : 'rgba(255,255,255,0.08)',
                   color: isSelected ? '#fff' : 'rgba(255,255,255,0.5)',
                   boxShadow: isSelected ? '0 4px 16px rgba(99,102,241,0.3)' : 'none',
                 }}>
@@ -162,8 +162,8 @@ const Onboarding = ({ user, onComplete }) => {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
               padding: '16px 40px',
-              background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#fff', border: 'none', borderRadius: '14px',
+              background: loading ? 'rgba(99,102,241,0.5)' : 'var(--brand-primary)',
+              color: 'var(--text-primary)', border: 'none', borderRadius: '14px',
               fontWeight: 700, fontSize: '17px', cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: '0 8px 28px rgba(99,102,241,0.4)',
               transition: 'all 0.2s',
@@ -185,11 +185,11 @@ const Onboarding = ({ user, onComplete }) => {
             const Icon = tile.icon;
             return (
               <div key={idx} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px 20px', textAlign: 'center' }}>
-                <div style={{ width: '46px', height: '46px', background: 'rgba(99,102,241,0.15)', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                  <Icon size={22} color="#818cf8" />
+                <div style={{ width: '46px', height: '46px', background: 'rgba(94, 106, 210, 0.15)', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                  <Icon size={22} color="var(--brand-primary)" />
                 </div>
-                <h4 style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>{tile.title}</h4>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: 0 }}>{tile.desc}</p>
+                <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', margin: '0 0 6px' }}>{tile.title}</h4>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: 0 }}>{tile.desc}</p>
               </div>
             );
           })}

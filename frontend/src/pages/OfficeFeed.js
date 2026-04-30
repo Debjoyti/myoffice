@@ -67,26 +67,26 @@ const OfficeFeed = ({ user, onLogout }) => {
             ) : (
               <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {announcements.map(item => (
-                  <div key={item.id} className="dark-card" style={{ padding: '24px', position: 'relative' }}>
+                  <div key={item.id} className="glass-card" style={{ padding: '24px', position: 'relative' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <User size={20} color="rgba(255,255,255,0.4)" />
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={20} color="var(--text-secondary)" />
                       </div>
                       <div>
-                        <h4 style={{ color: '#fff', margin: 0, fontSize: '15px' }}>{item.author_name}</h4>
+                        <h4 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '15px' }}>{item.author_name}</h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{new Date(item.created_at).toLocaleDateString()}</span>
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(item.created_at).toLocaleDateString()}</span>
                             {item.priority === 'urgent' && <span className="badge-red">Urgent</span>}
                             {item.priority === 'high' && <span className="badge-blue" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>High Priority</span>}
                         </div>
                       </div>
                     </div>
-                    <h3 style={{ color: '#fff', fontSize: '18px', margin: '0 0 10px', fontWeight: 700 }}>{item.title}</h3>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{item.content}</p>
+                    <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', margin: '0 0 10px', fontWeight: 700 }}>{item.title}</h3>
+                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{item.content}</p>
                     
                     <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px', display: 'flex', gap: '12px' }}>
-                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>Like</span>
-                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>Comment</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>Like</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>Comment</span>
                     </div>
                   </div>
                 ))}
@@ -104,7 +104,7 @@ const OfficeFeed = ({ user, onLogout }) => {
         <div className="dark-modal-overlay">
           <div className="dark-modal" style={{ maxWidth: '600px' }}>
             <div className="dark-modal-header">
-              <h2 style={{ color: '#fff', margin: 0 }}>New Announcement</h2>
+              <h2 style={{ color: 'var(--text-primary)', margin: 0 }}>New Announcement</h2>
               <button onClick={() => setShowModal(false)} className="icon-btn"><X /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
