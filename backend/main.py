@@ -286,6 +286,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class SeedTestDataRequest(BaseModel):
+    multiplier: int = Field(default=1, ge=1, le=5)
+    target_records: Optional[int] = Field(default=None, ge=200, le=1200)
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -1513,6 +1517,27 @@ async def get_me(current_user: dict = Depends(get_current_user)):
             user["enabled_services"] = admin.get("enabled_services")
             user["subscription_end_date"] = admin.get("subscription_end_date")
     return user
+
+@api_router.post("/dev/seed-test-data")
+async def seed_test_data(payload: SeedTestDataRequest, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Only admin users can seed test data")
+
+    org_id = current_user.get("organization_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="Organization context missing")
+
+    summary = await seed_test_data_for_org(
+        organization_id=org_id,
+        multiplier=payload.multiplier,
+        target_records=payload.target_records,
+        seeded_by=current_user.get("name", "Admin"),
+    )
+    return {
+        "message": "Test data seeded successfully",
+        "organization_id": org_id,
+        "summary": summary,
+    }
 
 @api_router.get("/dashboard/stats", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
@@ -3918,7 +3943,7 @@ async def create_announcement(data: AnnouncementCreate, current_user: dict = Dep
 
 @api_router.get("/announcements", response_model=List[Announcement])
 async def get_announcements(current_user: dict = Depends(get_current_user)):
-    return await db.announcements.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return await db.announcements.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).sort("created_at", -1).to_list(1000)
 
 # Recruitment (ATS)
 @api_router.post("/jobs", response_model=JobPosting)
@@ -3933,7 +3958,7 @@ async def create_job(data: JobPostingCreate, current_user: dict = Depends(get_cu
 
 @api_router.get("/jobs", response_model=List[JobPosting])
 async def get_jobs(current_user: dict = Depends(get_current_user)):
-    return await db.jobs.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(500)
+    return await db.jobs.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
 
 @api_router.post("/candidates", response_model=Candidate)
 async def create_candidate(data: CandidateCreate, current_user: dict = Depends(get_current_user)):
@@ -5231,6 +5256,233 @@ async def _upsert_seed_many(collection_name: str, docs: List[dict], key_field: s
             continue
         await _upsert_seed_document(collection_name, {key_field: key_value}, doc)
 
+def _seed_prefix_for_org(organization_id: str) -> str:
+    cleaned = "".join(ch for ch in (organization_id or "").lower() if ch.isalnum())
+    return (cleaned[:8] or "orgseed")
+
+async def seed_test_data_for_org(
+    organization_id: str,
+    multiplier: int = 1,
+    target_records: Optional[int] = None,
+    seeded_by: str = "System"
+) -> dict:
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    prefix = _seed_prefix_for_org(organization_id)
+    target = max(200, min(target_records if target_records is not None else 120 * multiplier, 1200))
+    scale = target / 120.0
+    seeded_id_prefix = f"{prefix}-"
+
+    first_names = ["Aarav", "Priya", "Rahul", "Sneha", "Vikram", "Pooja", "Ankit", "Neha"]
+    last_names = ["Sharma", "Verma", "Patel", "Gupta", "Reddy", "Kumar", "Nair", "Singh"]
+    departments = ["Engineering", "Sales", "Finance", "Marketing", "HR", "Operations", "Support"]
+    designations = ["Software Engineer", "Senior Engineer", "Account Executive", "Financial Analyst", "HR Specialist", "Marketing Associate", "Operations Executive", "Support Associate"]
+    summary: dict = {"target_records": target}
+
+    def n(base: int, min_value: int = 1, max_value: int = 1000) -> int:
+        return min(max_value, max(min_value, int(round(base * scale))))
+
+    def _is_seeded_id(value: Optional[str]) -> bool:
+        return isinstance(value, str) and value.startswith(seeded_id_prefix)
+
+    async def _list_org_ids(collection_name: str) -> List[str]:
+        docs = await getattr(db, collection_name).find({"organization_id": organization_id}, {"_id": 0, "id": 1}).to_list(20000)
+        return [d["id"] for d in docs if isinstance(d.get("id"), str)]
+
+    async def _planned_seed_count(collection_name: str, desired_total: int) -> int:
+        ids = await _list_org_ids(collection_name)
+        non_seeded_count = sum(1 for doc_id in ids if not _is_seeded_id(doc_id))
+        return max(0, min(1000, desired_total - non_seeded_count))
+
+    async def _prune_seeded_records(collection_name: str, keep_ids: Set[str]) -> None:
+        ids = await _list_org_ids(collection_name)
+        collection = getattr(db, collection_name)
+        for doc_id in ids:
+            if _is_seeded_id(doc_id) and doc_id not in keep_ids:
+                await collection.delete_one({"id": doc_id, "organization_id": organization_id})
+
+    async def _org_total(collection_name: str) -> int:
+        return await getattr(db, collection_name).count_documents({"organization_id": organization_id})
+
+    total_employees = await _planned_seed_count("employees", n(120, min_value=120))
+    employees: List[dict] = []
+    for i in range(1, total_employees + 1):
+        first = first_names[(i - 1) % len(first_names)]
+        last = last_names[(i - 1) % len(last_names)]
+        status = "active" if i <= int(total_employees * 0.84) else ("resigned" if i <= int(total_employees * 0.92) else "terminated")
+        employees.append({
+            "id": f"{prefix}-emp-{i:04d}",
+            "emp_id": f"{prefix.upper()}-{2000 + i}",
+            "name": f"{first} {last} {i}",
+            "email": f"{prefix}.{first.lower()}.{last.lower()}.{i}@demo.com",
+            "phone": f"+9199{20000000 + i:08d}",
+            "department": departments[(i - 1) % len(departments)],
+            "designation": designations[(i - 1) % len(designations)],
+            "date_of_joining": (today - timedelta(days=120 + (i * 3))).isoformat(),
+            "status": status,
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("employees", employees)
+    await _prune_seeded_records("employees", {e["id"] for e in employees})
+    summary["employees"] = await _org_total("employees")
+    employee_pool = employees or await db.employees.find({"organization_id": organization_id}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "designation": 1}).to_list(2000)
+
+    total_jobs = await _planned_seed_count("jobs", n(120, min_value=120))
+    jobs: List[dict] = []
+    statuses = (["open"] * int(total_jobs * 0.7)) + (["closed"] * int(total_jobs * 0.2))
+    while len(statuses) < total_jobs:
+        statuses.append("draft")
+    for i, status in enumerate(statuses, start=1):
+        dept = departments[(i - 1) % len(departments)]
+        jobs.append({
+            "id": f"{prefix}-job-{i:04d}",
+            "title": f"{dept} Specialist {i}",
+            "department": dept,
+            "location": "Bangalore" if i % 3 else "Remote",
+            "type": ["Full-time", "Contract", "Remote", "Hybrid"][(i - 1) % 4],
+            "description": f"Seeded test role #{i}",
+            "status": status,
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("jobs", jobs)
+    await _upsert_seed_many("job_postings", jobs)
+    await _prune_seeded_records("jobs", {j["id"] for j in jobs})
+    await _prune_seeded_records("job_postings", {j["id"] for j in jobs})
+    summary["jobs"] = await _org_total("jobs")
+    job_pool = jobs or await db.jobs.find({"organization_id": organization_id}, {"_id": 0, "id": 1}).to_list(2000)
+
+    total_candidates = await _planned_seed_count("candidates", n(120, min_value=120))
+    candidates: List[dict] = []
+    candidate_statuses = ["applied", "screening", "interview", "offered", "hired", "rejected"]
+    for i in range(1, total_candidates + 1):
+        candidates.append({
+            "id": f"{prefix}-cand-{i:04d}",
+            "job_id": job_pool[(i - 1) % len(job_pool)]["id"],
+            "name": f"{first_names[(i - 1) % len(first_names)]} Candidate {i}",
+            "email": f"{prefix}.candidate.{i}@mailinator.com",
+            "resume_url": f"https://example.com/{prefix}/resume/{i}",
+            "status": candidate_statuses[(i - 1) % len(candidate_statuses)],
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("candidates", candidates)
+    await _prune_seeded_records("candidates", {c["id"] for c in candidates})
+    summary["candidates"] = await _org_total("candidates")
+
+    def _employee(i: int) -> dict:
+        return employee_pool[(i - 1) % len(employee_pool)]
+
+    total_offers = await _planned_seed_count("offer_letters", n(120, min_value=120))
+    offers: List[dict] = []
+    for i in range(1, total_offers + 1):
+        emp = _employee(i)
+        offers.append({
+            "id": f"{prefix}-offer-{i:04d}",
+            "organization_id": organization_id,
+            "name": emp["name"],
+            "email": f"{prefix}.offer.{i}@demo.com",
+            "phone": emp["phone"],
+            "designation": emp["designation"],
+            "ctc_yearly": float(500000 + (i * 11000)),
+            "details": {"batch": "org-seed", "employee_ref": emp["id"]},
+            "status": ["Generated", "Sent", "Accepted", "Revoked"][(i - 1) % 4],
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("offer_letters", offers)
+    await _prune_seeded_records("offer_letters", {o["id"] for o in offers})
+    summary["offer_letters"] = await _org_total("offer_letters")
+
+    total_wfh = await _planned_seed_count("wfh_requests", n(120, min_value=120))
+    wfh: List[dict] = []
+    for i in range(1, total_wfh + 1):
+        emp = _employee(i)
+        wfh.append({
+            "id": f"{prefix}-wfh-{i:04d}",
+            "employee_id": emp["id"],
+            "employee_name": emp["name"],
+            "start_date": (today - timedelta(days=(i % 20))).isoformat(),
+            "end_date": (today - timedelta(days=max((i % 20) - 1, 0))).isoformat(),
+            "reason": f"Seeded WFH request #{i}",
+            "status": ["pending", "approved", "rejected"][(i - 1) % 3],
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("wfh_requests", wfh)
+    await _prune_seeded_records("wfh_requests", {w["id"] for w in wfh})
+    summary["wfh_requests"] = await _org_total("wfh_requests")
+
+    total_resignations = await _planned_seed_count("resignations", n(120, min_value=120))
+    resignations: List[dict] = []
+    for i in range(1, total_resignations + 1):
+        emp = _employee(i + 3)
+        status = ["pending", "approved", "rejected"][(i - 1) % 3]
+        fnf_status = "calculated" if status == "approved" else "pending"
+        fnf_amount = float(25000 + i * 850) if fnf_status == "calculated" else 0.0
+        resignations.append({
+            "id": f"{prefix}-res-{i:04d}",
+            "employee_id": emp["id"],
+            "employee_name": emp["name"],
+            "reason": f"Seeded resignation record #{i}",
+            "resignation_date": (today - timedelta(days=45 + i)).isoformat(),
+            "last_working_day": (today - timedelta(days=max(5, i % 30))).isoformat(),
+            "notice_period_days": 30,
+            "status": status,
+            "fnf_status": fnf_status,
+            "fnf_amount": round(fnf_amount, 2),
+            "fnf_breakdown": {
+                "Base Salary Pending (1M)": round(fnf_amount * 0.7, 2),
+                "Leave Encashment (approx)": round(fnf_amount * 0.4, 2),
+                "Notice Period Deficit Recovery": round(-(fnf_amount * 0.1), 2),
+            } if fnf_status == "calculated" else {},
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("resignations", resignations)
+    await _prune_seeded_records("resignations", {r["id"] for r in resignations})
+    summary["resignations"] = await _org_total("resignations")
+
+    total_pips = await _planned_seed_count("performance_plans", n(120, min_value=120))
+    pips: List[dict] = []
+    for i in range(1, total_pips + 1):
+        emp = _employee(i + 7)
+        pips.append({
+            "id": f"{prefix}-pip-{i:04d}",
+            "employee_id": emp["id"],
+            "employee_name": emp["name"],
+            "reason": f"Seeded performance concern #{i}",
+            "goals": f"Complete improvement plan target set #{i}",
+            "duration_days": 30,
+            "start_date": (today - timedelta(days=40 + i)).isoformat(),
+            "end_date": (today - timedelta(days=max(1, i % 20))).isoformat(),
+            "status": ["active", "successful", "failed"][(i - 1) % 3],
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        })
+    await _upsert_seed_many("performance_plans", pips)
+    await _prune_seeded_records("performance_plans", {p["id"] for p in pips})
+    summary["performance_plans"] = await _org_total("performance_plans")
+
+    total_announce = await _planned_seed_count("announcements", n(120, min_value=120))
+    announcements: List[dict] = []
+    for i in range(1, total_announce + 1):
+        announcements.append({
+            "id": f"{prefix}-ann-{i:04d}",
+            "title": f"Seeded Announcement {i}",
+            "content": f"Organization update #{i} generated for QA feed validation.",
+            "author_id": f"{prefix}-system",
+            "author_name": seeded_by,
+            "priority": "urgent" if i % 7 == 0 else ("high" if i % 3 == 0 else "normal"),
+            "organization_id": organization_id,
+            "created_at": (now - timedelta(hours=i)).isoformat(),
+        })
+    await _upsert_seed_many("announcements", announcements)
+    await _prune_seeded_records("announcements", {a["id"] for a in announcements})
+    summary["announcements"] = await _org_total("announcements")
+
+    return summary
+
 async def ensure_demo_users_seeded():
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat()
@@ -5307,6 +5559,32 @@ async def ensure_demo_users_seeded():
             "email_verified": True,
             "subscription_status": "active",
             "subscription_limits": {"max_employees": 50, "max_projects": 20},
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-hr",
+            "email": "hr@demo.com",
+            "password": hashed_password,
+            "name": "Demo HR Manager",
+            "role": "hr",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-manager",
+            "email": "manager@demo.com",
+            "password": hashed_password,
+            "name": "Demo Team Manager",
+            "role": "manager",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
             "subscription_end_date": subscription_end_iso,
             "enabled_services": DEFAULT_ENABLED_SERVICES,
             "created_at": now_iso,

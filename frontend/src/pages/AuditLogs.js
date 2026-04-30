@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { ShieldCheck, Search, Filter, History, Download } from 'lucide-react';
@@ -22,14 +22,7 @@ const AuditLogs = ({ user, onLogout }) => {
     setSkip(0);
   }, [searchQuery, moduleFilter]);
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-        fetchData();
-    }, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, moduleFilter, skip]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -43,7 +36,14 @@ const AuditLogs = ({ user, onLogout }) => {
       setLogs(res.data);
     } catch { toast.error('Failed to fetch audit logs'); }
     setLoading(false);
-  };
+  }, [searchQuery, moduleFilter, skip]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchData();
+    }, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [fetchData]);
 
   const handleNextPage = () => setSkip(prev => prev + limit);
   const handlePrevPage = () => setSkip(prev => Math.max(0, prev - limit));

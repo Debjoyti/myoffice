@@ -1,12 +1,26 @@
 import re
-import pytesseract
-from PIL import Image
-from pdf2image import convert_from_bytes
+try:
+    from PIL import Image
+except Exception:
+    Image = None
+try:
+    from pdf2image import convert_from_bytes
+except Exception:
+    convert_from_bytes = None
+
+try:
+    import pytesseract
+except Exception:
+    pytesseract = None
 
 def extract_text_from_file(file_content, filename):
     text = ""
+    if pytesseract is None or Image is None:
+        return text
     try:
         if filename.lower().endswith(".pdf"):
+            if convert_from_bytes is None:
+                return text
             images = convert_from_bytes(file_content)
             for img in images:
                 text += pytesseract.image_to_string(img) + "\n"

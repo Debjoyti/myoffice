@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { FileText, Download, ShieldCheck, ChevronRight, Smartphone, IndianRupee } from 'lucide-react';
 
@@ -17,11 +17,7 @@ export default function SalaryDetails({ user }) {
   // Colors for charts
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b']; // Earnings, Benefits, Reimbursements
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
@@ -50,7 +46,11 @@ export default function SalaryDetails({ user }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return <div style={{ padding: '20px', color: '#111827' }}>Loading salary details...</div>;

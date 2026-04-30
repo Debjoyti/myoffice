@@ -111,17 +111,20 @@ const Careers = ({ user, onLogout }) => {
     };
 
     if (activeTab === 'aiInterview' && interviewSession) {
+      const currentVideo = videoRef.current;
       setupCamera().then(() => {
-        videoRef.current.onloadeddata = () => {
+        if (!currentVideo) return;
+        currentVideo.onloadeddata = () => {
           detectFaces();
         };
       });
     }
 
     return () => {
+      const currentVideo = videoRef.current;
       if (animationId) cancelAnimationFrame(animationId);
-      if (videoRef.current && videoRef.current.srcObject) {
-         videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+      if (currentVideo && currentVideo.srcObject) {
+         currentVideo.srcObject.getTracks().forEach(t => t.stop());
       }
     };
   }, [activeTab, interviewSession, blazeModel]);
