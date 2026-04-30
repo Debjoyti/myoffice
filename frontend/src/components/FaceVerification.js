@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import * as faceapi from 'face-api.js';
+// face-api.js is a stub — actual model calls are commented out below
+// import * as faceapi from 'face-api.js';
 
 const FaceVerification = ({ onVerified, onSpoofDetected }) => {
   const videoRef = useRef(null);

@@ -5,10 +5,21 @@ import { toast } from 'sonner';
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
 const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
+// Demo credentials for easy access
+const DEMO_USERS = [
+  { label: 'Super Admin', email: 'superadmin@demo.com', password: 'password123' },
+  { label: 'Admin', email: 'admin@demo.com', password: 'password123' },
+  { label: 'Employee', email: 'employee@demo.com', password: 'password123' },
+];
+
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [loading, setLoading] = useState(false);
+
+  const fillDemo = (email, password) => {
+    setFormData(f => ({ ...f, email, password }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +31,11 @@ const Login = ({ onLogin }) => {
       onLogin(response.data.user, response.data.access_token);
     } catch (error) {
       if (!BACKEND_URL) {
-        toast.error('Backend URL is not configured. Set REACT_APP_BACKEND_URL in Vercel project environment variables.');
+        toast.error('Backend URL is not configured. Set REACT_APP_BACKEND_URL in .env file.');
+      } else if (!error.response) {
+        toast.error(`Cannot connect to backend at ${BACKEND_URL}. Please make sure the server is running.`);
+      } else if (error.response.status === 401) {
+        toast.error('Invalid email or password. Use demo credentials below.');
       } else {
         toast.error(error.response?.data?.detail || 'Authentication failed. Please try again.');
       }
@@ -273,14 +288,39 @@ const Login = ({ onLogin }) => {
 
           {!isRegister && (
             <div style={{
-              marginTop: '24px', padding: '14px 16px',
-              background: 'rgba(99,102,241,0.1)',
-              border: '1px solid rgba(99,102,241,0.2)',
+              marginTop: '20px', padding: '16px',
+              background: 'rgba(99,102,241,0.08)',
+              border: '1px solid rgba(99,102,241,0.25)',
               borderRadius: '12px',
             }}>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: 0, textAlign: 'center' }}>
-                💡 <strong style={{ color: 'rgba(255,255,255,0.8)' }}>First time?</strong> Click "Create a free account" to register
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: 600, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                🚀 Quick Demo Login
               </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {DEMO_USERS.map(u => (
+                  <button
+                    key={u.email}
+                    type="button"
+                    onClick={() => fillDemo(u.email, u.password)}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      color: 'rgba(255,255,255,0.7)',
+                      fontSize: '12px',
+                      padding: '7px 12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.2)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                  >
+                    <span style={{ color: '#818cf8', fontWeight: 600 }}>{u.label}</span>{' '}— {u.email}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

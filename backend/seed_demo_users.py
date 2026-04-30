@@ -93,7 +93,7 @@ async def create_demo_users():
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
-    print("✅ Demo users created with organization_id 'default' and password 'password123'")
+    print("Done: Demo users created with organization_id 'default' and password 'password123'")
     print("   - superadmin@demo.com (SuperAdmin)")
     print("   - admin@demo.com (Admin)")
     print("   - employee@demo.com (Employee)")
