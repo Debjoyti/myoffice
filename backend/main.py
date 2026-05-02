@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import os
+import re
 import asyncio
 import logging
 from pathlib import Path
@@ -494,6 +495,13 @@ class Payroll(BaseModel):
 class PayrollCreate(BaseModel):
     month: str
 
+    @field_validator('month')
+    @classmethod
+    def validate_month(cls, v: str) -> str:
+        if not re.match(r"^\d{4}-\d{2}$", v):
+            raise ValueError("Month must be in YYYY-MM format")
+        return v
+
 class Payslip(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -863,9 +871,9 @@ class OfferLetterCreate(BaseModel):
 class InventoryItemCreate(BaseModel):
     name: str
     category: str
-    quantity: int
+    quantity: int = Field(..., gt=0)
     unit: str
-    price_per_unit: float
+    price_per_unit: float = Field(..., gt=0)
     location: Optional[str] = None
 
 class DashboardStats(BaseModel):
@@ -919,8 +927,16 @@ class PurchaseRequestCreate(BaseModel):
     store_id: str
     requested_by: str
     items: List[dict]
-    total_amount: float
+    total_amount: float = Field(..., gt=0)
     reason: Optional[str] = None
+
+    @field_validator('items')
+    @classmethod
+    def validate_items(cls, v: List[dict]) -> List[dict]:
+        for item in v:
+            if item.get("quantity", 0) <= 0:
+                raise ValueError("Item quantity must be strictly positive")
+        return v
 
 class PurchaseOrder(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -945,6 +961,14 @@ class PurchaseOrderCreate(BaseModel):
     total_amount: float = Field(..., gt=0)
     delivery_date: Optional[str] = None
     created_by: str
+
+    @field_validator('items')
+    @classmethod
+    def validate_items(cls, v: List[dict]) -> List[dict]:
+        for item in v:
+            if item.get("quantity", 0) <= 0:
+                raise ValueError("Item quantity must be strictly positive")
+        return v
 
 class HRField(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -2145,6 +2169,13 @@ async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends
     if not pos:
         raise HTTPException(status_code=404, detail="Position not found.")
 
+    dept = await db.departments.find_one({"company_id": company_id, "name": emp_data.department})
+    if not dept:
+        raise HTTPException(status_code=400, detail="Department does not exist.")
+
+    if pos.get("title") != emp_data.designation:
+        raise HTTPException(status_code=400, detail="Designation does not match position title.")
+
     # Limit check
     limits = current_user.get("subscription_limits") or {}
     max_employees = limits.get("max_employees")
@@ -2985,8 +3016,13 @@ async def create_purchase_order(po_data: PurchaseOrderCreate, current_user: dict
         if item.get("quantity", 0) <= 0:
             raise HTTPException(status_code=400, detail="Item quantity must be strictly positive")
 
-    # The QA report also mentioned verifying vendor_id, but the schema uses supplier_name instead
-    # However, if there's a vendor table we might check it. For now, strict item qty validation.
+    # Verify supplier_name exists in vendors
+    query = {"name": po_data.supplier_name, "organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
+    vendor = await db.vendors.find_one(query)
+    if not vendor:
+        raise HTTPException(status_code=400, detail="Supplier does not exist in vendors.")
 
     po_doc["id"] = str(uuid.uuid4())
     po_doc["status"] = "pending"
