@@ -1496,6 +1496,10 @@ async def register(user_data: UserRegister):
 
 @api_router.post("/auth/login", response_model=Token)
 async def login(user_data: UserLogin, request: Request):
+    # Ensure demo users are seeded if they don't exist (especially for serverless environments)
+    if user_data.email == "superadmin@demo.com":
+        await ensure_demo_users_seeded()
+
     user = await db.users.find_one({"email": user_data.email}, {"_id": 0})
     if not user or not verify_password(user_data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
