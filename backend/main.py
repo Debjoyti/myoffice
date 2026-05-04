@@ -1497,7 +1497,15 @@ async def register(user_data: UserRegister):
 @api_router.post("/auth/login", response_model=Token)
 async def login(user_data: UserLogin, request: Request):
     # Ensure demo users are seeded if they don't exist (especially for serverless environments)
-    demo_emails = ["superadmin@demo.com", "admin@demo.com", "employee@demo.com", "accountant@demo.com", "manager@demo.com"]
+    demo_emails = [
+        "superadmin@demo.com",
+        "admin@demo.com",
+        "employee@demo.com",
+        "accountant@demo.com",
+        "client@demo.com",
+        "hr@demo.com",
+        "manager@demo.com"
+    ]
     if user_data.email in demo_emails:
         await ensure_demo_users_seeded()
 
