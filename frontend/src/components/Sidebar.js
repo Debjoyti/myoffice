@@ -52,6 +52,7 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
       group: null,
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/', tcode: 'S000', desc: 'Home base' },
+        { id: 'cockpit', label: 'Cockpit', icon: Zap, path: '/cockpit', tcode: 'C001', desc: 'Business overview' },
       ]
     },
     {
