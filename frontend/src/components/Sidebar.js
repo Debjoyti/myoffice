@@ -52,6 +52,7 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
       group: null,
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/', tcode: 'S000', desc: 'Home base' },
+        { id: 'cockpit', label: 'Cockpit', icon: Zap, path: '/cockpit', tcode: 'C001', desc: 'Business overview' },
       ]
     },
     {
@@ -99,6 +100,7 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
         { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20', desc: 'Activity trail' },
         ...(user?.role === 'admin' ? [{ id: 'company-onboarding', label: 'Company Setup', icon: Building2, path: '/company-onboarding', tcode: 'COMP', desc: 'Company profile' }] : []),
         { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO', desc: 'Preferences' },
+        { id: 'whatsapp-settings', label: 'WhatsApp Settings', icon: MessageSquare, path: '/settings/whatsapp', tcode: 'WA01', desc: 'Meta APIs' },
       ]
     }
   ];
