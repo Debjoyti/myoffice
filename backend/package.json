@@ -1,9 +1,0 @@
-{
-  "name": "myoffice-backend",
-  "version": "1.0.0",
-  "description": "Dummy package.json to satisfy Vercel's npm install requirement",
-  "scripts": {
-    "vercel-build": "pip install -r requirements.txt"
-  },
-  "dependencies": {}
-}
