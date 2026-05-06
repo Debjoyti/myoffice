@@ -151,15 +151,9 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {[
                         { id: 'dashboard', label: 'Overview' },
                         { id: 'employees', label: 'Directory' },
-                        { id: 'payroll', label: '⚙ Payroll' },
                         { id: 'attendance', label: 'Attendance' },
                         { id: 'leave', label: 'Leaves' },
                         { id: 'wfh', label: 'Remote' },
-                        { id: 'recruitment', label: 'ATS' },
-                        { id: 'offer-letters', label: 'Offers' },
-                        { id: 'posh', label: 'Compliance' },
-                        { id: 'resignations', label: 'Exits' },
-                        { id: 'pip', label: 'Performance' },
                         { id: 'hr-config', label: 'HR Panel' },
                     ].map(tab => (
                         <button 
@@ -203,7 +197,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                             </div>
 
                             {/* Charts Row */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '8px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '8px' }}>
                                 <div className="glass-card hover-glow" style={{ padding: '24px' }}>
                                     <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 24px', color: 'var(--text-primary)' }}>Organization Growth (YTD)</h3>
                                     <div style={{ height: '300px' }}>
@@ -279,13 +273,7 @@ const HRMS = ({ user, onLogout, isSubComponent }) => {
                     {activeTab === 'attendance' && <Attendance isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'leave' && <LeaveManagement isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'wfh' && <WFHRequests isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'recruitment' && <Recruitment isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'offer-letters' && <OfferLetters isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'payroll' && <PayrollEngine isSubComponent={true} user={user} onLogout={onLogout} />}
                     {activeTab === 'hr-config' && <HRConfig isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'posh' && <POSH isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'resignations' && <Resignations isSubComponent={true} user={user} onLogout={onLogout} />}
-                    {activeTab === 'pip' && <PIP isSubComponent={true} user={user} onLogout={onLogout} />}
                 </div>
             </div>
         </>
