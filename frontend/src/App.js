@@ -31,7 +31,10 @@ import IATFHub from './pages/IATFHub';
 import Careers from './pages/Careers';
 import SalaryDetails from './pages/SalaryDetails';
 import AIAssistant from './components/AIAssistant';
+import DesignSystem from './pages/DesignSystem';
 import './App.css'; // Fixed: was @/App.css which CRA doesn't support
+import { Toaster } from './components/ui/sonner';
+import { ThemeProvider } from 'next-themes';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -108,56 +111,60 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
-        <Route
-          path="/onboarding"
-          element={user && needsOnboarding ? <Onboarding user={user} onComplete={handleOnboardingComplete} /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/"
-          element={
-            user ? (
-              needsOnboarding ? <Navigate to="/onboarding" /> 
-              : user.role === 'accountant' ? <AccountantPortal user={user} onLogout={handleLogout} />
-              : <Dashboard user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-        <Route path="/accountant" element={user && (user.role === 'accountant' || user.role === 'admin' || user.role === 'superadmin') ? <AccountantPortal user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/employee-management" element={user && !needsOnboarding ? <EmployeeManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/projects" element={user && !needsOnboarding ? <Projects user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/crm" element={user && !needsOnboarding ? <CRM user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/expenses" element={user && !needsOnboarding ? <Expenses user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/business-orders" element={user && !needsOnboarding ? <BusinessOrders user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/salary-details" element={user && !needsOnboarding ? <SalaryDetails user={user} /> : <Navigate to="/login" />} />
-        <Route path="/hrms" element={user && !needsOnboarding ? <HRMS user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/saas-admin" element={user && user.role === 'superadmin' ? <SaasAdmin user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
-        <Route path="/finance" element={user && !needsOnboarding ? <Finance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/goods-receipts" element={user && !needsOnboarding ? <GoodsReceipts user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/timesheets" element={user && !needsOnboarding ? <Timesheets user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/support-desk" element={user && !needsOnboarding ? <SupportDesk user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/feed" element={user && !needsOnboarding ? <OfficeFeed user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/assets" element={user && !needsOnboarding ? <AssetManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/recruitment" element={user && !needsOnboarding ? <Recruitment user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/kb" element={user && !needsOnboarding ? <KnowledgeBase user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/cockpit" element={user && !needsOnboarding ? <Cockpit user={user} /> : <Navigate to="/login" />} />
-        <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/settings/whatsapp" element={user && !needsOnboarding ? <WhatsAppSettings user={user} /> : <Navigate to="/login" />} />
-        <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
-        <Route path="/company-onboarding" element={user && user.role === 'admin' && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
-        <Route path="/travel" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/iatf-hub" element={user && !needsOnboarding ? <IATFHub user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/careers" element={user && !needsOnboarding ? <Careers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
-      </Routes>
-      {/* Global AI Assistant — available on all authenticated pages */}
-      {user && !needsOnboarding && <AIAssistant user={user} />}
-    </BrowserRouter>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/design" element={<DesignSystem />} />
+          <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
+          <Route
+            path="/onboarding"
+            element={user && needsOnboarding ? <Onboarding user={user} onComplete={handleOnboardingComplete} /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/"
+            element={
+              user ? (
+                needsOnboarding ? <Navigate to="/onboarding" />
+                : user.role === 'accountant' ? <AccountantPortal user={user} onLogout={handleLogout} />
+                : <Dashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route path="/accountant" element={user && (user.role === 'accountant' || user.role === 'admin' || user.role === 'superadmin') ? <AccountantPortal user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/employee-management" element={user && !needsOnboarding ? <EmployeeManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/projects" element={user && !needsOnboarding ? <Projects user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/crm" element={user && !needsOnboarding ? <CRM user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/expenses" element={user && !needsOnboarding ? <Expenses user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/business-orders" element={user && !needsOnboarding ? <BusinessOrders user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/salary-details" element={user && !needsOnboarding ? <SalaryDetails user={user} /> : <Navigate to="/login" />} />
+          <Route path="/hrms" element={user && !needsOnboarding ? <HRMS user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/team" element={user && !needsOnboarding ? <TeamMembers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/saas-admin" element={user && user.role === 'superadmin' ? <SaasAdmin user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
+          <Route path="/finance" element={user && !needsOnboarding ? <Finance user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/goods-receipts" element={user && !needsOnboarding ? <GoodsReceipts user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/timesheets" element={user && !needsOnboarding ? <Timesheets user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/support-desk" element={user && !needsOnboarding ? <SupportDesk user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/feed" element={user && !needsOnboarding ? <OfficeFeed user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/assets" element={user && !needsOnboarding ? <AssetManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/recruitment" element={user && !needsOnboarding ? <Recruitment user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/kb" element={user && !needsOnboarding ? <KnowledgeBase user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/cockpit" element={user && !needsOnboarding ? <Cockpit user={user} /> : <Navigate to="/login" />} />
+          <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/settings/whatsapp" element={user && !needsOnboarding ? <WhatsAppSettings user={user} /> : <Navigate to="/login" />} />
+          <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
+          <Route path="/company-onboarding" element={user && user.role === 'admin' && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
+          <Route path="/travel" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/iatf-hub" element={user && !needsOnboarding ? <IATFHub user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+          <Route path="/careers" element={user && !needsOnboarding ? <Careers user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        </Routes>
+        {/* Global AI Assistant — available on all authenticated pages */}
+        {user && !needsOnboarding && <AIAssistant user={user} />}
+      </BrowserRouter>
+      <Toaster />
+    </ThemeProvider>
   );
 }
 
