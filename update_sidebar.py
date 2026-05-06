@@ -3,65 +3,73 @@ import re
 with open('frontend/src/components/Sidebar.js', 'r') as f:
     content = f.read()
 
-# Add collapsedGroups state
-if 'const [collapsedGroups, setCollapsedGroups] = useState({});' not in content:
-    content = content.replace(
-        "const commandInputRef = useRef(null);",
-        "const commandInputRef = useRef(null);\n  const [collapsedGroups, setCollapsedGroups] = useState({});\n\n  const toggleGroup = (groupName) => {\n    if (!groupName) return;\n    setCollapsedGroups(prev => ({\n      ...prev,\n      [groupName]: !prev[groupName]\n    }));\n  };"
-    )
+new_categories = """  const categorizedMenuItems = [
+    {
+      group: null,
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/', tcode: 'S000', desc: 'Home base' },
+      ]
+    },
+    {
+      group: 'Home',
+      items: [
+        { id: 'feed', label: 'Office Feed', icon: Rss, path: '/feed', tcode: 'ZFEED', desc: 'Announcements' },
+      ]
+    },
+    {
+      group: 'People',
+      items: [
+        { id: 'hrms', label: 'HR People Hub', icon: Users, path: '/hrms', tcode: 'PA40', desc: 'Human resources' },
+        { id: 'team', label: 'Team Members', icon: UserPlus, path: '/team', tcode: 'SU01', desc: 'User management' },
+      ]
+    },
+    {
+      group: 'Payroll',
+      items: [
+        { id: 'salary-details', label: 'Salary Details', icon: Receipt, path: '/salary-details', tcode: 'SAL1', desc: 'My compensation' },
+        { id: 'expenses', label: 'Reimbursements', icon: TrendingUp, path: '/expenses', tcode: 'FB60', desc: 'Expense tracker' },
+      ]
+    },
+    {
+      group: 'Recruitment',
+      items: [
+        { id: 'careers', label: 'Careers Page', icon: Briefcase, path: '/careers', tcode: 'CARE', desc: 'Careers portal' },
+        { id: 'recruitment', label: 'ATS & Hiring', icon: Users, path: '/recruitment', tcode: 'REC1', desc: 'Hiring dashboard' },
+      ]
+    },
+    {
+      group: 'Operations',
+      items: [
+        { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects', tcode: 'CJ20N', desc: 'Track projects' },
+        { id: 'timesheets', label: 'Timesheets', icon: Clock, path: '/timesheets', tcode: 'CAT2', desc: 'Time tracking' },
+        { id: 'crm', label: 'CRM', icon: Briefcase, path: '/crm', tcode: 'VA01', desc: 'Leads & deals' },
+        { id: 'finance', label: 'Finance & Books', icon: Receipt, path: '/finance', tcode: 'VF01', desc: 'Invoices & billing' },
+        { id: 'business-orders', label: 'Business Orders', icon: Package, path: '/business-orders', tcode: 'ME51N', desc: 'Purchase orders' },
+        { id: 'assets', label: 'Asset Management', icon: Box, path: '/assets', tcode: 'AA01', desc: 'Fixed assets' },
+        { id: 'travel', label: 'Travel Tracker', icon: MapPin, path: '/travel', tcode: 'TRV1', desc: 'GPS trip tracker' },
+        { id: 'support-desk', label: 'Support Desk', icon: MessageSquare, path: '/support-desk', tcode: 'SO11', desc: 'Help tickets' },
+      ]
+    },
+    {
+      group: 'Administration',
+      items: [
+        ...(user?.role === 'superadmin' ? [{ id: 'saas-admin', label: 'SAAS Admin', icon: Shield, path: '/saas-admin', tcode: 'SU01', desc: 'Platform admin' }] : []),
+        ...(user?.role === 'admin' ? [{ id: 'subscription', label: 'Subscription', icon: Receipt, path: '/subscription', tcode: 'SUB1', desc: 'Billing plan' }] : []),
+        { id: 'audit', label: 'Audit Logs', icon: ShieldCheck, path: '/audit', tcode: 'SM20', desc: 'Activity trail' },
+        ...(user?.role === 'admin' ? [{ id: 'company-onboarding', label: 'Company Setup', icon: Building2, path: '/company-onboarding', tcode: 'COMP', desc: 'Company profile' }] : []),
+      ]
+    },
+    {
+      group: 'Settings',
+      items: [
+        { id: 'settings', label: 'Platform Settings', icon: Settings, path: '/settings', tcode: 'SPRO', desc: 'Preferences' },
+        { id: 'kb', label: 'Knowledge Base', icon: Book, path: '/kb', tcode: 'DB02', desc: 'Docs & SOPs' },
+        { id: 'iatf-hub', label: 'IATF Hub', icon: ShieldCheck, path: '/iatf-hub', tcode: 'IATF', desc: 'L&D & Compliance' },
+      ]
+    }
+  ];"""
 
-# Modify nav rendering to be collapsible
-# Replace the visibleGroups.map block
-old_nav_block = """          {visibleGroups.map((group, idx) => (
-            <div key={idx} className="mb-6">
-              {group.group && (
-                <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: groupColors[group.group] || '#94a3b8' }}>
-                  <div className="w-4 h-px opacity-50" style={{ background: groupColors[group.group] || '#94a3b8' }} />
-                  {group.group}
-                </div>
-              )}
-              <div className="space-y-1 mt-2">
-              {group.items.map((item) => {"""
-
-new_nav_block = """          {visibleGroups.map((group, idx) => {
-            const isCollapsed = group.group ? collapsedGroups[group.group] : false;
-            return (
-            <div key={idx} className="mb-4">
-              {group.group && (
-                <button
-                  onClick={() => toggleGroup(group.group)}
-                  className="w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-slate-800/50 rounded-md transition-colors cursor-pointer border-none bg-transparent"
-                  style={{ color: groupColors[group.group] || '#94a3b8' }}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-px opacity-50" style={{ background: groupColors[group.group] || '#94a3b8' }} />
-                    {group.group}
-                  </div>
-                  <ChevronRight size={12} className={`transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`} />
-                </button>
-              )}
-              <div className={`space-y-0.5 overflow-hidden transition-all duration-300 ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100 mt-1'}`}>
-              {group.items.map((item) => {"""
-
-content = content.replace(old_nav_block, new_nav_block)
-
-# Fix the closing of the visibleGroups.map block
-old_nav_close = """              })}
-              </div>
-            </div>
-          ))}"""
-
-new_nav_close = """              })}
-              </div>
-            </div>
-          )})}"""
-
-content = content.replace(old_nav_close, new_nav_close)
-
-# Hide t-code by default
-old_tcode = """<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded tracking-wider shrink-0 ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>"""
-new_tcode = """<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded tracking-wider shrink-0 transition-opacity duration-200 ${isActive ? 'opacity-100 bg-indigo-500/20 text-indigo-300' : 'opacity-0 group-hover:opacity-100 bg-slate-800 text-slate-500 group-hover:bg-slate-700'}`}>"""
-content = content.replace(old_tcode, new_tcode)
+content = re.sub(r'const categorizedMenuItems = \[\s*\{.*?\];\n', new_categories + '\n', content, flags=re.DOTALL)
 
 with open('frontend/src/components/Sidebar.js', 'w') as f:
     f.write(content)

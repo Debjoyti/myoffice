@@ -401,14 +401,14 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     transition: all 0.15s ease;
     margin-bottom: -1px;
   }
   .tab-btn:hover { color: var(--text-primary); }
   .tab-btn.active {
-    color: #fff;
-    border-bottom-color: var(--brand-primary);
+    color: var(--text-primary);
+    border-bottom-color: var(--text-primary);
   }
 
   /* Utility Animations */

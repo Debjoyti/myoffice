@@ -246,11 +246,11 @@ const Dashboard = ({ user, onLogout }) => {
 
           {/* Stat Cards */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
               {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
               {statCards.map((card, i) => {
                 const Icon = card.icon;
                 return (
@@ -276,9 +276,9 @@ const Dashboard = ({ user, onLogout }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
               {/* Quick Actions */}
-              <div className="glass-card" style={{ padding: '24px' }}>
+              <div className="glass-card" style={{ padding: '24px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h2 style={{ margin: 0 }}>Quick Actions</h2>
+                  <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Quick Actions</h2>
                   <span className="badge">⌘K to search</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -288,12 +288,13 @@ const Dashboard = ({ user, onLogout }) => {
                       <button
                         key={i}
                         onClick={() => navigate(action.href)}
-                        className="glass-card"
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '16px', cursor: 'pointer', textAlign: 'left', border: '1px solid var(--border)', background: 'var(--bg-elevated)' }}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '16px', cursor: 'pointer', textAlign: 'left', border: '1px solid var(--border)', background: 'var(--bg-elevated)', borderRadius: '8px', transition: 'all 0.2s' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--text-muted)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
                       >
                         <Icon size={20} color="var(--text-secondary)" style={{ marginBottom: '12px' }} />
-                        <p style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>{action.label}</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '12px', margin: 0 }}>{action.sub}</p>
+                        <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, margin: '0 0 4px' }}>{action.label}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: 0 }}>{action.sub}</p>
                       </button>
                     )
                   })}
@@ -301,8 +302,8 @@ const Dashboard = ({ user, onLogout }) => {
               </div>
 
               {/* Executive Intelligence */}
-              <div className="glass-card" style={{ padding: '24px' }}>
-                <h2 style={{ margin: '0 0 20px' }}>Executive Intelligence</h2>
+              <div className="glass-card" style={{ padding: '24px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                <h2 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '600' }}>Executive Intelligence</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                   {[
                     { label: 'Burn Rate', value: `₹${((stats?.burn_rate || 0) / 1000).toFixed(1)}K/day` },
