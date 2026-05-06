@@ -3,6 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import JobStudio from './pages/JobStudio';
+import JobApply from './pages/JobApply';
+import CandidateProfile from './pages/CandidateProfile';
+import AIScreening from './pages/AIScreening';
 import HRMS from './pages/HRMS';
 import Projects from './pages/Projects';
 import CRM from './pages/CRM';
@@ -142,6 +146,10 @@ function App() {
         <Route path="/feed" element={user && !needsOnboarding ? <OfficeFeed user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/assets" element={user && !needsOnboarding ? <AssetManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/recruitment" element={user && !needsOnboarding ? <Recruitment user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/job-studio" element={user && !needsOnboarding ? <JobStudio user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/apply" element={<JobApply />} />
+        <Route path="/candidate" element={<CandidateProfile />} />
+        <Route path="/ai-screening" element={<AIScreening />} />
         <Route path="/kb" element={user && !needsOnboarding ? <KnowledgeBase user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />

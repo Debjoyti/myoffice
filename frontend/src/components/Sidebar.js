@@ -79,6 +79,9 @@ const Sidebar = ({ user, onLogout, isSidebarOpen, setIsSidebarOpen }) => {
       items: [
         { id: 'careers', label: 'Careers Page', icon: Briefcase, path: '/careers', tcode: 'CARE', desc: 'Careers portal' },
         { id: 'recruitment', label: 'ATS & Hiring', icon: Users, path: '/recruitment', tcode: 'REC1', desc: 'Hiring dashboard' },
+        { id: 'job-studio', label: 'Job Studio', icon: Briefcase, path: '/job-studio', tcode: 'JOBS', desc: 'AI JD Drafts' },
+        { id: 'candidate', label: 'Candidate Search', icon: Users, path: '/candidate?person_id=test', tcode: 'CAND', desc: 'Trust Profile' },
+        { id: 'ai-screening', label: 'AI Screening', icon: FileText, path: '/ai-screening?job_id=fake-job-id', tcode: 'SCRN', desc: 'Top 5 Candidates' },
       ]
     },
     {

@@ -22,6 +22,10 @@ from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 from ai_expense_engine import analyze_receipt, validate_expense_claim
 from api.scheduling import router as scheduling_router
+from api.jobs import router as jobs_router
+from api.conversational_app import router as wa_router
+from api.trust_backbone import router as trust_router
+from api.ai_screening import router as screening_router
 
 try:
     from motor.motor_asyncio import AsyncIOMotorClient
@@ -6819,6 +6823,10 @@ async def get_career_candidates(job_id: Optional[str] = None):
             del c["_id"]
     return candidates
 
+api_router.include_router(jobs_router)
+api_router.include_router(wa_router)
+api_router.include_router(trust_router)
+api_router.include_router(screening_router)
 
 app.include_router(api_router)
 app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
