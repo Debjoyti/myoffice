@@ -14,3 +14,67 @@
     font-family: 'Geist Sans', 'Inter', sans-serif;
   }
 }
+
+.dark-table-wrap table tbody tr:hover {
+    background: var(--bg-card-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.hover-glow {
+    transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(94, 106, 210, 0.15);
+    border-color: rgba(94, 106, 210, 0.3);
+}
+
+/* Staggered animation for table rows */
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dark-table-wrap table tbody tr {
+    animation: slideInUp 0.3s ease forwards;
+    opacity: 0;
+}
+
+.dark-table-wrap table tbody tr:nth-child(1) { animation-delay: 50ms; }
+.dark-table-wrap table tbody tr:nth-child(2) { animation-delay: 100ms; }
+.dark-table-wrap table tbody tr:nth-child(3) { animation-delay: 150ms; }
+.dark-table-wrap table tbody tr:nth-child(4) { animation-delay: 200ms; }
+.dark-table-wrap table tbody tr:nth-child(5) { animation-delay: 250ms; }
+.dark-table-wrap table tbody tr:nth-child(6) { animation-delay: 300ms; }
+.dark-table-wrap table tbody tr:nth-child(n+7) { animation-delay: 350ms; }
+
+
+/* ────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN OVERRIDES
+──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 16px 20px;
+  }
+
+  .dark-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dark-table-wrap table {
+    min-width: 600px; /* Ensure table doesn't crush on mobile */
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .btn-dark-primary, .btn-dark-cancel {
+    width: 100%; /* Full width buttons on mobile */
+  }
+}
