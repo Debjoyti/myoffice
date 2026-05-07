@@ -6867,6 +6867,10 @@ async def get_career_candidates(job_id: Optional[str] = None):
             del c["_id"]
     return candidates
 
+api_router.include_router(jobs_router)
+api_router.include_router(wa_router)
+api_router.include_router(trust_router)
+api_router.include_router(screening_router)
 
 @api_router.get("/whatsapp/config")
 async def get_whatsapp_config(current_user: User = Depends(get_current_user)):
