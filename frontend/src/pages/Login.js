@@ -3,7 +3,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
-const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+const API = BACKEND_URL ? `${BACKEND_URL}/api/v1` : '/api/v1';
 
 // Demo credentials for easy access
 const DEMO_USERS = [
