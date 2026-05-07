@@ -31,7 +31,10 @@ import IATFHub from './pages/IATFHub';
 import Careers from './pages/Careers';
 import SalaryDetails from './pages/SalaryDetails';
 import AIAssistant from './components/AIAssistant';
+import DesignSystem from './pages/DesignSystem';
 import './App.css'; // Fixed: was @/App.css which CRA doesn't support
+import { Toaster } from './components/ui/sonner';
+import { ThemeProvider } from 'next-themes';
 
 function App() {
   const [user, setUser] = useState(null);
