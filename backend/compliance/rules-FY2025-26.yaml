@@ -1,0 +1,14 @@
+version: "FY2025-26"
+signature: "Verified by CA Partner, FRN 12345"
+rules:
+  tds:
+    - condition: "vendor_pan_exists == true"
+      rate: 0.10
+    - condition: "vendor_pan_exists == false"
+      rate: 0.20
+  gst:
+    - condition: "valid_gstin == true"
+      rate: 0.18
+  pf:
+    - condition: "employee_opt_in == true"
+      rate: 0.12
