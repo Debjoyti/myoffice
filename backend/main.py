@@ -1641,6 +1641,7 @@ async def create_department(data: DepartmentCreate, current_user: dict = Depends
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.departments.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    await log_audit_action(db, current_user, "CREATE", "Department", dept_id, company_id, f"Created department {data.name}")
     return Department(**doc)
 
 @api_router.get("/departments", response_model=List[Department])
@@ -1735,6 +1736,7 @@ async def create_position(data: PositionCreate, current_user: dict = Depends(get
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.positions.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    await log_audit_action(db, current_user, "CREATE", "Position", pos_id, company_id, f"Created position {data.title}")
     return Position(**doc)
 
 @api_router.get("/positions", response_model=List[Position])
@@ -2218,6 +2220,7 @@ async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends
     emp_doc["status"] = "active"
     emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.employees.insert_one(emp_doc)
+    await log_audit_action(db, current_user, "CREATE", "Employee", emp_doc["id"], company_id, f"Created employee {emp_data.name}")
 
     # Create employee-position mapping
     mapping_doc = {
@@ -4772,6 +4775,7 @@ async def create_company(data: CompanyProfileCreate, current_user: dict = Depend
     company["plants"] = plants_to_save
     
     await db.companies.insert_one({k: v for k, v in company.items() if k != "_id"})
+    await log_audit_action(db, current_user, "CREATE", "Company", comp_id, comp_id, f"Created company {data.name}")
     return CompanyProfile(**company)
 
 @api_router.get("/company")
@@ -6963,6 +6967,23 @@ async def shutdown_db_client():
         client.close()
 
 handler = app
+
+async def log_audit_action(db_conn, current_user: dict, action: str, module: str, entity_id: str, company_id: str, details: str = ""):
+    audit_doc = {
+        "id": str(uuid.uuid4()),
+        "organization_id": current_user.get("organization_id"),
+        "company_id": company_id,
+        "user_id": current_user["id"],
+        "user_email": current_user.get("email", "Unknown"),
+        "action": action,
+        "module": module,
+        "entity_id": entity_id,
+        "details": details,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db_conn.audit_logs.insert_one(audit_doc)
+
+
 
 # ==========================================
 # SAAS ERP API ENDPOINTS (MOCKUP)
