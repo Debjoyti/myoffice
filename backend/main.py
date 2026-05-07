@@ -22,10 +22,7 @@ from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 from ai_expense_engine import analyze_receipt, validate_expense_claim
 from api.scheduling import router as scheduling_router
-from api.jobs import router as jobs_router
-from api.conversational_app import router as wa_router
-from api.trust_backbone import router as trust_router
-from api.ai_screening import router as screening_router
+from supabase import create_client, Client
 
 try:
     from motor.motor_asyncio import AsyncIOMotorClient
@@ -178,6 +175,10 @@ if not SECRET_KEY or SECRET_KEY == 'your-secret-key-change-in-production':
         logging.warning('⚠️  SECRET_KEY not set — using insecure default. Set SECRET_KEY env variable!')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "http://localhost:8000")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "dummy")
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 DEFAULT_ORG_ID = "default"
 DEFAULT_COMPANY_ID = "demo-comp-1"
 DEFAULT_DEMO_PASSWORD = "password123"
@@ -294,6 +295,45 @@ class UserLogin(BaseModel):
 class SeedTestDataRequest(BaseModel):
     multiplier: int = Field(default=1, ge=1, le=5)
     target_records: Optional[int] = Field(default=None, ge=200, le=1200)
+
+class WhatsAppConfig(BaseModel):
+    phone_number_id: str
+    waba_id: str
+    access_token_encrypted: str
+    webhook_verify_token: str
+    is_active: bool = True
+
+class WhatsAppMessage(BaseModel):
+    direction: str
+    wa_message_id: Optional[str] = None
+    to_phone: Optional[str] = None
+    from_phone: Optional[str] = None
+    template_name: Optional[str] = None
+    body: Optional[str] = None
+    status: str = 'sent'
+    context_type: Optional[str] = None
+    context_id: Optional[str] = None
+    replied_at: Optional[datetime] = None
+
+class WhatsAppPendingAction(BaseModel):
+    user_id: str
+    phone: str
+    action_type: str
+    action_id: str
+    expires_at: datetime
+    resolved: bool = False
+    resolved_at: Optional[datetime] = None
+    resolution: Optional[str] = None
+
+class CockpitMetrics(BaseModel):
+    revenue_today: float
+    revenue_trend: float
+    revenue_mtd: float
+    mtd_trend: float
+    cash_balance: float
+    bank_accounts_count: int
+    pipeline_value: float
+    open_deals_count: int
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1645,6 +1685,7 @@ async def create_department(data: DepartmentCreate, current_user: dict = Depends
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.departments.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    await log_audit_action(db, current_user, "CREATE", "Department", dept_id, company_id, f"Created department {data.name}")
     return Department(**doc)
 
 @api_router.get("/departments", response_model=List[Department])
@@ -1739,6 +1780,7 @@ async def create_position(data: PositionCreate, current_user: dict = Depends(get
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.positions.insert_one({k: v for k, v in doc.items() if k != "_id"})
+    await log_audit_action(db, current_user, "CREATE", "Position", pos_id, company_id, f"Created position {data.title}")
     return Position(**doc)
 
 @api_router.get("/positions", response_model=List[Position])
@@ -2222,6 +2264,7 @@ async def create_employee(emp_data: EmployeeCreate, current_user: dict = Depends
     emp_doc["status"] = "active"
     emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.employees.insert_one(emp_doc)
+    await log_audit_action(db, current_user, "CREATE", "Employee", emp_doc["id"], company_id, f"Created employee {emp_data.name}")
 
     # Create employee-position mapping
     mapping_doc = {
@@ -4776,6 +4819,7 @@ async def create_company(data: CompanyProfileCreate, current_user: dict = Depend
     company["plants"] = plants_to_save
     
     await db.companies.insert_one({k: v for k, v in company.items() if k != "_id"})
+    await log_audit_action(db, current_user, "CREATE", "Company", comp_id, comp_id, f"Created company {data.name}")
     return CompanyProfile(**company)
 
 @api_router.get("/company")
@@ -6828,8 +6872,423 @@ api_router.include_router(wa_router)
 api_router.include_router(trust_router)
 api_router.include_router(screening_router)
 
+@api_router.get("/whatsapp/config")
+async def get_whatsapp_config(current_user: User = Depends(get_current_user)):
+    company_id = get_user_company_id(current_user)
+    if not company_id:
+        return {}
+    try:
+        response = supabase_client.table("whatsapp_config").select("*").eq("company_id", company_id).execute()
+        if response.data:
+            return response.data[0]
+    except Exception as e:
+        print(f"Error fetching WhatsApp config from Supabase: {e}")
+    return {
+        "phone_number_id": "",
+        "waba_id": "",
+        "access_token_encrypted": "",
+        "webhook_verify_token": "",
+        "is_active": False
+    }
+
+@api_router.post("/whatsapp/config")
+async def save_whatsapp_config(config: WhatsAppConfig, current_user: User = Depends(get_current_user)):
+    company_id = get_user_company_id(current_user)
+    if not company_id:
+        raise HTTPException(status_code=400, detail="User not associated with a company")
+
+    config_data = config.model_dump()
+    config_data["company_id"] = company_id
+
+    try:
+        # Upsert logic - verify if exists
+        existing = supabase_client.table("whatsapp_config").select("id").eq("company_id", company_id).execute()
+        if existing.data:
+            supabase_client.table("whatsapp_config").update(config_data).eq("company_id", company_id).execute()
+        else:
+            supabase_client.table("whatsapp_config").insert(config_data).execute()
+        return {"status": "success", "message": "WhatsApp config saved"}
+    except Exception as e:
+        print(f"Error saving WhatsApp config to Supabase: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save WhatsApp config")
+
+@api_router.post("/whatsapp/test-connection")
+async def test_whatsapp_connection(current_user: User = Depends(get_current_user)):
+    company_id = get_user_company_id(current_user)
+    try:
+        response = supabase_client.table("whatsapp_config").select("*").eq("company_id", company_id).execute()
+        config = response.data[0] if response.data else None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Database connection error")
+
+    if not config or not config.get("is_active"):
+        raise HTTPException(status_code=400, detail="WhatsApp integration not active")
+
+    # Real Meta API Call for test
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            meta_res = await client.get(
+                f"https://graph.facebook.com/v18.0/{config['phone_number_id']}",
+                headers={"Authorization": f"Bearer {config['access_token_encrypted']}"}
+            )
+            if meta_res.status_code != 200:
+                raise HTTPException(status_code=400, detail=f"Meta API rejected credentials: {meta_res.text}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to reach Meta API: {str(e)}")
+
+    return {"status": "success", "message": "Connection test successful"}
+
+@api_router.get("/webhooks/whatsapp")
+async def verify_whatsapp_webhook(request: Request):
+    query_params = dict(request.query_params)
+    mode = query_params.get("hub.mode")
+    token = query_params.get("hub.verify_token")
+    challenge = query_params.get("hub.challenge")
+
+    if mode == "subscribe" and challenge:
+        # You'd normally verify the token against the DB here, but for global webhooks,
+        # it can be challenging to determine *which* company without context.
+        # For this prototype we accept it.
+        return int(challenge)
+    return {"status": "success"}
+
+@api_router.post("/webhooks/whatsapp")
+async def receive_whatsapp_webhook(request: Request):
+    try:
+        body = await request.json()
+        print(f"Received WhatsApp Webhook: {body}")
+
+        # Real webhook parsing logic
+        if body.get("object") == "whatsapp_business_account":
+            for entry in body.get("entry", []):
+                for change in entry.get("changes", []):
+                    value = change.get("value", {})
+                    if "messages" in value:
+                        for msg in value["messages"]:
+                            from_phone = msg.get("from")
+                            text_body = msg.get("text", {}).get("body", "").lower()
+
+                            # Find pending action for this phone
+                            try:
+                                pending = supabase_client.table("whatsapp_pending_actions").select("*").eq("phone", from_phone).eq("resolved", False).execute()
+                                if pending.data:
+                                    action = pending.data[0]
+                                    resolution = "approved" if text_body in ["yes", "approve", "y", "ok", "haan"] else "rejected"
+
+                                    # Update action
+                                    supabase_client.table("whatsapp_pending_actions").update({
+                                        "resolved": True,
+                                        "resolved_at": datetime.utcnow().isoformat(),
+                                        "resolution": resolution
+                                    }).eq("id", action["id"]).execute()
+
+                                    # Here you would trigger the actual approval flow (e.g. approve leave)
+                                    print(f"Action {action['id']} resolved as {resolution}")
+                            except Exception as e:
+                                print(f"Failed to process pending action: {e}")
+
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Error processing WhatsApp webhook: {e}")
+        return {"status": "error"}
+
+@api_router.post("/whatsapp/send")
+async def send_whatsapp_message(payload: dict, current_user: User = Depends(get_current_user)):
+    company_id = get_user_company_id(current_user)
+    try:
+        response = supabase_client.table("whatsapp_config").select("*").eq("company_id", company_id).execute()
+        config = response.data[0] if response.data else None
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+    if not config or not config.get("is_active"):
+        return {"status": "skipped", "message": "WhatsApp not active"}
+
+    to_phone = payload.get("to_phone")
+    template_name = payload.get("template_name")
+
+    # Real Meta API Call for sending message
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            meta_res = await client.post(
+                f"https://graph.facebook.com/v18.0/{config['phone_number_id']}/messages",
+                headers={
+                    "Authorization": f"Bearer {config['access_token_encrypted']}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "messaging_product": "whatsapp",
+                    "to": to_phone,
+                    "type": "template",
+                    "template": {
+                        "name": template_name,
+                        "language": {
+                            "code": "en"
+                        }
+                    }
+                }
+            )
+
+            status = "sent" if meta_res.status_code in [200, 201] else "failed"
+            print(f"Meta API Response: {meta_res.text}")
+
+    except Exception as e:
+        print(f"Failed to send to Meta API: {e}")
+        status = "failed"
+
+    msg_data = {
+        "company_id": company_id,
+        "direction": "outbound",
+        "to_phone": to_phone,
+        "template_name": template_name,
+        "status": status
+    }
+
+    try:
+        supabase_client.table("whatsapp_messages").insert(msg_data).execute()
+    except Exception as e:
+        print(f"Failed to log whatsapp message: {e}")
+
+    return {"status": "success"}
+
+@api_router.get("/cockpit")
+async def get_cockpit_data(current_user: User = Depends(get_current_user)):
+    company_id = get_user_company_id(current_user)
+    if not company_id:
+        raise HTTPException(status_code=400, detail="User not associated with a company")
+
+    try:
+        # We query the pre-computed Supabase materialized view
+        # Ensure company_id is matched
+        response = supabase_client.table("cockpit_metrics").select("*").eq("company_id", company_id).execute()
+        metrics = response.data[0] if response.data else {
+            "revenue_today": 0,
+            "revenue_mtd": 0,
+            "cash_balance": 0,
+            "pipeline_value": 0,
+            "overdue_invoices_count": 0,
+            "overdue_invoices_value": 0,
+            "present_today": 0,
+            "pending_leaves": 0,
+            "pending_expenses": 0
+        }
+    except Exception as e:
+        print(f"Failed to fetch from supabase cockpit_metrics, fallback to defaults: {e}")
+        metrics = {
+            "revenue_today": 0,
+            "revenue_mtd": 0,
+            "cash_balance": 0,
+            "pipeline_value": 0,
+            "overdue_invoices_count": 0,
+            "overdue_invoices_value": 0,
+            "present_today": 0,
+            "pending_leaves": 0,
+            "pending_expenses": 0
+        }
+
+    alerts = []
+    if metrics.get("overdue_invoices_count", 0) > 0:
+        alerts.append({
+            "severity": "critical",
+            "message": f"{metrics['overdue_invoices_count']} invoices overdue totaling {metrics['overdue_invoices_value']}",
+            "action_label": "View Invoices"
+        })
+
+    formatted_metrics = {
+        "revenue_today": metrics.get("revenue_today", 0),
+        "revenue_trend": 5.2, # Mock trend
+        "revenue_mtd": metrics.get("revenue_mtd", 0),
+        "mtd_trend": 12.4, # Mock trend
+        "cash_balance": metrics.get("cash_balance", 0),
+        "bank_accounts_count": 1,
+        "pipeline_value": metrics.get("pipeline_value", 0),
+        "open_deals_count": 0
+    }
+
+    top_deals = []
+
+    pending_actions = {
+        "leaves": metrics.get("pending_leaves", 0),
+        "expenses": metrics.get("pending_expenses", 0),
+        "purchase_orders": 0
+    }
+
+    attendance = {
+        "total": 0, # Requires employee count, mocking for now
+        "present": metrics.get("present_today", 0),
+        "on_leave": metrics.get("pending_leaves", 0), # Mock
+        "absent": 0,
+        "absent_names": []
+    }
+
+    return {
+        "metrics": formatted_metrics,
+        "alerts": alerts,
+        "topDeals": top_deals,
+        "pendingActions": pending_actions,
+        "attendance": attendance,
+        "recentActivity": []
+    }
+
 app.include_router(api_router)
 app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WHATSAPP API ROUTES
+# ─────────────────────────────────────────────────────────────────────────────
+
+from whatsapp_service import WhatsAppService
+from whatsapp_classifier import WhatsAppClassifier
+
+wa_router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp"])
+
+class WASendRequest(BaseModel):
+    phone: str
+    template_name: str
+    variables: list = []
+    client_message_id: Optional[str] = None
+
+class WAOptInRequest(BaseModel):
+    phone: str
+    consent_text: str
+
+@wa_router.post("/send")
+async def send_whatsapp_message(req: WASendRequest, request: Request, current_user: dict = Depends(get_current_user)):
+    # Extract token
+    auth_header = request.headers.get("Authorization")
+    token = auth_header.split("Bearer ")[1] if auth_header and "Bearer " in auth_header else None
+
+    wa_service = WhatsAppService(db, token=token)
+
+    company_id = current_user.get("company_id")
+    if not company_id and "organization_id" in current_user:
+        comp = await db.companies.find_one({"organization_id": current_user["organization_id"]})
+        if comp:
+            company_id = comp["id"]
+
+    if not company_id:
+        raise HTTPException(status_code=400, detail="User is not associated with a company")
+
+    try:
+        result = await wa_service.send_message(
+            company_id=company_id,
+            phone=req.phone,
+            template_name=req.template_name,
+            variables=req.variables,
+            client_message_id=req.client_message_id
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@wa_router.post("/opt-in")
+async def opt_in_whatsapp(req: WAOptInRequest, request: Request, current_user: dict = Depends(get_current_user)):
+    auth_header = request.headers.get("Authorization")
+    token = auth_header.split("Bearer ")[1] if auth_header and "Bearer " in auth_header else None
+
+    wa_service = WhatsAppService(db, token=token)
+
+    company_id = current_user.get("company_id")
+    if not company_id and "organization_id" in current_user:
+        comp = await db.companies.find_one({"organization_id": current_user["organization_id"]})
+        if comp:
+            company_id = comp["id"]
+
+    if not company_id:
+        raise HTTPException(status_code=400, detail="User is not associated with a company")
+
+    ip = request.client.host
+    try:
+        await wa_service.log_opt_in(
+            company_id=company_id,
+            phone=req.phone,
+            ip=ip,
+            consent_text=req.consent_text
+        )
+        return {"status": "success", "message": "Opt-in logged successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@wa_router.get("/webhook")
+async def verify_webhook(
+    mode: str = Query(None, alias="hub.mode"),
+    token: str = Query(None, alias="hub.verify_token"),
+    challenge: str = Query(None, alias="hub.challenge")
+):
+    """Verify webhook for Meta Cloud API."""
+    VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "my_secret_verify_token")
+    if mode and token:
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            return int(challenge)
+        else:
+            raise HTTPException(status_code=403, detail="Verification failed")
+    raise HTTPException(status_code=400, detail="Missing parameters")
+
+@wa_router.post("/webhook")
+async def webhook_receiver(payload: dict, request: Request):
+    """Receive messages and delivery receipts from WhatsApp."""
+    # Webhooks do not have user tokens. To process we need the service key to bypass RLS or just let backend process.
+    # Since we use supabase RLS, but the webhook is triggered by Meta, we have to bypass it here for inserting/updating records.
+    wa_service = WhatsAppService(db)
+
+    # We override the supabase client with service key since we don't have a user token for incoming webhooks
+    import os
+    from supabase._async.client import create_client as create_async_client
+    wa_service.supabase = await create_async_client(
+        os.environ.get("SUPABASE_URL", "http://localhost:8000"),
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "dummy")
+    )
+
+    classifier = WhatsAppClassifier()
+
+    try:
+        entries = payload.get("entry", [])
+        for entry in entries:
+            changes = entry.get("changes", [])
+            for change in changes:
+                value = change.get("value", {})
+
+                # Handle Messages
+                if "messages" in value:
+                    for msg in value["messages"]:
+                        phone = msg.get("from")
+                        text_obj = msg.get("text", {})
+                        text = text_obj.get("body", "")
+
+                        existing_conv = await wa_service.supabase.table("wa_conversations").select("company_id").eq("phone", phone).execute()
+                        company_id = existing_conv.data[0].get("company_id") if existing_conv.data else None
+
+                        if not company_id:
+                            existing_consent = await wa_service.supabase.table("wa_consents").select("company_id").eq("phone", phone).execute()
+                            company_id = existing_consent.data[0].get("company_id") if existing_consent.data else None
+
+                        await wa_service.update_conversation(phone, company_id=company_id, inbound=True)
+
+                        # Classify intent
+                        classification = classifier.classify_intent(text)
+
+                        if classification["action"] == "unknown":
+                            print("Would send: Sorry, I didn't understand that. You can reply with: approve, reject, remind later, show details.")
+                        else:
+                            print(f"Would send: Executing: {classification['action']}")
+                            # In real implementation we trigger HRMS/workflow logic here
+
+                # Handle Status Updates (Delivery Receipts)
+                elif "statuses" in value:
+                    for status_obj in value["statuses"]:
+                        msg_id = status_obj.get("id")
+                        status = status_obj.get("status")
+                        if msg_id and status:
+                            await wa_service.process_webhook_receipt(msg_id, status)
+
+        return {"status": "success"}
+    except Exception as e:
+        logging.error(f"Error processing webhook: {e}")
+        return {"status": "error", "message": str(e)}
+
+app.include_router(wa_router)
 
 
 logging.basicConfig(
@@ -6971,6 +7430,23 @@ async def shutdown_db_client():
         client.close()
 
 handler = app
+
+async def log_audit_action(db_conn, current_user: dict, action: str, module: str, entity_id: str, company_id: str, details: str = ""):
+    audit_doc = {
+        "id": str(uuid.uuid4()),
+        "organization_id": current_user.get("organization_id"),
+        "company_id": company_id,
+        "user_id": current_user["id"],
+        "user_email": current_user.get("email", "Unknown"),
+        "action": action,
+        "module": module,
+        "entity_id": entity_id,
+        "details": details,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db_conn.audit_logs.insert_one(audit_doc)
+
+
 
 # ==========================================
 # SAAS ERP API ENDPOINTS (MOCKUP)

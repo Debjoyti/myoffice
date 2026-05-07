@@ -3,10 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
-import JobStudio from './pages/JobStudio';
-import JobApply from './pages/JobApply';
-import CandidateProfile from './pages/CandidateProfile';
-import AIScreening from './pages/AIScreening';
+import Cockpit from './pages/Cockpit';
 import HRMS from './pages/HRMS';
 import Projects from './pages/Projects';
 import CRM from './pages/CRM';
@@ -22,6 +19,7 @@ import OfficeFeed from './pages/OfficeFeed';
 import AssetManagement from './pages/AssetManagement';
 import Recruitment from './pages/Recruitment';
 import Settings from './pages/Settings';
+import WhatsAppSettings from './pages/WhatsAppSettings';
 import KnowledgeBase from './pages/KnowledgeBase';
 import AuditLogs from './pages/AuditLogs';
 import Subscription from './pages/Subscription';
@@ -151,8 +149,10 @@ function App() {
         <Route path="/candidate" element={<CandidateProfile />} />
         <Route path="/ai-screening" element={<AIScreening />} />
         <Route path="/kb" element={user && !needsOnboarding ? <KnowledgeBase user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/cockpit" element={user && !needsOnboarding ? <Cockpit user={user} /> : <Navigate to="/login" />} />
         <Route path="/audit" element={user && !needsOnboarding ? <AuditLogs user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user && !needsOnboarding ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/settings/whatsapp" element={user && !needsOnboarding ? <WhatsAppSettings user={user} /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user && user.role === 'admin' ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/company-onboarding" element={user && user.role === 'admin' && !needsOnboarding ? <CompanyOnboarding user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/travel" element={user && !needsOnboarding ? <TravelTracker user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
