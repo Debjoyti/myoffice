@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Building2, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -15,84 +17,123 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      router.push('/dashboard')
-      router.refresh()
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) { setError(error.message); setLoading(false) }
+    else { router.push('/dashboard'); router.refresh() }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
-            PRSK
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Complete Office Management
-          </p>
+    <div className="min-h-screen bg-slate-950 flex">
+      {/* Left — Brand Panel */}
+      <div className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 p-12 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 border-r border-white/6">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <span className="text-lg font-bold text-white tracking-tight">PRSK</span>
+            <span className="block text-xs text-slate-500">Enterprise Suite</span>
+          </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          {error && (
-            <div className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/30 p-3 rounded-md">
-              {error}
+
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-4xl font-bold text-white leading-tight">
+              Your entire<br />
+              <span className="text-indigo-400">business OS</span>
+            </h1>
+            <p className="mt-4 text-slate-400 text-sm leading-relaxed">
+              HRMS, Payroll, Finance, CRM, Projects and more — unified in one enterprise platform built for modern Indian businesses.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {['Multi-module enterprise suite', 'Real-time analytics & reporting', 'Indian compliance ready — PAN, GST, PF, ESI', 'Role-based access control'].map(f => (
+              <div key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
+                <div className="h-1.5 w-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                {f}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-600">© 2026 PRSK Technologies Pvt. Ltd.</p>
+      </div>
+
+      {/* Right — Login Form */}
+      <div className="flex-1 flex items-center justify-center p-6 bg-slate-950">
+        <div className="w-full max-w-sm">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-2 mb-8">
+            <div className="h-8 w-8 rounded-xl bg-indigo-500 flex items-center justify-center">
+              <Building2 className="h-4.5 w-4.5 text-white" />
             </div>
-          )}
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="email">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="you@company.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="••••••••"
-              />
-            </div>
+            <span className="text-lg font-bold text-white">PRSK</span>
           </div>
 
-          <div>
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white">Sign in</h2>
+            <p className="mt-1.5 text-sm text-slate-400">Access your organization&apos;s workspace</p>
+          </div>
+
+          {error && (
+            <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-red-950/50 border border-red-900/50 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-xs font-medium text-slate-300 mb-1.5">
+                Work email
+              </label>
+              <input
+                id="email" type="email" autoComplete="email" required
+                value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="w-full h-10 px-3 rounded-lg border border-slate-700 bg-slate-900 text-sm text-white placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="text-xs font-medium text-slate-300">Password</label>
+                <button type="button" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                  Forgot password?
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  id="password" type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password" required
+                  value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••••"
+                  className="w-full h-10 pl-3 pr-10 rounded-lg border border-slate-700 bg-slate-900 text-sm text-white placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
             <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+              type="submit" disabled={loading}
+              className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-sm font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
+              {loading && <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />}
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
-          </div>
-        </form>
+          </form>
+
+          <p className="mt-6 text-center text-xs text-slate-600">
+            Secure enterprise login · SOC 2 compliant
+          </p>
+        </div>
       </div>
     </div>
   )
