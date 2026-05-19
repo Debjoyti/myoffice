@@ -22,6 +22,9 @@ from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 from ai_expense_engine import analyze_receipt, validate_expense_claim
 from api.scheduling import router as scheduling_router
+from api.jobs import router as jobs_router
+from api.trust_backbone import router as trust_router
+from api.ai_screening import router as screening_router
 from supabase import create_client, Client
 
 try:
@@ -4195,6 +4198,11 @@ async def start_trip(data: TripCreate, current_user: dict = Depends(get_current_
 # Post a location update
 @api_router.post("/location")
 async def post_location(data: LocationPost, current_user: dict = Depends(get_current_user)):
+    # Only the trip owner can post location updates
+    trip = await db.trips.find_one({"id": data.trip_id, "user_id": current_user["id"]})
+    if not trip:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     loc = {
         "id": str(uuid.uuid4()),
         "trip_id": data.trip_id,
@@ -4205,7 +4213,7 @@ async def post_location(data: LocationPost, current_user: dict = Depends(get_cur
     await db.locations.insert_one(loc)
     # Update last known position on trip document
     await db.trips.update_one(
-        {"id": data.trip_id, "user_id": current_user["id"]},
+        {"id": data.trip_id},
         {"$set": {"last_lat": data.lat, "last_lng": data.lng, "last_update": loc["timestamp"]}}
     )
     loc.pop("_id", None)
@@ -4217,6 +4225,15 @@ async def get_trip(trip_id: str, current_user: dict = Depends(get_current_user))
     trip = await db.trips.find_one({"id": trip_id}, {"_id": 0})
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     locations = await db.locations.find(
         {"trip_id": trip_id}, {"_id": 0}
     ).sort("timestamp", 1).to_list(10000)
@@ -4232,9 +4249,10 @@ async def get_live(trip_id: str, current_user: dict = Depends(get_current_user))
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     is_owner = trip.get("user_id") == current_user.get("id")
-    is_admin = current_user.get("role") in ["admin", "superadmin"]
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
     is_same_org = trip.get("organization_id") == current_user.get("organization_id")
-    if not (is_owner or (is_admin and is_same_org)):
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
         raise HTTPException(status_code=403, detail="Access denied")
     loc = await db.locations.find_one(
         {"trip_id": trip_id}, {"_id": 0}, sort=[("timestamp", -1)]
@@ -4246,9 +4264,17 @@ async def get_live(trip_id: str, current_user: dict = Depends(get_current_user))
 # End a trip
 @api_router.post("/trip/{trip_id}/end")
 async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
-    trip = await db.trips.find_one({"id": trip_id, "user_id": current_user["id"]})
+    trip = await db.trips.find_one({"id": trip_id})
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     end_time = datetime.now(timezone.utc)
 
@@ -4275,7 +4301,7 @@ async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user))
     )
 
     await db.trips.update_one(
-        {"id": trip_id, "user_id": current_user["id"]},
+        {"id": trip_id},
         {"$set": {
             "status": "completed",
             "end_time": end_time.isoformat(),
@@ -4287,15 +4313,35 @@ async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user))
 # List all trips for current user
 @api_router.get("/trips")
 async def list_trips(current_user: dict = Depends(get_current_user)):
+    role = current_user.get("role")
+    if role == "superadmin":
+        query = {}
+    elif role == "admin":
+        query = {"organization_id": current_user.get("organization_id")}
+    else:
+        query = {"user_id": current_user["id"]}
+
     trips = await db.trips.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
+        query, {"_id": 0}
     ).sort("start_time", -1).to_list(100)
     return trips
 
 # Delete a trip
 @api_router.delete("/trip/{trip_id}")
 async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
-    await db.trips.delete_one({"id": trip_id, "user_id": current_user["id"]})
+    trip = await db.trips.find_one({"id": trip_id})
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    await db.trips.delete_one({"id": trip_id})
     await db.locations.delete_many({"trip_id": trip_id})
     return {"message": "Trip deleted"}
 
@@ -6868,7 +6914,7 @@ async def get_career_candidates(job_id: Optional[str] = None):
     return candidates
 
 api_router.include_router(jobs_router)
-api_router.include_router(wa_router)
+# api_router.include_router(wa_router) # Moved below after definition
 api_router.include_router(trust_router)
 api_router.include_router(screening_router)
 
@@ -7143,6 +7189,7 @@ from whatsapp_service import WhatsAppService
 from whatsapp_classifier import WhatsAppClassifier
 
 wa_router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp"])
+api_router.include_router(wa_router)
 
 class WASendRequest(BaseModel):
     phone: str
