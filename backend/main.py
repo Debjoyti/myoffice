@@ -22,6 +22,9 @@ from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 from ai_expense_engine import analyze_receipt, validate_expense_claim
 from api.scheduling import router as scheduling_router
+from api.jobs import router as jobs_router
+from api.trust_backbone import router as trust_router
+from api.ai_screening import router as screening_router
 from supabase import create_client, Client
 
 try:
@@ -6868,7 +6871,6 @@ async def get_career_candidates(job_id: Optional[str] = None):
     return candidates
 
 api_router.include_router(jobs_router)
-api_router.include_router(wa_router)
 api_router.include_router(trust_router)
 api_router.include_router(screening_router)
 
@@ -7132,9 +7134,6 @@ async def get_cockpit_data(current_user: User = Depends(get_current_user)):
         "recentActivity": []
     }
 
-app.include_router(api_router)
-app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
-
 # ─────────────────────────────────────────────────────────────────────────────
 # WHATSAPP API ROUTES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -7143,6 +7142,10 @@ from whatsapp_service import WhatsAppService
 from whatsapp_classifier import WhatsAppClassifier
 
 wa_router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp"])
+
+api_router.include_router(wa_router)
+app.include_router(api_router)
+app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
 
 class WASendRequest(BaseModel):
     phone: str
