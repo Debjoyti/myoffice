@@ -2,10 +2,13 @@ from playwright.sync_api import sync_playwright
 import time
 import requests
 
+import os
+
 def run():
     # Let's just bypass the login form by injecting the token into localStorage
     # We can get a fresh token via python requests first
-    resp = requests.post("http://127.0.0.1:8000/api/auth/login", json={"email":"admin@prsk.ai","password":"password123","name":""})
+    password = os.environ.get("DEFAULT_DEMO_PASSWORD", "password123")
+    resp = requests.post("http://127.0.0.1:8000/api/auth/login", json={"email":"admin@prsk.ai","password":password,"name":""})
     data = resp.json()
     token = data["access_token"]
     user = data["user"]

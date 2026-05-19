@@ -20,6 +20,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def get_password_hash(password: str):
     return pwd_context.hash(password)
 
+DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD", "password123")
+
 async def create_demo_users():
     # Clear existing demo users
     emails = ["superadmin@demo.com", "admin@demo.com", "employee@demo.com", "accountant@demo.com"]
@@ -39,7 +41,7 @@ async def create_demo_users():
     await db.users.insert_one({
         "id": str(uuid.uuid4()),
         "email": "superadmin@demo.com",
-        "password": get_password_hash("password123"),
+        "password": get_password_hash(DEFAULT_DEMO_PASSWORD),
         "name": "Super Admin",
         "role": "superadmin",
         "organization_id": ORGANIZATION_ID,
@@ -54,7 +56,7 @@ async def create_demo_users():
     await db.users.insert_one({
         "id": str(uuid.uuid4()),
         "email": "admin@demo.com",
-        "password": get_password_hash("password123"),
+        "password": get_password_hash(DEFAULT_DEMO_PASSWORD),
         "name": "Org Admin",
         "role": "admin",
         "organization_id": ORGANIZATION_ID,
@@ -73,7 +75,7 @@ async def create_demo_users():
     await db.users.insert_one({
         "id": str(uuid.uuid4()),
         "email": "employee@demo.com",
-        "password": get_password_hash("password123"),
+        "password": get_password_hash(DEFAULT_DEMO_PASSWORD),
         "name": "John Employee",
         "role": "employee",
         "organization_id": ORGANIZATION_ID,
@@ -86,7 +88,7 @@ async def create_demo_users():
     await db.users.insert_one({
         "id": str(uuid.uuid4()),
         "email": "accountant@demo.com",
-        "password": get_password_hash("password123"),
+        "password": get_password_hash(DEFAULT_DEMO_PASSWORD),
         "name": "Jane Accountant",
         "role": "accountant",
         "company_id": "demo-comp-1",
@@ -97,7 +99,7 @@ async def create_demo_users():
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
-    print("Done: Demo users created with organization_id 'default' and password 'password123'")
+    print(f"Done: Demo users created with organization_id 'default' and password '{DEFAULT_DEMO_PASSWORD}'")
     print("   - superadmin@demo.com (SuperAdmin)")
     print("   - admin@demo.com (Admin)")
     print("   - employee@demo.com (Employee)")

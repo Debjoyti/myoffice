@@ -1,12 +1,13 @@
 import requests
 import string
 import random
+import os
 
 API = "http://127.0.0.1:8000/api"
 
 # 1. Register a new user
 email = f"test_{''.join(random.choices(string.ascii_lowercase, k=6))}@example.com"
-password = "password123"
+password = os.environ.get("DEFAULT_DEMO_PASSWORD", "password123")
 res = requests.post(f"{API}/auth/register", json={"name": "Test User", "email": email, "password": password})
 if res.status_code != 200:
     print(f"Register failed: {res.json()}")

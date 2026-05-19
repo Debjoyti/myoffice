@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import uuid
+import os
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -37,6 +38,7 @@ class UserRegister(BaseModel):
 
 DEFAULT_ORG_ID = "default"
 DEFAULT_COMPANY_ID = "demo-comp-1"
+DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD", "password123")
 DEFAULT_SUBSCRIPTION_END = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
 DEFAULT_ENABLED_SERVICES = [
     "dashboard",
@@ -60,7 +62,7 @@ users = {
     "superadmin@demo.com": {
         "id": str(uuid.uuid4()),
         "email": "superadmin@demo.com",
-        "password": "password123",
+        "password": DEFAULT_DEMO_PASSWORD,
         "name": "Demo SuperAdmin",
         "role": "superadmin",
         "organization_id": DEFAULT_ORG_ID,
@@ -73,7 +75,7 @@ users = {
     "admin@demo.com": {
         "id": str(uuid.uuid4()),
         "email": "admin@demo.com",
-        "password": "password123",
+        "password": DEFAULT_DEMO_PASSWORD,
         "name": "Demo Admin",
         "role": "admin",
         "organization_id": DEFAULT_ORG_ID,
@@ -87,7 +89,7 @@ users = {
     "client@demo.com": {
         "id": str(uuid.uuid4()),
         "email": "client@demo.com",
-        "password": "password123",
+        "password": DEFAULT_DEMO_PASSWORD,
         "name": "Demo Client",
         "role": "admin",
         "organization_id": DEFAULT_ORG_ID,
@@ -99,7 +101,7 @@ users = {
     "employee@demo.com": {
         "id": str(uuid.uuid4()),
         "email": "employee@demo.com",
-        "password": "password123",
+        "password": DEFAULT_DEMO_PASSWORD,
         "name": "Demo Employee",
         "role": "employee",
         "organization_id": DEFAULT_ORG_ID,
@@ -110,7 +112,7 @@ users = {
     "accountant@demo.com": {
         "id": str(uuid.uuid4()),
         "email": "accountant@demo.com",
-        "password": "password123",
+        "password": DEFAULT_DEMO_PASSWORD,
         "name": "Demo Accountant",
         "role": "accountant",
         "company_id": DEFAULT_COMPANY_ID,

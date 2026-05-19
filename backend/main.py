@@ -181,7 +181,16 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "dummy")
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 DEFAULT_ORG_ID = "default"
 DEFAULT_COMPANY_ID = "demo-comp-1"
-DEFAULT_DEMO_PASSWORD = "password123"
+
+DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD")
+if not DEFAULT_DEMO_PASSWORD or DEFAULT_DEMO_PASSWORD == "password123":
+    if os.environ.get("ENVIRONMENT", "production") != "test":
+        logging.error("CRITICAL: DEFAULT_DEMO_PASSWORD is missing or insecure. Production environment requires a secure DEFAULT_DEMO_PASSWORD.")
+        sys.exit(1)
+    else:
+        DEFAULT_DEMO_PASSWORD = DEFAULT_DEMO_PASSWORD or "password123"
+        logging.warning("⚠️  DEFAULT_DEMO_PASSWORD not set or insecure — using default. Set DEFAULT_DEMO_PASSWORD env variable!")
+
 DEFAULT_ENABLED_SERVICES = [
     "dashboard",
     "employees",
