@@ -1413,13 +1413,6 @@ class TurtleDiagram(BaseModel):
     personnel: List[str] # With Whom?
     kpis: List[str] # How Many?
 
-class InductionProgram(BaseModel):
-    id: str
-    employee_id: str
-    metadata: IATFMetadata
-    checkpoints: List[dict] # {item: str, status: bool, date: str}
-    mentor_sign_off: bool = False
-
 class SatisfactionAssessment(BaseModel):
     id: str
     metadata: IATFMetadata
