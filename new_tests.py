@@ -1,14 +1,16 @@
 import requests
+import os
 
 base_url = "http://localhost:8000/api"
+password = os.environ.get("DEFAULT_DEMO_PASSWORD", "password123")
 
 def run():
     print("Testing new endpoints...")
     requests.post(f"{base_url}/auth/register", json={
-        "email": "test6@test.com", "password": "password123", "name": "Test"
+        "email": "test6@test.com", "password": password, "name": "Test"
     })
 
-    resp = requests.post(f"{base_url}/auth/login", json={"email": "test6@test.com", "password": "password123"})
+    resp = requests.post(f"{base_url}/auth/login", json={"email": "test6@test.com", "password": password})
 
     if resp.status_code != 200:
         print("Login failed:", resp.text)

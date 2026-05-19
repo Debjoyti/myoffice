@@ -9,6 +9,7 @@
   "password": "password123"
 }
 ```
+*Note: `password123` is the default demo password. It can be changed via the `DEFAULT_DEMO_PASSWORD` environment variable.*
 **Response (200 OK):**
 ```json
 {
@@ -28,6 +29,7 @@
   "name": "New User"
 }
 ```
+*Note: `password123` is the default demo password. It can be changed via the `DEFAULT_DEMO_PASSWORD` environment variable.*
 **Response (200 OK):**
 ```json
 {
