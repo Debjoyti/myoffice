@@ -4320,7 +4320,7 @@ async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user))
         mins = int(delta.total_seconds() / 60)
         duration_str = f"{mins} mins"
     except Exception:
-        pass
+        logging.exception("Error parsing trip duration")
 
     point_count = len(locations)
     dest = trip.get("destination", "your destination")
