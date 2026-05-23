@@ -4,7 +4,7 @@ import os
 # Add backend directory to sys.path to be able to import backend modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
 
-from ai_recruitment import parse_jd
+from ai_recruitment import parse_jd, evaluate_answer
 
 def test_parse_jd_skill_extraction():
     jd_text = "We are looking for someone with experience in Python, AWS, and React."
