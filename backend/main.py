@@ -22,6 +22,9 @@ from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 from ai_expense_engine import analyze_receipt, validate_expense_claim
 from api.scheduling import router as scheduling_router
+from api.jobs import router as jobs_router
+from api.ai_screening import router as screening_router
+from api.trust_backbone import router as trust_router
 from supabase import create_client, Client
 
 try:
@@ -2779,7 +2782,7 @@ async def delete_lead(lead_id: str, current_user: dict = Depends(get_current_use
 async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_current_user)):
     deal_doc = deal_data.model_dump()
     deal_doc["id"] = str(uuid.uuid4())
-    deal_doc["organization_id"] = current_user.get("organization_id")  # FIX: was missing
+    deal_doc["organization_id"] = current_user.get("organization_id")
     deal_doc["created_by"] = current_user.get("id")
     deal_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.deals.insert_one(deal_doc)
@@ -2787,7 +2790,6 @@ async def create_deal(deal_data: DealCreate, current_user: dict = Depends(get_cu
 
 @api_router.get("/deals", response_model=List[Deal])
 async def get_deals(current_user: dict = Depends(get_current_user)):
-    # FIX: was leaking ALL orgs' deals
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
     deals = await db.deals.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return deals
@@ -6868,7 +6870,6 @@ async def get_career_candidates(job_id: Optional[str] = None):
     return candidates
 
 api_router.include_router(jobs_router)
-api_router.include_router(wa_router)
 api_router.include_router(trust_router)
 api_router.include_router(screening_router)
 
@@ -7348,6 +7349,7 @@ async def create_indexes():
     await db.leads.create_index([("organization_id", 1), ("created_at", -1)])
     await db.deals.create_index("id", unique=True)
     await db.deals.create_index([("organization_id", 1), ("stage", 1)])
+    await db.deals.create_index([("organization_id", 1), ("created_at", -1)])
 
     # ── Finance ────────────────────────────────────────────
     await db.invoices.create_index("id", unique=True)
