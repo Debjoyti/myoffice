@@ -237,3 +237,31 @@ body {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
+
+/* Premium gradient text */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle dot grid overlay (for dark hero sections) */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Card glow on hover */
+.hover-glow:hover {
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.3), 0 4px 16px -4px rgba(99,102,241,0.2);
+}
+
+/* Gradient accent bars for cards */
+.accent-bar-indigo { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+.accent-bar-emerald { background: linear-gradient(90deg, #10b981, #14b8a6); }
+.accent-bar-amber   { background: linear-gradient(90deg, #f59e0b, #f97316); }
+.accent-bar-sky     { background: linear-gradient(90deg, #38bdf8, #3b82f6); }
+.accent-bar-rose    { background: linear-gradient(90deg, #f43f5e, #ec4899); }
+.accent-bar-violet  { background: linear-gradient(90deg, #8b5cf6, #a855f7); }
+.accent-bar-purple  { background: linear-gradient(90deg, #a855f7, #8b5cf6); }

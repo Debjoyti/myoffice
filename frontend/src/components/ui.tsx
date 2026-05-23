@@ -107,32 +107,61 @@ export function CardHeader({ title, description, action, className }: {
 }
 
 /* ─── Stat Card ──────────────────────────────────────────────────────────── */
+const STAT_ACCENTS = {
+  indigo: { bar: 'accent-bar-indigo', iconBg: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400' },
+  emerald: { bar: 'accent-bar-emerald', iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400' },
+  amber: { bar: 'accent-bar-amber', iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400' },
+  sky: { bar: 'accent-bar-sky', iconBg: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400' },
+  rose: { bar: 'accent-bar-rose', iconBg: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400' },
+  violet: { bar: 'accent-bar-violet', iconBg: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400' },
+  purple: { bar: 'accent-bar-purple', iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400' },
+}
+
 interface StatCardProps {
   label: string
   value: string | number
   delta?: { value: string; positive: boolean }
   icon?: React.ReactNode
+  accent?: keyof typeof STAT_ACCENTS
   iconColor?: string
   className?: string
   onClick?: () => void
 }
 
-export function StatCard({ label, value, delta, icon, iconColor = 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400', className, onClick }: StatCardProps) {
+export function StatCard({ label, value, delta, icon, accent = 'indigo', iconColor, className, onClick }: StatCardProps) {
+  const a = STAT_ACCENTS[accent]
   return (
-    <Card className={cn('flex flex-col gap-3', onClick && 'cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800', className)} onClick={onClick ? () => onClick() : undefined}>
-      <div className="flex items-start justify-between">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-tight">{label}</span>
-        {icon && <span className={cn('p-1.5 rounded-md flex-shrink-0', iconColor)}>{icon}</span>}
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 data-value leading-none">{value}</div>
+    <div
+      onClick={onClick}
+      className={cn(
+        'relative overflow-hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800',
+        'shadow-sm hover:shadow-md transition-all duration-200',
+        onClick && 'cursor-pointer hover:border-slate-300 dark:hover:border-slate-700',
+        className
+      )}
+    >
+      <div className={cn('absolute top-0 inset-x-0 h-[3px]', a.bar)} />
+      <div className="p-5 pt-5">
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-snug">{label}</span>
+          {icon && <span className={cn('p-2 rounded-lg flex-shrink-0', iconColor || a.iconBg)}>{icon}</span>}
+        </div>
+        <div className="text-[2rem] font-bold text-slate-900 dark:text-slate-50 leading-none tracking-tight data-value">{value}</div>
         {delta && (
-          <p className={cn('text-xs font-medium mt-1.5', delta.positive ? 'text-emerald-600' : 'text-red-600')}>
-            {delta.positive ? '↑' : '↓'} {delta.value} <span className="text-slate-400 font-normal">vs last month</span>
-          </p>
+          <div className="flex items-center gap-2 mt-2.5">
+            <span className={cn(
+              'inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md',
+              delta.positive
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+            )}>
+              {delta.positive ? '↑' : '↓'} {delta.value}
+            </span>
+            <span className="text-xs text-slate-400">vs last month</span>
+          </div>
         )}
       </div>
-    </Card>
+    </div>
   )
 }
 

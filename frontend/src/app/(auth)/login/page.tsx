@@ -26,9 +26,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-950 flex">
       {/* Left — Brand Panel */}
-      <div className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 p-12 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 border-r border-white/6">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center">
+      <div className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 p-12 bg-gradient-to-br from-slate-950 via-indigo-950/30 to-slate-950 border-r border-white/[0.06] relative overflow-hidden">
+        <div className="absolute inset-0 bg-dot-grid opacity-60" />
+        <div className="relative flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-900/40">
             <Building2 className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -37,11 +38,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="relative space-y-6">
           <div>
             <h1 className="text-4xl font-bold text-white leading-tight">
               Your entire<br />
-              <span className="text-indigo-400">business OS</span>
+              <span className="text-gradient-brand">business OS</span>
             </h1>
             <p className="mt-4 text-slate-400 text-sm leading-relaxed">
               HRMS, Payroll, Finance, CRM, Projects and more — unified in one enterprise platform built for modern Indian businesses.
@@ -123,7 +124,7 @@ export default function LoginPage() {
 
             <button
               type="submit" disabled={loading}
-              className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-sm font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+              className="w-full h-10 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:from-indigo-700 active:to-violet-700 text-sm font-semibold text-white transition-all shadow-lg shadow-indigo-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
               {loading && <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />}
               {loading ? 'Signing in...' : 'Sign in'}
