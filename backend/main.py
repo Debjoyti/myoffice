@@ -22,6 +22,9 @@ from fallback_db import InMemoryDatabase
 from auto_gl import _get_or_create_system_account, create_auto_journal_entry
 from ai_expense_engine import analyze_receipt, validate_expense_claim
 from api.scheduling import router as scheduling_router
+from api.jobs import router as jobs_router
+from api.trust_backbone import router as trust_router
+from api.ai_screening import router as screening_router
 from supabase import create_client, Client
 
 try:
@@ -945,6 +948,8 @@ class DashboardStats(BaseModel):
 class Store(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: str
+    company_id: Optional[str] = None
     name: str
     location: str
     manager: Optional[str] = None
@@ -1412,13 +1417,6 @@ class TurtleDiagram(BaseModel):
     methods: List[str] # How?
     personnel: List[str] # With Whom?
     kpis: List[str] # How Many?
-
-class InductionProgram(BaseModel):
-    id: str
-    employee_id: str
-    metadata: IATFMetadata
-    checkpoints: List[dict] # {item: str, status: bool, date: str}
-    mentor_sign_off: bool = False
 
 class SatisfactionAssessment(BaseModel):
     id: str
@@ -2320,10 +2318,14 @@ async def create_attendance(att_data: AttendanceCreate, current_user: dict = Dep
 
 @api_router.get("/attendance", response_model=List[Attendance])
 async def get_attendance(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    # FIX: was not org-scoped — cross-org data was accessible
     query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
-    if employee_id:
+
+    # Enforce RBAC: Non-admin employees can only see their own attendance
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+    elif employee_id:
         query["employee_id"] = employee_id
+
     attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(500)
     return attendance
 
@@ -2506,22 +2508,28 @@ async def get_attendance_anomalies(employee_id: Optional[str] = None, current_us
 @api_router.post("/leave-requests", response_model=LeaveRequest)
 async def create_leave_request(leave_data: LeaveRequestCreate, current_user: dict = Depends(get_current_user)):
     leave_doc = leave_data.model_dump()
+
+    # Enforce RBAC: Non-admin employees can only create requests for themselves
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        leave_doc["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+
     leave_doc["id"] = str(uuid.uuid4())
     leave_doc["status"] = "pending"
-    leave_doc["organization_id"] = current_user.get("organization_id")  # FIX: was missing org scope
+    leave_doc["organization_id"] = current_user.get("organization_id")
     leave_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.leave_requests.insert_one(leave_doc)
     return leave_doc
 
 @api_router.get("/leave-requests", response_model=List[LeaveRequest])
-async def get_leave_requests(current_user: dict = Depends(get_current_user)):
-    # FIX: was leaking all orgs' leave data
-    query = {}
-    if current_user.get("role") != "superadmin":
-        query["organization_id"] = current_user.get("organization_id")
-    # Employees only see their own leave requests
-    if current_user.get("role") == "employee":
-        query["employee_id"] = current_user.get("id")
+async def get_leave_requests(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+
+    # Enforce RBAC: Non-admin employees can only see their own leave requests
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+    elif employee_id:
+        query["employee_id"] = employee_id
+
     leaves = await db.leave_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return leaves
 
@@ -2626,7 +2634,12 @@ async def create_wfh_request(wfh_data: WFHRequestCreate, current_user: dict = De
 
 @api_router.get("/wfh-requests", response_model=List[WFHRequest])
 async def get_wfh_requests(current_user: dict = Depends(get_current_user)):
-    requests = await db.wfh_requests.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    # Enforce RBAC: Non-admin employees can only see their own WFH requests
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+
+    requests = await db.wfh_requests.find(query, {"_id": 0}).to_list(1000)
     return requests
 
 @api_router.patch("/wfh-requests/{request_id}/status")
@@ -2998,6 +3011,9 @@ async def update_inventory_item(item_id: str, item_data: InventoryItemCreate, cu
 async def create_store(store_data: StoreCreate, current_user: dict = Depends(get_current_user)):
     store_doc = store_data.model_dump()
     store_doc["id"] = str(uuid.uuid4())
+    store_doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        store_doc["company_id"] = get_accountant_company(current_user)
     store_doc["status"] = "active"
     store_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.stores.insert_one(store_doc)
@@ -3005,29 +3021,48 @@ async def create_store(store_data: StoreCreate, current_user: dict = Depends(get
 
 @api_router.get("/stores", response_model=List[Store])
 async def get_stores(current_user: dict = Depends(get_current_user)):
-    # FIX: was returning all orgs' store data
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
     stores = await db.stores.find(query, {"_id": 0}).to_list(500)
     return stores
 
 @api_router.get("/stores/{store_id}", response_model=Store)
 async def get_store(store_id: str, current_user: dict = Depends(get_current_user)):
-    store = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    query = {"id": store_id}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+        if current_user.get("role") == "accountant":
+            query["company_id"] = get_accountant_company(current_user)
+
+    store = await db.stores.find_one(query, {"_id": 0})
     if not store:
         raise HTTPException(status_code=404, detail="Store not found")
     return store
 
 @api_router.put("/stores/{store_id}", response_model=Store)
 async def update_store(store_id: str, store_data: StoreCreate, current_user: dict = Depends(get_current_user)):
-    result = await db.stores.update_one({"id": store_id}, {"$set": store_data.model_dump()})
+    query = {"id": store_id}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+        if current_user.get("role") == "accountant":
+            query["company_id"] = get_accountant_company(current_user)
+
+    result = await db.stores.update_one(query, {"$set": store_data.model_dump()})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Store not found")
-    updated = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    updated = await db.stores.find_one(query, {"_id": 0})
     return updated
 
 @api_router.delete("/stores/{store_id}")
 async def delete_store(store_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.stores.delete_one({"id": store_id})
+    query = {"id": store_id}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+        if current_user.get("role") == "accountant":
+            query["company_id"] = get_accountant_company(current_user)
+
+    result = await db.stores.delete_one(query)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Store not found")
     return {"message": "Store deleted"}
@@ -3919,9 +3954,10 @@ async def create_timesheet(data: TimesheetCreate, current_user: dict = Depends(g
 @api_router.get("/timesheets", response_model=List[Timesheet])
 async def get_timesheets(current_user: dict = Depends(get_current_user)):
     query = {"organization_id": current_user.get("organization_id")}
-    # Employees see their own, admins see all
-    if current_user.get("role") != "admin":
-        query["employee_id"] = current_user.get("id")
+    # Enforce RBAC: Non-admin employees can only see their own timesheets
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+
     return await db.timesheets.find(query, {"_id": 0}).to_list(1000)
 
 # Tickets (Zoho Desk)
@@ -4195,6 +4231,11 @@ async def start_trip(data: TripCreate, current_user: dict = Depends(get_current_
 # Post a location update
 @api_router.post("/location")
 async def post_location(data: LocationPost, current_user: dict = Depends(get_current_user)):
+    # Only the trip owner can post location updates
+    trip = await db.trips.find_one({"id": data.trip_id, "user_id": current_user["id"]})
+    if not trip:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     loc = {
         "id": str(uuid.uuid4()),
         "trip_id": data.trip_id,
@@ -4205,7 +4246,7 @@ async def post_location(data: LocationPost, current_user: dict = Depends(get_cur
     await db.locations.insert_one(loc)
     # Update last known position on trip document
     await db.trips.update_one(
-        {"id": data.trip_id, "user_id": current_user["id"]},
+        {"id": data.trip_id},
         {"$set": {"last_lat": data.lat, "last_lng": data.lng, "last_update": loc["timestamp"]}}
     )
     loc.pop("_id", None)
@@ -4217,6 +4258,15 @@ async def get_trip(trip_id: str, current_user: dict = Depends(get_current_user))
     trip = await db.trips.find_one({"id": trip_id}, {"_id": 0})
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     locations = await db.locations.find(
         {"trip_id": trip_id}, {"_id": 0}
     ).sort("timestamp", 1).to_list(10000)
@@ -4232,9 +4282,10 @@ async def get_live(trip_id: str, current_user: dict = Depends(get_current_user))
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     is_owner = trip.get("user_id") == current_user.get("id")
-    is_admin = current_user.get("role") in ["admin", "superadmin"]
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
     is_same_org = trip.get("organization_id") == current_user.get("organization_id")
-    if not (is_owner or (is_admin and is_same_org)):
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
         raise HTTPException(status_code=403, detail="Access denied")
     loc = await db.locations.find_one(
         {"trip_id": trip_id}, {"_id": 0}, sort=[("timestamp", -1)]
@@ -4246,9 +4297,17 @@ async def get_live(trip_id: str, current_user: dict = Depends(get_current_user))
 # End a trip
 @api_router.post("/trip/{trip_id}/end")
 async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
-    trip = await db.trips.find_one({"id": trip_id, "user_id": current_user["id"]})
+    trip = await db.trips.find_one({"id": trip_id})
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     end_time = datetime.now(timezone.utc)
 
@@ -4261,7 +4320,7 @@ async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user))
         mins = int(delta.total_seconds() / 60)
         duration_str = f"{mins} mins"
     except Exception:
-        pass
+        logging.exception("Error parsing trip duration")
 
     point_count = len(locations)
     dest = trip.get("destination", "your destination")
@@ -4275,7 +4334,7 @@ async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user))
     )
 
     await db.trips.update_one(
-        {"id": trip_id, "user_id": current_user["id"]},
+        {"id": trip_id},
         {"$set": {
             "status": "completed",
             "end_time": end_time.isoformat(),
@@ -4287,15 +4346,35 @@ async def end_trip(trip_id: str, current_user: dict = Depends(get_current_user))
 # List all trips for current user
 @api_router.get("/trips")
 async def list_trips(current_user: dict = Depends(get_current_user)):
+    role = current_user.get("role")
+    if role == "superadmin":
+        query = {}
+    elif role == "admin":
+        query = {"organization_id": current_user.get("organization_id")}
+    else:
+        query = {"user_id": current_user["id"]}
+
     trips = await db.trips.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
+        query, {"_id": 0}
     ).sort("start_time", -1).to_list(100)
     return trips
 
 # Delete a trip
 @api_router.delete("/trip/{trip_id}")
 async def delete_trip(trip_id: str, current_user: dict = Depends(get_current_user)):
-    await db.trips.delete_one({"id": trip_id, "user_id": current_user["id"]})
+    trip = await db.trips.find_one({"id": trip_id})
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    is_owner = trip.get("user_id") == current_user.get("id")
+    is_superadmin = current_user.get("role") == "superadmin"
+    is_admin = current_user.get("role") == "admin"
+    is_same_org = trip.get("organization_id") == current_user.get("organization_id")
+
+    if not (is_owner or is_superadmin or (is_admin and is_same_org)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    await db.trips.delete_one({"id": trip_id})
     await db.locations.delete_many({"trip_id": trip_id})
     return {"message": "Trip deleted"}
 
@@ -4897,6 +4976,8 @@ async def delete_company(company_id: str, current_user: dict = Depends(get_curre
 @api_router.get("/ai/dashboard-brief")
 async def ai_dashboard_brief(current_user: dict = Depends(get_current_user)):
     """Personalized AI morning brief based on live data"""
+    if current_user.get("role") not in ["admin", "superadmin", "hr"]:
+        raise HTTPException(status_code=403, detail="Only admins can access the dashboard brief")
     org_id = current_user.get("organization_id")
     query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
@@ -4928,6 +5009,8 @@ async def ai_dashboard_brief(current_user: dict = Depends(get_current_user)):
 @api_router.get("/ai/crm-insights")
 async def ai_crm_insights(current_user: dict = Depends(get_current_user)):
     """AI-powered CRM insights: lead scoring, next actions, forecast"""
+    if current_user.get("role") not in ["admin", "superadmin", "hr", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized to access CRM insights")
     org_id = current_user.get("organization_id")
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
@@ -4958,11 +5041,13 @@ async def ai_crm_insights(current_user: dict = Depends(get_current_user)):
 @api_router.get("/ai/hr-insights")
 async def ai_hr_insights(current_user: dict = Depends(get_current_user)):
     """AI-powered HR insights: attrition risk, team health"""
+    if current_user.get("role") not in ["admin", "superadmin", "hr"]:
+        raise HTTPException(status_code=403, detail="Not authorized to access HR insights")
     org_id = current_user.get("organization_id")
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
     employees = await db.employees.find(query, {"_id": 0}).to_list(1000)
-    leaves = await db.leaves.find(query, {"_id": 0}).to_list(1000)
+    leaves = await db.leave_requests.find(query, {"_id": 0}).to_list(1000)
 
     # Detect high leave frequency (attrition risk signal)
     leave_counts = {}
@@ -4989,7 +5074,7 @@ async def get_notifications(current_user: dict = Depends(get_current_user)):
     org_id = current_user.get("organization_id")
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
-    pending_leaves = await db.leaves.count_documents({**query, "status": "pending"})
+    pending_leaves = await db.leave_requests.count_documents({**query, "status": "pending"})
     open_tickets = await db.tickets.count_documents({**query, "status": "open"})
     total_leads = await db.leads.count_documents(query)
 
@@ -5783,7 +5868,6 @@ async def ensure_demo_users_seeded():
         },
     ]
     await _upsert_seed_many("leave_requests", leave_requests)
-    await _upsert_seed_many("leaves", leave_requests)
 
     # Additional leave data for QA filtering/states
     bulk_leave_requests: List[dict] = []
@@ -5808,7 +5892,6 @@ async def ensure_demo_users_seeded():
             }
         )
     await _upsert_seed_many("leave_requests", bulk_leave_requests)
-    await _upsert_seed_many("leaves", bulk_leave_requests)
 
     attendance = [
         {
@@ -6868,7 +6951,6 @@ async def get_career_candidates(job_id: Optional[str] = None):
     return candidates
 
 api_router.include_router(jobs_router)
-api_router.include_router(wa_router)
 api_router.include_router(trust_router)
 api_router.include_router(screening_router)
 
@@ -7132,9 +7214,6 @@ async def get_cockpit_data(current_user: User = Depends(get_current_user)):
         "recentActivity": []
     }
 
-app.include_router(api_router)
-app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
-
 # ─────────────────────────────────────────────────────────────────────────────
 # WHATSAPP API ROUTES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -7143,6 +7222,11 @@ from whatsapp_service import WhatsAppService
 from whatsapp_classifier import WhatsAppClassifier
 
 wa_router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp"])
+api_router.include_router(wa_router)
+
+api_router.include_router(wa_router)
+app.include_router(api_router)
+app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
 
 class WASendRequest(BaseModel):
     phone: str
@@ -7288,7 +7372,6 @@ async def webhook_receiver(payload: dict, request: Request):
         logging.error(f"Error processing webhook: {e}")
         return {"status": "error", "message": str(e)}
 
-app.include_router(wa_router)
 
 
 logging.basicConfig(
