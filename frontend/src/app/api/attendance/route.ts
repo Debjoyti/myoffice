@@ -14,7 +14,7 @@ export const POST = createEnterpriseApiHandler({
   schema: checkInSchema,
   requiredRoles: ['employee', 'manager', 'hr', 'company_admin', 'super_admin'],
   handler: async (req, ctx, body) => {
-    const supabase = createClient();
+    const supabase = await createClient();
     const today = new Date().toISOString().split('T')[0];
     
     // Get the employee record for the current user

@@ -18,13 +18,13 @@ export type ApiHandlerConfig<T> = {
   handler: (req: Request, ctx: UserContext, body: T | null) => Promise<NextResponse>;
 };
 
-export async function createEnterpriseApiHandler<T>(config: ApiHandlerConfig<T>) {
+export function createEnterpriseApiHandler<T>(config: ApiHandlerConfig<T>) {
   return async function (req: Request) {
     try {
-      const supabase = createClient();
-      
+      const supabase = await createClient();
+
       let userCtx: UserContext | null = null;
-      
+
       // 1. Authentication & Tenancy
       if (config.requireAuth !== false) {
         const { data: { session }, error: authError } = await supabase.auth.getSession();

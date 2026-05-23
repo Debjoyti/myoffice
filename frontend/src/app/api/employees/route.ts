@@ -19,8 +19,8 @@ export const POST = createEnterpriseApiHandler({
   schema: employeeSchema,
   requiredRoles: ['hr', 'company_admin', 'super_admin'],
   handler: async (req, ctx, body) => {
-    const supabase = createClient();
-    
+    const supabase = await createClient();
+
     // Insert employee
     const { data, error } = await supabase
       .from('employees')
@@ -44,7 +44,7 @@ export const GET = createEnterpriseApiHandler({
   actionName: 'ListEmployees',
   requiredRoles: ['hr', 'company_admin', 'super_admin', 'manager', 'employee'],
   handler: async (req, ctx) => {
-    const supabase = createClient();
+    const supabase = await createClient();
     const url = new URL(req.url);
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');

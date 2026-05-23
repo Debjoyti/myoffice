@@ -1,116 +1,196 @@
 'use client'
 
-import { PageHeader, Card, CardHeader, StatCard, Badge } from '@/components/ui'
-import { BarChart3, TrendingUp, Users, Clock, DollarSign, Target } from 'lucide-react'
+import { useState } from 'react'
+import { PageHeader, Card, CardHeader, StatCard, Badge, TabBar, Button } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
+import { TrendingUp, Users, Clock, DollarSign, Download, BarChart3 } from 'lucide-react'
+import {
+  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts'
 
-const DEPT_HEADCOUNT = [
-  { dept: 'Engineering', count: 98, pct: 34.5 },
-  { dept: 'Sales', count: 54, pct: 19.0 },
-  { dept: 'Finance', count: 28, pct: 9.9 },
-  { dept: 'HR', count: 18, pct: 6.3 },
-  { dept: 'Operations', count: 42, pct: 14.8 },
-  { dept: 'Marketing', count: 30, pct: 10.6 },
-  { dept: 'Others', count: 14, pct: 4.9 },
+const MONTHLY = [
+  { month: 'Oct', revenue: 9800000, payroll: 3800000, headcount: 268 },
+  { month: 'Nov', revenue: 10200000, payroll: 3900000, headcount: 272 },
+  { month: 'Dec', revenue: 11500000, payroll: 4000000, headcount: 275 },
+  { month: 'Jan', revenue: 10800000, payroll: 4100000, headcount: 278 },
+  { month: 'Feb', revenue: 11200000, payroll: 4150000, headcount: 280 },
+  { month: 'Mar', revenue: 12100000, payroll: 4200000, headcount: 281 },
+  { month: 'Apr', revenue: 11700000, payroll: 4250000, headcount: 283 },
+  { month: 'May', revenue: 12450000, payroll: 4280000, headcount: 284 },
 ]
 
-const DEPT_COLORS = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-purple-500', 'bg-rose-500', 'bg-slate-400']
-
-const MONTHLY_DATA = [
-  { month: 'Oct', revenue: 9800000, payroll: 3800000 },
-  { month: 'Nov', revenue: 10200000, payroll: 3900000 },
-  { month: 'Dec', revenue: 11500000, payroll: 4000000 },
-  { month: 'Jan', revenue: 10800000, payroll: 4100000 },
-  { month: 'Feb', revenue: 11200000, payroll: 4150000 },
-  { month: 'Mar', revenue: 12100000, payroll: 4200000 },
-  { month: 'Apr', revenue: 11700000, payroll: 4250000 },
-  { month: 'May', revenue: 12450000, payroll: 4280000 },
+const DEPT_DATA = [
+  { dept: 'Engineering', count: 98, cost: 17640000 },
+  { dept: 'Sales', count: 54, cost: 7560000 },
+  { dept: 'Operations', count: 42, cost: 5040000 },
+  { dept: 'Marketing', count: 30, cost: 3900000 },
+  { dept: 'Finance', count: 28, cost: 3360000 },
+  { dept: 'HR', count: 18, cost: 2160000 },
 ]
 
-const maxRevenue = Math.max(...MONTHLY_DATA.map(d => d.revenue))
+const ATTRITION = [
+  { month: 'Oct', joined: 4, left: 2 },
+  { month: 'Nov', joined: 3, left: 1 },
+  { month: 'Dec', joined: 5, left: 3 },
+  { month: 'Jan', joined: 6, left: 2 },
+  { month: 'Feb', joined: 4, left: 2 },
+  { month: 'Mar', joined: 3, left: 1 },
+  { month: 'Apr', joined: 5, left: 2 },
+  { month: 'May', joined: 3, left: 2 },
+]
+
+const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#f43f5e']
+
+const TOOLTIP_STYLE = { fontSize: 12, borderRadius: 8 }
+const TICK_STYLE = { fontSize: 11, fill: '#94a3b8' }
 
 export default function AnalyticsPage() {
+  const [tab, setTab] = useState('overview')
+
+  const totalHeadcount = DEPT_DATA.reduce((s, d) => s + d.count, 0)
+  const lastMonth = MONTHLY[MONTHLY.length - 1]
+  const prevMonth = MONTHLY[MONTHLY.length - 2]
+  const revGrowth = ((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue * 100).toFixed(1)
+  const payrollRatio = (lastMonth.payroll / lastMonth.revenue * 100).toFixed(1)
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
         title="Analytics"
-        description="Business intelligence and performance metrics"
+        description="Business intelligence and workforce performance metrics"
+        actions={<Button variant="outline" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />}>Export Report</Button>}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Revenue MTD" value={formatCurrency(12450000)} delta={{ value: '8.3%', positive: true }} icon={<TrendingUp className="h-4 w-4" />} />
-        <StatCard label="Total Headcount" value="284" delta={{ value: '3 new', positive: true }} icon={<Users className="h-4 w-4" />} iconColor="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
+        <StatCard label="Revenue MTD" value={formatCurrency(lastMonth.revenue)} delta={{ value: `${revGrowth}%`, positive: parseFloat(revGrowth) > 0 }} icon={<TrendingUp className="h-4 w-4" />} />
+        <StatCard label="Total Headcount" value={totalHeadcount} delta={{ value: '3 new', positive: true }} icon={<Users className="h-4 w-4" />} iconColor="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
         <StatCard label="Avg Attendance" value="84.9%" delta={{ value: '1.2%', positive: true }} icon={<Clock className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
-        <StatCard label="Payroll Ratio" value="34.4%" delta={{ value: '0.5%', positive: false }} icon={<DollarSign className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
+        <StatCard label="Payroll/Revenue" value={`${payrollRatio}%`} delta={{ value: '0.5%', positive: false }} icon={<DollarSign className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue trend */}
-        <Card className="lg:col-span-2">
-          <CardHeader title="Revenue vs Payroll Trend" description="Last 8 months" />
-          <div className="space-y-1">
-            {MONTHLY_DATA.map(d => (
-              <div key={d.month} className="flex items-center gap-3">
-                <span className="text-xs text-slate-500 w-8 flex-shrink-0">{d.month}</span>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 bg-indigo-500 rounded-full" style={{ width: `${(d.revenue / maxRevenue) * 100}%` }} />
-                    <span className="text-xs text-slate-500 whitespace-nowrap">{formatCurrency(d.revenue)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 bg-rose-400 rounded-full" style={{ width: `${(d.payroll / maxRevenue) * 100}%` }} />
-                    <span className="text-xs text-slate-400 whitespace-nowrap">{formatCurrency(d.payroll)}</span>
-                  </div>
+      <TabBar
+        tabs={[{ id: 'overview', label: 'Business' }, { id: 'workforce', label: 'Workforce' }]}
+        active={tab}
+        onChange={setTab}
+      />
+
+      {tab === 'overview' && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader title="Revenue vs Payroll Cost" description="Last 8 months" />
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={MONTHLY} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gPay" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} /><stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="month" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => `₹${(v / 1000000).toFixed(0)}M`} tick={TICK_STYLE} axisLine={false} tickLine={false} width={52} />
+                <Tooltip formatter={(v, n) => [formatCurrency(v as number), (n as string) === 'revenue' ? 'Revenue' : 'Payroll']} contentStyle={TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366f1" strokeWidth={2} fill="url(#gRev)" />
+                <Area type="monotone" dataKey="payroll" name="Payroll" stroke="#f59e0b" strokeWidth={2} fill="url(#gPay)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader title="Revenue per Employee" description="Monthly trend" />
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={MONTHLY.map(m => ({ ...m, rpe: Math.round(m.revenue / m.headcount) }))} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`} tick={TICK_STYLE} axisLine={false} tickLine={false} width={48} />
+                  <Tooltip formatter={(v) => [formatCurrency(v as number), 'Rev/Employee']} contentStyle={TOOLTIP_STYLE} />
+                  <Line type="monotone" dataKey="rpe" stroke="#10b981" strokeWidth={2.5} dot={{ fill: '#10b981', r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card>
+              <CardHeader title="Dept Cost Distribution" description="Annual payroll by department" />
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width="50%" height={160}>
+                  <PieChart>
+                    <Pie data={DEPT_DATA} dataKey="cost" nameKey="dept" cx="50%" cy="50%" outerRadius={70} innerRadius={40}>
+                      {DEPT_DATA.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v) => formatCurrency(v as number)} contentStyle={TOOLTIP_STYLE} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-1.5 flex-1">
+                  {DEPT_DATA.map((d, i) => (
+                    <div key={d.dept} className="flex items-center gap-2 text-xs">
+                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i] }} />
+                      <span className="text-slate-600 dark:text-slate-400 truncate flex-1">{d.dept}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300 tabular-nums">{d.count}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            </Card>
           </div>
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-1.5"><div className="h-2 w-4 bg-indigo-500 rounded" /><span className="text-xs text-slate-500">Revenue</span></div>
-            <div className="flex items-center gap-1.5"><div className="h-2 w-4 bg-rose-400 rounded" /><span className="text-xs text-slate-500">Payroll</span></div>
-          </div>
-        </Card>
+        </div>
+      )}
 
-        {/* Headcount by dept */}
-        <Card>
-          <CardHeader title="Headcount by Dept" description="284 total employees" />
-          <div className="space-y-2.5">
-            {DEPT_HEADCOUNT.map((d, i) => (
-              <div key={d.dept}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-slate-600 dark:text-slate-400">{d.dept}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{d.count}</span>
-                    <span className="text-xs text-slate-400">{d.pct}%</span>
-                  </div>
-                </div>
-                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className={`h-full ${DEPT_COLORS[i]} rounded-full`} style={{ width: `${d.pct}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+      {tab === 'workforce' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader title="Headcount Growth" description="New hires vs departures (8 months)" />
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={ATTRITION} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+                  <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} width={24} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="joined" name="Joined" fill="#10b981" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="left" name="Left" fill="#f87171" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Offers Accepted', value: '94.2%', trend: '+2.1%', positive: true, note: 'Last 30 days' },
-          { label: 'Avg Time to Hire', value: '18 days', trend: '-3 days', positive: true, note: 'vs last quarter' },
-          { label: 'Employee NPS', value: '72', trend: '+5', positive: true, note: 'Q2 2026 survey' },
-          { label: 'Attrition Rate', value: '4.2%', trend: '-0.8%', positive: true, note: 'Annualized' },
-        ].map(k => (
-          <Card key={k.label}>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{k.label}</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-2 data-value">{k.value}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className={`text-xs font-semibold ${k.positive ? 'text-emerald-600' : 'text-red-600'}`}>{k.trend}</span>
-              <span className="text-xs text-slate-400">{k.note}</span>
+            <Card>
+              <CardHeader title="Headcount by Department" description={`${totalHeadcount} total employees`} />
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={DEPT_DATA} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                  <XAxis type="number" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="dept" tick={{ ...TICK_STYLE, fontSize: 10 }} axisLine={false} tickLine={false} width={70} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Bar dataKey="count" fill="#6366f1" radius={[0, 3, 3, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader title="Key Workforce Metrics" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'Avg Tenure', value: '2.8 years', note: 'Company average' },
+                { label: 'Attrition Rate', value: '8.4%', note: 'Rolling 12 months', bad: true },
+                { label: 'Time to Hire', value: '28 days', note: 'Avg across all roles' },
+                { label: 'Offer Acceptance', value: '78%', note: 'Last quarter' },
+              ].map(m => (
+                <div key={m.label} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{m.label}</p>
+                  <p className={`text-xl font-bold mt-1 data-value ${m.bad ? 'text-amber-600' : 'text-slate-900 dark:text-slate-100'}`}>{m.value}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{m.note}</p>
+                </div>
+              ))}
             </div>
           </Card>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
