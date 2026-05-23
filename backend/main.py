@@ -948,6 +948,8 @@ class DashboardStats(BaseModel):
 class Store(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    organization_id: str
+    company_id: Optional[str] = None
     name: str
     location: str
     manager: Optional[str] = None
@@ -3016,6 +3018,9 @@ async def update_inventory_item(item_id: str, item_data: InventoryItemCreate, cu
 async def create_store(store_data: StoreCreate, current_user: dict = Depends(get_current_user)):
     store_doc = store_data.model_dump()
     store_doc["id"] = str(uuid.uuid4())
+    store_doc["organization_id"] = current_user.get("organization_id")
+    if current_user.get("role") == "accountant":
+        store_doc["company_id"] = get_accountant_company(current_user)
     store_doc["status"] = "active"
     store_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.stores.insert_one(store_doc)
@@ -3023,29 +3028,48 @@ async def create_store(store_data: StoreCreate, current_user: dict = Depends(get
 
 @api_router.get("/stores", response_model=List[Store])
 async def get_stores(current_user: dict = Depends(get_current_user)):
-    # FIX: was returning all orgs' store data
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+    if current_user.get("role") == "accountant":
+        query["company_id"] = get_accountant_company(current_user)
     stores = await db.stores.find(query, {"_id": 0}).to_list(500)
     return stores
 
 @api_router.get("/stores/{store_id}", response_model=Store)
 async def get_store(store_id: str, current_user: dict = Depends(get_current_user)):
-    store = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    query = {"id": store_id}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+        if current_user.get("role") == "accountant":
+            query["company_id"] = get_accountant_company(current_user)
+
+    store = await db.stores.find_one(query, {"_id": 0})
     if not store:
         raise HTTPException(status_code=404, detail="Store not found")
     return store
 
 @api_router.put("/stores/{store_id}", response_model=Store)
 async def update_store(store_id: str, store_data: StoreCreate, current_user: dict = Depends(get_current_user)):
-    result = await db.stores.update_one({"id": store_id}, {"$set": store_data.model_dump()})
+    query = {"id": store_id}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+        if current_user.get("role") == "accountant":
+            query["company_id"] = get_accountant_company(current_user)
+
+    result = await db.stores.update_one(query, {"$set": store_data.model_dump()})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Store not found")
-    updated = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    updated = await db.stores.find_one(query, {"_id": 0})
     return updated
 
 @api_router.delete("/stores/{store_id}")
 async def delete_store(store_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.stores.delete_one({"id": store_id})
+    query = {"id": store_id}
+    if current_user.get("role") != "superadmin":
+        query["organization_id"] = current_user.get("organization_id")
+        if current_user.get("role") == "accountant":
+            query["company_id"] = get_accountant_company(current_user)
+
+    result = await db.stores.delete_one(query)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Store not found")
     return {"message": "Store deleted"}
@@ -7311,7 +7335,6 @@ async def webhook_receiver(payload: dict, request: Request):
         logging.error(f"Error processing webhook: {e}")
         return {"status": "error", "message": str(e)}
 
-app.include_router(wa_router)
 
 
 logging.basicConfig(
