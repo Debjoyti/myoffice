@@ -2325,10 +2325,14 @@ async def create_attendance(att_data: AttendanceCreate, current_user: dict = Dep
 
 @api_router.get("/attendance", response_model=List[Attendance])
 async def get_attendance(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    # FIX: was not org-scoped — cross-org data was accessible
     query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
-    if employee_id:
+
+    # Enforce RBAC: Non-admin employees can only see their own attendance
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+    elif employee_id:
         query["employee_id"] = employee_id
+
     attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(500)
     return attendance
 
@@ -2511,22 +2515,28 @@ async def get_attendance_anomalies(employee_id: Optional[str] = None, current_us
 @api_router.post("/leave-requests", response_model=LeaveRequest)
 async def create_leave_request(leave_data: LeaveRequestCreate, current_user: dict = Depends(get_current_user)):
     leave_doc = leave_data.model_dump()
+
+    # Enforce RBAC: Non-admin employees can only create requests for themselves
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        leave_doc["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+
     leave_doc["id"] = str(uuid.uuid4())
     leave_doc["status"] = "pending"
-    leave_doc["organization_id"] = current_user.get("organization_id")  # FIX: was missing org scope
+    leave_doc["organization_id"] = current_user.get("organization_id")
     leave_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.leave_requests.insert_one(leave_doc)
     return leave_doc
 
 @api_router.get("/leave-requests", response_model=List[LeaveRequest])
-async def get_leave_requests(current_user: dict = Depends(get_current_user)):
-    # FIX: was leaking all orgs' leave data
-    query = {}
-    if current_user.get("role") != "superadmin":
-        query["organization_id"] = current_user.get("organization_id")
-    # Employees only see their own leave requests
-    if current_user.get("role") == "employee":
-        query["employee_id"] = current_user.get("id")
+async def get_leave_requests(employee_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    query = {} if current_user.get("role") == "superadmin" else {"organization_id": current_user.get("organization_id")}
+
+    # Enforce RBAC: Non-admin employees can only see their own leave requests
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+    elif employee_id:
+        query["employee_id"] = employee_id
+
     leaves = await db.leave_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return leaves
 
@@ -2631,7 +2641,12 @@ async def create_wfh_request(wfh_data: WFHRequestCreate, current_user: dict = De
 
 @api_router.get("/wfh-requests", response_model=List[WFHRequest])
 async def get_wfh_requests(current_user: dict = Depends(get_current_user)):
-    requests = await db.wfh_requests.find({"organization_id": current_user.get("organization_id")}, {"_id": 0}).to_list(1000)
+    query = {"organization_id": current_user.get("organization_id")}
+    # Enforce RBAC: Non-admin employees can only see their own WFH requests
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+
+    requests = await db.wfh_requests.find(query, {"_id": 0}).to_list(1000)
     return requests
 
 @api_router.patch("/wfh-requests/{request_id}/status")
@@ -3946,9 +3961,10 @@ async def create_timesheet(data: TimesheetCreate, current_user: dict = Depends(g
 @api_router.get("/timesheets", response_model=List[Timesheet])
 async def get_timesheets(current_user: dict = Depends(get_current_user)):
     query = {"organization_id": current_user.get("organization_id")}
-    # Employees see their own, admins see all
-    if current_user.get("role") != "admin":
-        query["employee_id"] = current_user.get("id")
+    # Enforce RBAC: Non-admin employees can only see their own timesheets
+    if current_user.get("role") not in ["superadmin", "admin", "hr"]:
+        query["employee_id"] = current_user.get("employee_id") or current_user.get("id")
+
     return await db.timesheets.find(query, {"_id": 0}).to_list(1000)
 
 # Tickets (Zoho Desk)
@@ -4924,6 +4940,8 @@ async def delete_company(company_id: str, current_user: dict = Depends(get_curre
 @api_router.get("/ai/dashboard-brief")
 async def ai_dashboard_brief(current_user: dict = Depends(get_current_user)):
     """Personalized AI morning brief based on live data"""
+    if current_user.get("role") not in ["admin", "superadmin", "hr"]:
+        raise HTTPException(status_code=403, detail="Only admins can access the dashboard brief")
     org_id = current_user.get("organization_id")
     query: dict = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
@@ -4955,6 +4973,8 @@ async def ai_dashboard_brief(current_user: dict = Depends(get_current_user)):
 @api_router.get("/ai/crm-insights")
 async def ai_crm_insights(current_user: dict = Depends(get_current_user)):
     """AI-powered CRM insights: lead scoring, next actions, forecast"""
+    if current_user.get("role") not in ["admin", "superadmin", "hr", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized to access CRM insights")
     org_id = current_user.get("organization_id")
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
@@ -4985,11 +5005,13 @@ async def ai_crm_insights(current_user: dict = Depends(get_current_user)):
 @api_router.get("/ai/hr-insights")
 async def ai_hr_insights(current_user: dict = Depends(get_current_user)):
     """AI-powered HR insights: attrition risk, team health"""
+    if current_user.get("role") not in ["admin", "superadmin", "hr"]:
+        raise HTTPException(status_code=403, detail="Not authorized to access HR insights")
     org_id = current_user.get("organization_id")
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
     employees = await db.employees.find(query, {"_id": 0}).to_list(1000)
-    leaves = await db.leaves.find(query, {"_id": 0}).to_list(1000)
+    leaves = await db.leave_requests.find(query, {"_id": 0}).to_list(1000)
 
     # Detect high leave frequency (attrition risk signal)
     leave_counts = {}
@@ -5016,7 +5038,7 @@ async def get_notifications(current_user: dict = Depends(get_current_user)):
     org_id = current_user.get("organization_id")
     query = {} if current_user.get("role") == "superadmin" else {"organization_id": org_id}
 
-    pending_leaves = await db.leaves.count_documents({**query, "status": "pending"})
+    pending_leaves = await db.leave_requests.count_documents({**query, "status": "pending"})
     open_tickets = await db.tickets.count_documents({**query, "status": "open"})
     total_leads = await db.leads.count_documents(query)
 
@@ -5810,7 +5832,6 @@ async def ensure_demo_users_seeded():
         },
     ]
     await _upsert_seed_many("leave_requests", leave_requests)
-    await _upsert_seed_many("leaves", leave_requests)
 
     # Additional leave data for QA filtering/states
     bulk_leave_requests: List[dict] = []
@@ -5835,7 +5856,6 @@ async def ensure_demo_users_seeded():
             }
         )
     await _upsert_seed_many("leave_requests", bulk_leave_requests)
-    await _upsert_seed_many("leaves", bulk_leave_requests)
 
     attendance = [
         {
@@ -7169,7 +7189,7 @@ from whatsapp_service import WhatsAppService
 from whatsapp_classifier import WhatsAppClassifier
 
 wa_router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp"])
-app.include_router(wa_router)
+api_router.include_router(wa_router)
 
 class WASendRequest(BaseModel):
     phone: str

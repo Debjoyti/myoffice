@@ -23,7 +23,6 @@ def parse_jd(jd_text: str) -> Dict[str, Any]:
 
     # Assign weightages and difficulties
     skills = []
-    total_weight = 0
     for i, skill in enumerate(found_skills):
         # simple heuristic for weight
         weight = 100 // len(found_skills)
@@ -38,11 +37,11 @@ def parse_jd(jd_text: str) -> Dict[str, Any]:
             "weightage": weight, # percentage
             "difficulty": difficulty
         })
-        total_weight += weight
 
-    # Fix rounding issues
-    if skills and total_weight < 100:
-        skills[0]["weightage"] += (100 - total_weight)
+    # Fix rounding issues by adjusting the first skill to ensure total is exactly 100%
+    actual_total = sum(s["weightage"] for s in skills)
+    if skills and actual_total != 100:
+        skills[0]["weightage"] += (100 - actual_total)
 
     return {
         "parsed_skills": skills,
