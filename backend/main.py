@@ -7214,9 +7214,6 @@ async def get_cockpit_data(current_user: User = Depends(get_current_user)):
         "recentActivity": []
     }
 
-app.include_router(api_router)
-app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
-
 # ─────────────────────────────────────────────────────────────────────────────
 # WHATSAPP API ROUTES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -7226,6 +7223,10 @@ from whatsapp_classifier import WhatsAppClassifier
 
 wa_router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp"])
 api_router.include_router(wa_router)
+
+api_router.include_router(wa_router)
+app.include_router(api_router)
+app.include_router(scheduling_router, prefix="/api/scheduling", tags=["scheduling"])
 
 class WASendRequest(BaseModel):
     phone: str
