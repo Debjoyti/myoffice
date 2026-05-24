@@ -5,7 +5,7 @@ import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, SearchInput, TabBar, Modal, Input, Select, Textarea, DetailGrid
 } from '@/components/ui'
-import { MessageSquare, Clock, CheckCircle2, AlertTriangle, Plus, ArrowUpRight } from 'lucide-react'
+import { MessageSquare, Clock, CheckCircle2, AlertTriangle, Plus, FlaskConical } from 'lucide-react'
 
 type TicketStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed'
 type Priority = 'Critical' | 'High' | 'Medium' | 'Low'
@@ -49,6 +49,12 @@ export default function SupportPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Demo banner */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+        <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
+        <span><strong>Preview mode</strong> — Support tickets are illustrative. Helpdesk integration is on the roadmap.</span>
+      </div>
+
       <PageHeader
         title="Support"
         description="Internal helpdesk and IT ticket management"
@@ -56,10 +62,10 @@ export default function SupportPage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Open Tickets" value={open} icon={<MessageSquare className="h-4 w-4" />} iconColor="bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400" />
-        <StatCard label="In Progress" value={inProgress} icon={<Clock className="h-4 w-4" />} iconColor="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
-        <StatCard label="Resolved Today" value={resolved} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
-        <StatCard label="Avg Resolution" value="3.8h" icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
+        <StatCard label="Open Tickets" value={open} icon={<MessageSquare className="h-4 w-4" />} iconColor="bg-red-50 text-red-500" />
+        <StatCard label="In Progress" value={inProgress} icon={<Clock className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Resolved Today" value={resolved} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Avg Resolution" value="3.8h" icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
       </div>
 
       <Card padding="none">
@@ -91,14 +97,14 @@ export default function SupportPage() {
           <Tbody>
             {filtered.map(t => (
               <Tr key={t.id} onClick={() => setSelected(t)}>
-                <Td><span className="font-mono text-xs font-medium text-indigo-600">{t.id}</span></Td>
+                <Td><span className="font-mono text-xs font-medium text-blue-600">{t.id}</span></Td>
                 <Td>
-                  <span className="font-medium text-slate-800 dark:text-slate-200 max-w-64 truncate block">{t.subject}</span>
+                  <span className="font-medium text-slate-800 max-w-64 truncate block">{t.subject}</span>
                 </Td>
                 <Td>
                   <div className="flex items-center gap-1.5">
                     <Avatar name={t.requester} size="xs" />
-                    <span className="text-xs text-slate-600 dark:text-slate-400">{t.requester}</span>
+                    <span className="text-xs text-slate-600">{t.requester}</span>
                   </div>
                 </Td>
                 <Td><Badge variant="neutral" size="sm">{t.type}</Badge></Td>
@@ -117,7 +123,7 @@ export default function SupportPage() {
             ))}
           </Tbody>
         </Table>
-        <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="px-4 py-3 border-t border-slate-100">
           <p className="text-xs text-slate-500">{filtered.length} tickets shown</p>
         </div>
       </Card>
@@ -133,14 +139,14 @@ export default function SupportPage() {
         {selected && (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">{selected.subject}</h3>
+              <h3 className="font-semibold text-slate-900">{selected.subject}</h3>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant={STATUS_COLOR[selected.status]} dot>{selected.status}</Badge>
                 <Badge variant={PRIORITY_COLOR[selected.priority]} dot>{selected.priority} Priority</Badge>
                 <Badge variant="neutral">{selected.type}</Badge>
               </div>
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg p-3 leading-relaxed">
+            <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3 leading-relaxed">
               {selected.description}
             </p>
             <DetailGrid items={[

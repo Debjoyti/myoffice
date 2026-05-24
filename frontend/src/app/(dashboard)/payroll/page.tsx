@@ -1,234 +1,383 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, DetailGrid, Divider, ProgressBar, Alert
+  StatCard, TabBar, Modal, DetailGrid, Divider, Alert, Input, Select, EmptyState
 } from '@/components/ui'
-import { formatCurrency } from '@/lib/utils'
-import { Banknote, Users, CheckCircle2, Clock, Download, Play, FileText, AlertTriangle, IndianRupee } from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/utils'
+import { Banknote, Users, CheckCircle2, Lock, Play, RefreshCw, IndianRupee, Clock, FileText } from 'lucide-react'
 
-type PayrollRow = {
-  name: string; empId: string; dept: string; basic: number; hra: number;
-  allowances: number; pf: number; tds: number; gross: number; net: number
-  status: 'Processed' | 'Pending' | 'On Hold'
+/* ── Types ─────────────────────────────────────────────────────────────────── */
+type PayrollRun = {
+  id: string
+  payroll_month: string
+  status: 'processing' | 'completed' | 'locked' | 'failed'
+  total_employees: number
+  total_gross: number
+  total_net: number
+  total_deductions: number
+  total_reimbursements: number
+  processed_at: string | null
+  locked_at: string | null
+  notes: string | null
+  processor: { full_name: string; designation: string } | null
 }
 
-const PAYROLL: PayrollRow[] = [
-  { name: 'Priya Sharma', empId: 'EMP-001', dept: 'Engineering', basic: 900000, hra: 360000, allowances: 180000, pf: 108000, tds: 85000, gross: 1440000, net: 1247000, status: 'Processed' },
-  { name: 'Rahul Mehta', empId: 'EMP-002', dept: 'Finance', basic: 600000, hra: 240000, allowances: 120000, pf: 72000, tds: 42000, gross: 960000, net: 846000, status: 'Processed' },
-  { name: 'Ananya Iyer', empId: 'EMP-003', dept: 'HR', basic: 700000, hra: 280000, allowances: 140000, pf: 84000, tds: 58000, gross: 1120000, net: 978000, status: 'Pending' },
-  { name: 'Karan Singh', empId: 'EMP-004', dept: 'Sales', basic: 500000, hra: 200000, allowances: 100000, pf: 60000, tds: 28000, gross: 800000, net: 712000, status: 'On Hold' },
-  { name: 'Divya Nair', empId: 'EMP-005', dept: 'Engineering', basic: 1100000, hra: 440000, allowances: 220000, pf: 132000, tds: 145000, gross: 1760000, net: 1483000, status: 'Pending' },
-  { name: 'Amit Patel', empId: 'EMP-006', dept: 'Operations', basic: 800000, hra: 320000, allowances: 160000, pf: 96000, tds: 72000, gross: 1280000, net: 1112000, status: 'Processed' },
-  { name: 'Sneha Reddy', empId: 'EMP-007', dept: 'Sales', basic: 900000, hra: 360000, allowances: 180000, pf: 108000, tds: 89000, gross: 1440000, net: 1243000, status: 'Pending' },
-]
-
-const STATUS_COLOR: Record<string, 'success' | 'warning' | 'danger'> = {
-  Processed: 'success', Pending: 'warning', 'On Hold': 'danger',
+type Payslip = {
+  id: string
+  payroll_month: string
+  paid_days: number
+  working_days: number
+  loss_of_pay_days: number
+  gross_earnings: number
+  total_deductions: number
+  net_salary: number
+  reimbursements_paid: number
+  status: 'draft' | 'finalized' | 'paid'
+  generated_at: string | null
+  paid_at: string | null
+  employee: { id: string; full_name: string; employee_code: string; designation: string; department: string }
 }
 
-const totalGross = PAYROLL.reduce((s, r) => s + r.gross / 12, 0)
-const totalNet = PAYROLL.reduce((s, r) => s + r.net / 12, 0)
-const totalPF = PAYROLL.reduce((s, r) => s + r.pf / 12, 0)
-const totalTDS = PAYROLL.reduce((s, r) => s + r.tds / 12, 0)
+type PayrollDetail = { payroll: PayrollRun; payslips: Payslip[] }
 
-const processedCount = PAYROLL.filter(r => r.status === 'Processed').length
+/* ── Status helpers ─────────────────────────────────────────────────────────── */
+const PAYROLL_STATUS: Record<string, { label: string; variant: 'success' | 'warning' | 'info' | 'danger' | 'neutral' }> = {
+  completed: { label: 'Completed', variant: 'success' },
+  locked:    { label: 'Locked',    variant: 'info' },
+  processing:{ label: 'Processing',variant: 'warning' },
+  failed:    { label: 'Failed',    variant: 'danger' },
+}
+const PAYSLIP_STATUS: Record<string, { label: string; variant: 'success' | 'warning' | 'neutral' | 'info' }> = {
+  paid:      { label: 'Paid',      variant: 'success' },
+  finalized: { label: 'Finalized', variant: 'info' },
+  draft:     { label: 'Draft',     variant: 'neutral' },
+}
 
-export default function PayrollPage() {
-  const [tab, setTab] = useState('summary')
-  const [runOpen, setRunOpen] = useState(false)
-  const [selected, setSelected] = useState<PayrollRow | null>(null)
+/* ── Run Payroll Modal ──────────────────────────────────────────────────────── */
+function RunPayrollModal({ open, onClose, onSuccess }: {
+  open: boolean; onClose: () => void; onSuccess: () => void
+}) {
+  const now = new Date()
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const [month, setMonth] = useState(defaultMonth)
+  const [notes, setNotes] = useState('')
   const [running, setRunning] = useState(false)
+  const [result,  setResult]  = useState<any>(null)
+  const [err,     setErr]     = useState<string | null>(null)
 
-  const handleRun = () => {
-    setRunning(true)
-    setTimeout(() => { setRunning(false); setRunOpen(false) }, 2000)
+  useEffect(() => { if (!open) { setResult(null); setErr(null); setMonth(defaultMonth); setNotes('') } }, [open])
+
+  const handleRun = async () => {
+    setRunning(true); setErr(null)
+    try {
+      const res = await fetch('/api/v1/payroll/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payroll_month: month, notes }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? 'Payroll run failed')
+      setResult(d)
+      onSuccess()
+    } catch (err: any) { setErr(err.message) }
+    finally { setRunning(false) }
   }
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <PageHeader
-        title="Payroll"
-        description="Salary processing, payslips, and statutory compliance"
-        actions={
-          <>
-            <Button variant="outline" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />}>Export</Button>
-            <Button size="sm" leftIcon={<Play className="h-3.5 w-3.5" />} onClick={() => setRunOpen(true)}>Run Payroll</Button>
-          </>
-        }
-      />
-
-      {PAYROLL.some(r => r.status === 'On Hold') && (
-        <Alert variant="warning" title="Action Required">
-          {PAYROLL.filter(r => r.status === 'On Hold').length} employee(s) have payroll on hold. Please resolve before processing.
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Gross Payroll" value={formatCurrency(totalGross)} icon={<Banknote className="h-4 w-4" />} delta={{ value: '2.1%', positive: true }} />
-        <StatCard label="Net Disbursement" value={formatCurrency(totalNet)} icon={<IndianRupee className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
-        <StatCard label="PF Contribution" value={formatCurrency(totalPF)} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400" />
-        <StatCard label="TDS Deducted" value={formatCurrency(totalTDS)} icon={<FileText className="h-4 w-4" />} iconColor="bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400" />
-      </div>
-
-      {/* Processing status */}
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">May 2026 Processing Status</p>
-            <p className="text-xs text-slate-500 mt-0.5">{processedCount} of {PAYROLL.length} employees processed</p>
+    <Modal open={open} onClose={onClose} title="Run Payroll" size="md"
+      footer={!result ? <>
+        <Button variant="ghost" size="sm" onClick={onClose} disabled={running}>Cancel</Button>
+        <Button size="sm" loading={running}
+          leftIcon={<Play className="h-3.5 w-3.5" />}
+          onClick={handleRun}>
+          Run Payroll
+        </Button>
+      </> : <Button size="sm" onClick={onClose}>Done</Button>}
+    >
+      {result ? (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-emerald-800">Payroll completed successfully!</p>
+              <p className="text-sm text-emerald-700 mt-0.5">{result.message}</p>
+            </div>
           </div>
-          <Badge variant={processedCount === PAYROLL.length ? 'success' : 'warning'}>
-            {processedCount === PAYROLL.length ? 'Complete' : `${PAYROLL.length - processedCount} pending`}
-          </Badge>
+          <DetailGrid cols={2} items={[
+            { label: 'Employees Processed', value: result.total_employees },
+            { label: 'Total Gross',         value: formatCurrency(result.total_gross ?? 0) },
+            { label: 'Total Net Salary',    value: formatCurrency(result.total_net ?? 0) },
+            { label: 'Total Deductions',    value: formatCurrency(result.total_deductions ?? 0) },
+          ]} />
         </div>
-        <ProgressBar value={processedCount} max={PAYROLL.length} color={processedCount === PAYROLL.length ? 'emerald' : 'amber'} size="md" showLabel />
-      </Card>
+      ) : (
+        <div className="space-y-4">
+          {err && <Alert variant="danger">{err}</Alert>}
+          <Alert variant="warning" title="Before you proceed">
+            Running payroll will calculate salary for all active employees using their attendance
+            data. Employees without a salary structure will be skipped.
+          </Alert>
+          <Input label="Payroll Month" type="month" value={month}
+            onChange={e => setMonth(e.target.value)} />
+          <div>
+            <label className="text-xs font-medium text-slate-700">Notes (optional)</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)}
+              className="mt-1.5 w-full h-16 rounded-md border border-slate-200 bg-white text-sm px-3 py-2 resize-none focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              placeholder="e.g. Regular monthly payroll…"
+            />
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
 
-      <TabBar
-        tabs={[
-          { id: 'summary', label: 'Payroll Register' },
-          { id: 'statutory', label: 'Statutory Reports' },
-        ]}
-        active={tab}
-        onChange={setTab}
-      />
+/* ── Payroll Detail Modal ───────────────────────────────────────────────────── */
+function PayrollDetailModal({ payrollId, onClose, onAction }: {
+  payrollId: string | null; onClose: () => void; onAction: () => void
+}) {
+  const [detail,   setDetail]   = useState<PayrollDetail | null>(null)
+  const [loading,  setLoading]  = useState(false)
+  const [actioning,setActioning]= useState(false)
+  const [err,      setErr]      = useState<string | null>(null)
 
-      {tab === 'summary' && (
-        <Card padding="none">
+  useEffect(() => {
+    if (!payrollId) { setDetail(null); return }
+    setLoading(true); setErr(null)
+    fetch(`/api/v1/payroll/${payrollId}`)
+      .then(r => r.json())
+      .then(d => setDetail(d))
+      .catch(() => setErr('Failed to load payroll details'))
+      .finally(() => setLoading(false))
+  }, [payrollId])
+
+  const handleAction = async (action: 'lock' | 'mark_paid') => {
+    setActioning(true); setErr(null)
+    try {
+      const res = await fetch(`/api/v1/payroll/${payrollId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? 'Action failed')
+      onAction()
+      onClose()
+    } catch (err: any) { setErr(err.message) }
+    finally { setActioning(false) }
+  }
+
+  if (!payrollId) return null
+
+  const p = detail?.payroll
+  return (
+    <Modal open={!!payrollId} onClose={onClose} title={`Payroll — ${p?.payroll_month ?? '…'}`} size="xl"
+      footer={
+        p && <>
+          {p.status === 'completed' && !p.locked_at && (
+            <Button variant="outline" size="sm" loading={actioning}
+              leftIcon={<Lock className="h-3.5 w-3.5" />}
+              onClick={() => handleAction('lock')}>Lock & Finalise</Button>
+          )}
+          {p.status === 'locked' && (
+            <Button size="sm" loading={actioning}
+              leftIcon={<CheckCircle2 className="h-3.5 w-3.5" />}
+              onClick={() => handleAction('mark_paid')}>Mark All Paid</Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+        </>
+      }
+    >
+      {loading && <div className="py-8 text-center text-sm text-slate-400">Loading…</div>}
+      {err && <Alert variant="danger">{err}</Alert>}
+      {p && !loading && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Employees',       value: p.total_employees },
+              { label: 'Gross Salary',    value: formatCurrency(p.total_gross) },
+              { label: 'Net Salary',      value: formatCurrency(p.total_net) },
+              { label: 'Total Deductions',value: formatCurrency(p.total_deductions) },
+            ].map(s => (
+              <div key={s.label} className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs text-slate-500 mb-1">{s.label}</p>
+                <p className="font-bold text-slate-900">{s.value}</p>
+              </div>
+            ))}
+          </div>
+
           <Table>
-            <Thead>
-              <tr>
-                <Th>Employee</Th><Th>Dept</Th><Th align="right">Gross</Th>
-                <Th align="right">PF</Th><Th align="right">TDS</Th><Th align="right">Net Pay</Th>
-                <Th>Status</Th>
-              </tr>
-            </Thead>
+            <Thead><tr>
+              <Th>Employee</Th>
+              <Th>Days</Th>
+              <Th align="right">Gross</Th>
+              <Th align="right">Deductions</Th>
+              <Th align="right">Net Salary</Th>
+              <Th>Status</Th>
+            </tr></Thead>
             <Tbody>
-              {PAYROLL.map(r => (
-                <Tr key={r.empId} onClick={() => setSelected(r)}>
+              {(detail?.payslips ?? []).map(ps => (
+                <Tr key={ps.id}>
                   <Td>
-                    <div className="flex items-center gap-2.5">
-                      <Avatar name={r.name} size="sm" />
-                      <div>
-                        <p className="font-medium text-slate-800 dark:text-slate-200">{r.name}</p>
-                        <p className="text-xs font-mono text-slate-400">{r.empId}</p>
-                      </div>
+                    <div>
+                      <p className="font-medium text-sm text-slate-900">{ps.employee?.full_name}</p>
+                      <p className="text-xs text-slate-400">{ps.employee?.designation}</p>
                     </div>
                   </Td>
-                  <Td><Badge variant="neutral" size="sm">{r.dept}</Badge></Td>
-                  <Td align="right"><span className="data-value text-sm">{formatCurrency(r.gross / 12)}</span></Td>
-                  <Td align="right"><span className="data-value text-xs text-slate-500">{formatCurrency(r.pf / 12)}</span></Td>
-                  <Td align="right"><span className="data-value text-xs text-slate-500">{formatCurrency(r.tds / 12)}</span></Td>
-                  <Td align="right"><span className="data-value font-semibold text-emerald-600">{formatCurrency(r.net / 12)}</span></Td>
-                  <Td><Badge variant={STATUS_COLOR[r.status]} dot>{r.status}</Badge></Td>
+                  <Td>
+                    <span className="text-sm">{ps.paid_days}/{ps.working_days}</span>
+                    {ps.loss_of_pay_days > 0 && (
+                      <span className="ml-1 text-xs text-red-500">(-{ps.loss_of_pay_days} LOP)</span>
+                    )}
+                  </Td>
+                  <Td align="right"><span className="font-mono text-sm">{formatCurrency(ps.gross_earnings)}</span></Td>
+                  <Td align="right"><span className="font-mono text-sm text-red-600">-{formatCurrency(ps.total_deductions)}</span></Td>
+                  <Td align="right"><span className="font-mono text-sm font-semibold text-emerald-700">{formatCurrency(ps.net_salary)}</span></Td>
+                  <Td>
+                    <Badge variant={(PAYSLIP_STATUS[ps.status] ?? PAYSLIP_STATUS.draft).variant} size="sm">
+                      {(PAYSLIP_STATUS[ps.status] ?? PAYSLIP_STATUS.draft).label}
+                    </Badge>
+                  </Td>
                 </Tr>
               ))}
             </Tbody>
           </Table>
-          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Total: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(totalGross)}</span> gross · <span className="font-semibold text-emerald-600">{formatCurrency(totalNet)}</span> net
-            </p>
-            <Button variant="outline" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />}>Download Payslips</Button>
-          </div>
-        </Card>
-      )}
-
-      {tab === 'statutory' && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: 'Provident Fund (PF)', value: formatCurrency(totalPF * 2), note: 'Employee + Employer contribution', color: 'bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-800' },
-            { label: 'Tax Deducted at Source (TDS)', value: formatCurrency(totalTDS), note: 'Deposit by 7th of next month', color: 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800' },
-            { label: 'Professional Tax (PT)', value: formatCurrency(PAYROLL.length * 200), note: `${PAYROLL.length} employees × ₹200`, color: 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800' },
-          ].map(s => (
-            <div key={s.label} className={`rounded-lg border p-4 ${s.color}`}>
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">{s.label}</p>
-              <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1 data-value">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-1">{s.note}</p>
-            </div>
-          ))}
         </div>
       )}
+    </Modal>
+  )
+}
 
-      {/* Payslip Modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title="Payslip Details" size="lg"
-        footer={<>
-          <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />}>Download PDF</Button>
-        </>}
-      >
-        {selected && (
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Avatar name={selected.name} size="lg" />
-              <div>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">{selected.name}</p>
-                <p className="text-xs text-slate-500">{selected.dept} · {selected.empId}</p>
-                <Badge variant={STATUS_COLOR[selected.status]} dot className="mt-1">{selected.status}</Badge>
-              </div>
-            </div>
-            <Divider label="May 2026 Payslip" />
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Earnings</p>
-                {[['Basic Salary', selected.basic / 12], ['HRA', selected.hra / 12], ['Allowances', selected.allowances / 12]].map(([l, v]) => (
-                  <div key={l as string} className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">{l as string}</span>
-                    <span className="text-xs font-medium data-value">{formatCurrency(v as number)}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between py-1.5 font-semibold">
-                  <span className="text-xs text-slate-800 dark:text-slate-200">Gross Pay</span>
-                  <span className="text-xs data-value text-emerald-600">{formatCurrency(selected.gross / 12)}</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Deductions</p>
-                {[['Provident Fund', selected.pf / 12], ['TDS (Income Tax)', selected.tds / 12]].map(([l, v]) => (
-                  <div key={l as string} className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">{l as string}</span>
-                    <span className="text-xs font-medium data-value text-red-500">{formatCurrency(v as number)}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between py-1.5 font-semibold">
-                  <span className="text-xs text-slate-800 dark:text-slate-200">Net Pay</span>
-                  <span className="text-xs data-value text-indigo-600">{formatCurrency(selected.net / 12)}</span>
-                </div>
-              </div>
-            </div>
+/* ── Main Page ──────────────────────────────────────────────────────────────── */
+export default function PayrollPage() {
+  const [payrolls,   setPayrolls]   = useState<PayrollRun[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [runOpen,    setRunOpen]    = useState(false)
+  const [detailId,   setDetailId]   = useState<string | null>(null)
+  const [isHR,       setIsHR]       = useState(false)
+
+  const fetchPayrolls = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [payRes, meRes] = await Promise.all([
+        fetch('/api/v1/payroll'),
+        fetch('/api/v1/me'),
+      ])
+      if (payRes.ok) { const d = await payRes.json(); setPayrolls(d.payrolls ?? []) }
+      if (meRes.ok)  { const d = await meRes.json(); setIsHR(['admin', 'hr'].includes(d.employee?.role)) }
+    } catch { /* silent */ }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
+
+  const latest = payrolls[0]
+  const totalGross = payrolls.slice(0, 3).reduce((s, p) => s + (p.total_gross ?? 0), 0)
+  const lockedCount = payrolls.filter(p => p.status === 'locked').length
+
+  return (
+    <div className="space-y-5 animate-fadeIn">
+      <PageHeader
+        title="Payroll"
+        description="Run monthly payroll, review payslips, and manage salary disbursement"
+        actions={
+          isHR && (
+            <Button leftIcon={<Play className="h-3.5 w-3.5" />} onClick={() => setRunOpen(true)}>
+              Run Payroll
+            </Button>
+          )
+        }
+      />
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Payroll Runs"    value={payrolls.length}          accent="blue"    icon={<Banknote className="h-4 w-4" />}  loading={loading} />
+        <StatCard label="Last Month Gross" value={latest ? formatCurrency(latest.total_gross) : '—'} accent="emerald" icon={<IndianRupee className="h-4 w-4" />} loading={loading} />
+        <StatCard label="Last Month Net"  value={latest ? formatCurrency(latest.total_net)   : '—'} accent="teal"    icon={<CheckCircle2 className="h-4 w-4" />} loading={loading} />
+        <StatCard label="Locked Months"   value={lockedCount}             accent="sky"     icon={<Lock className="h-4 w-4" />}       loading={loading} />
+      </div>
+
+      {/* Payroll History */}
+      <Card padding="none">
+        <div className="flex items-center justify-between p-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Payroll History</h3>
+            <p className="text-xs text-slate-500 mt-0.5">All payroll runs in this organisation</p>
           </div>
+          <Button variant="outline" size="sm" leftIcon={<RefreshCw className="h-3 w-3" />} onClick={fetchPayrolls}>
+            Refresh
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center text-sm text-slate-400">Loading payroll history…</div>
+        ) : payrolls.length === 0 ? (
+          <EmptyState
+            icon={<Banknote className="h-8 w-8" />}
+            title="No payroll runs yet"
+            description="Run your first payroll to get started"
+            action={
+              isHR ? (
+                <Button size="sm" leftIcon={<Play className="h-3.5 w-3.5" />} onClick={() => setRunOpen(true)}>
+                  Run Payroll
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <Table>
+            <Thead>
+              <tr>
+                <Th>Month</Th>
+                <Th>Employees</Th>
+                <Th align="right">Gross Salary</Th>
+                <Th align="right">Total Deductions</Th>
+                <Th align="right">Net Salary</Th>
+                <Th>Processed By</Th>
+                <Th>Status</Th>
+                <Th align="center">Action</Th>
+              </tr>
+            </Thead>
+            <Tbody>
+              {payrolls.map(p => {
+                const st = PAYROLL_STATUS[p.status] ?? { label: p.status, variant: 'neutral' as const }
+                return (
+                  <Tr key={p.id} onClick={() => setDetailId(p.id)}>
+                    <Td>
+                      <span className="font-semibold text-slate-900">{p.payroll_month}</span>
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-slate-400" />
+                        <span>{p.total_employees}</span>
+                      </div>
+                    </Td>
+                    <Td align="right"><span className="font-mono">{formatCurrency(p.total_gross)}</span></Td>
+                    <Td align="right"><span className="font-mono text-red-600">-{formatCurrency(p.total_deductions)}</span></Td>
+                    <Td align="right"><span className="font-mono font-semibold text-emerald-700">{formatCurrency(p.total_net)}</span></Td>
+                    <Td>
+                      <span className="text-sm text-slate-500">{p.processor?.full_name ?? '—'}</span>
+                    </Td>
+                    <Td>
+                      <Badge variant={st.variant} dot size="sm">{st.label}</Badge>
+                    </Td>
+                    <Td align="center">
+                      <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setDetailId(p.id) }}>
+                        View
+                      </Button>
+                    </Td>
+                  </Tr>
+                )
+              })}
+            </Tbody>
+          </Table>
         )}
-      </Modal>
+      </Card>
 
-      {/* Run Payroll Modal */}
-      <Modal open={runOpen} onClose={() => setRunOpen(false)} title="Run Payroll — May 2026" size="md"
-        footer={<>
-          <Button variant="ghost" size="sm" onClick={() => setRunOpen(false)}>Cancel</Button>
-          <Button size="sm" loading={running} onClick={handleRun}>Confirm & Process</Button>
-        </>}
-      >
-        <div className="space-y-4">
-          <Alert variant="info" title="Pre-flight checks">
-            All attendance and reimbursement data has been synced. Review the summary below before processing.
-          </Alert>
-          <DetailGrid items={[
-            { label: 'Pay Period', value: 'May 2026 (01–31 May)' },
-            { label: 'Total Employees', value: PAYROLL.length },
-            { label: 'Gross Disbursement', value: formatCurrency(totalGross) },
-            { label: 'Net Disbursement', value: formatCurrency(totalNet) },
-            { label: 'PF Contribution', value: formatCurrency(totalPF) },
-            { label: 'TDS Payable', value: formatCurrency(totalTDS) },
-          ]} />
-          {PAYROLL.some(r => r.status === 'On Hold') && (
-            <Alert variant="warning">
-              <AlertTriangle className="h-3 w-3 inline mr-1" />
-              {PAYROLL.filter(r => r.status === 'On Hold').length} employees are on hold and will be excluded from this run.
-            </Alert>
-          )}
-        </div>
-      </Modal>
+      {/* Modals */}
+      <RunPayrollModal open={runOpen} onClose={() => setRunOpen(false)} onSuccess={fetchPayrolls} />
+      <PayrollDetailModal payrollId={detailId} onClose={() => setDetailId(null)} onAction={fetchPayrolls} />
     </div>
   )
 }

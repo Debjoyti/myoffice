@@ -3,10 +3,10 @@
 import { useState, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td, StatCard,
-  TabBar, SearchInput, Modal, Input, Select, Textarea, DetailGrid, Divider, ProgressBar
+  TabBar, SearchInput, Modal, Input, Select, Textarea, DetailGrid, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { Package, ShoppingCart, Truck, CheckCircle2, Plus, Download, Star, Building2 } from 'lucide-react'
+import { Package, ShoppingCart, Truck, CheckCircle2, Plus, Download, Star, Building2, FlaskConical } from 'lucide-react'
 
 type POStatus = 'Delivered' | 'In Transit' | 'Approved' | 'Pending' | 'Draft'
 
@@ -62,6 +62,12 @@ export default function ProcurementPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Demo banner */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+        <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
+        <span><strong>Preview mode</strong> — Procurement data is illustrative. Connect your ERP to enable live PO tracking.</span>
+      </div>
+
       <PageHeader
         title="Procurement"
         description="Purchase orders, vendor management, and spend analytics"
@@ -75,9 +81,9 @@ export default function ProcurementPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Total Spend MTD" value={formatCurrency(totalSpend)} delta={{ value: '12.4%', positive: false }} icon={<ShoppingCart className="h-4 w-4" />} />
-        <StatCard label="Open POs" value={openPOs} icon={<Package className="h-4 w-4" />} iconColor="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
-        <StatCard label="In Transit" value={inTransit} icon={<Truck className="h-4 w-4" />} iconColor="bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400" />
-        <StatCard label="Delivered" value={delivered} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
+        <StatCard label="Open POs" value={openPOs} icon={<Package className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="In Transit" value={inTransit} icon={<Truck className="h-4 w-4" />} iconColor="bg-sky-50 text-sky-600" />
+        <StatCard label="Delivered" value={delivered} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
       </div>
 
       <TabBar
@@ -101,8 +107,8 @@ export default function ProcurementPage() {
             <Tbody>
               {filteredPOs.map(po => (
                 <Tr key={po.id} onClick={() => setSelectedPO(po)}>
-                  <Td><span className="font-mono text-xs font-medium text-indigo-600">{po.id}</span></Td>
-                  <Td><span className="font-medium text-slate-800 dark:text-slate-200">{po.vendor}</span></Td>
+                  <Td><span className="font-mono text-xs font-medium text-blue-600">{po.id}</span></Td>
+                  <Td><span className="font-medium text-slate-800">{po.vendor}</span></Td>
                   <Td><span className="text-xs text-slate-500">{po.items}</span></Td>
                   <Td><span className="text-xs text-slate-500">{po.raised}</span></Td>
                   <Td><span className="text-xs text-slate-500">{po.expected}</span></Td>
@@ -113,8 +119,8 @@ export default function ProcurementPage() {
               ))}
             </Tbody>
           </Table>
-          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <p className="text-xs text-slate-500">Total committed spend: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(totalSpend)}</span></p>
+          <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500">Total committed spend: <span className="font-semibold text-slate-700">{formatCurrency(totalSpend)}</span></p>
           </div>
         </Card>
       )}
@@ -130,21 +136,21 @@ export default function ProcurementPage() {
                 <Tr key={v.name}>
                   <Td>
                     <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <div className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
                         <Building2 className="h-3.5 w-3.5 text-slate-500" />
                       </div>
                       <div>
-                        <p className="font-medium text-slate-800 dark:text-slate-200 text-sm">{v.name}</p>
+                        <p className="font-medium text-slate-800 text-sm">{v.name}</p>
                         <p className="text-xs text-slate-400">{v.contact}</p>
                       </div>
                     </div>
                   </Td>
                   <Td><Badge variant="neutral" size="sm">{v.category}</Badge></Td>
                   <Td><StarRating rating={v.rating} /></Td>
-                  <Td><span className="text-sm font-medium text-slate-700 dark:text-slate-300">{v.activePOs}</span></Td>
+                  <Td><span className="text-sm font-medium text-slate-700">{v.activePOs}</span></Td>
                   <Td align="right"><span className="data-value font-medium">{formatCurrency(v.totalSpend)}</span></Td>
                   <Td>
-                    <Badge variant={v.status === 'Preferred' ? 'default' : 'neutral'} dot>
+                    <Badge variant={v.status === 'Preferred' ? 'info' : 'neutral'} dot>
                       {v.status}
                     </Badge>
                   </Td>
@@ -166,7 +172,7 @@ export default function ProcurementPage() {
         {selectedPO && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-sm font-bold text-indigo-600">{selectedPO.id}</span>
+              <span className="font-mono text-sm font-bold text-blue-600">{selectedPO.id}</span>
               <Badge variant={PO_STATUS[selectedPO.status]}>{selectedPO.status}</Badge>
             </div>
             <Divider />
@@ -174,7 +180,7 @@ export default function ProcurementPage() {
               { label: 'Vendor', value: selectedPO.vendor },
               { label: 'Category', value: selectedPO.category },
               { label: 'Items', value: selectedPO.items },
-              { label: 'Amount', value: <span className="font-bold text-indigo-600">{formatCurrency(selectedPO.amount)}</span> },
+              { label: 'Amount', value: <span className="font-bold text-blue-600">{formatCurrency(selectedPO.amount)}</span> },
               { label: 'Raised On', value: selectedPO.raised },
               { label: 'Expected', value: selectedPO.expected },
               { label: 'Approver', value: selectedPO.approver },

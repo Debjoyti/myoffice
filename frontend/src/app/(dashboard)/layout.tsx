@@ -1,62 +1,95 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard, Users, Clock, Banknote, Briefcase,
-  ShoppingCart, LogOut, ChevronLeft, ChevronRight,
-  Building2, Target, FileText, UserCheck, BarChart3,
-  Settings, HelpCircle, Bell, Search, ChevronDown,
-  TrendingUp, Zap, Package, MessageSquare
+  LayoutDashboard, Users, Clock, Banknote, Wallet,
+  Settings, Bell, ChevronLeft, ChevronRight,
+  TrendingUp, Package, Target, Zap, MessageSquare,
+  BarChart3, Home, LogOut, Building2
 } from 'lucide-react'
 
 const NAV_GROUPS = [
   {
     label: 'Workspace',
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'My Home',    href: '/home',       icon: Home },
+      { name: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard },
     ]
   },
   {
     label: 'People',
     items: [
-      { name: 'HRMS', href: '/hrms', icon: Users },
+      { name: 'HRMS',       href: '/hrms',       icon: Users },
       { name: 'Attendance', href: '/attendance', icon: Clock },
-      { name: 'Payroll', href: '/payroll', icon: Banknote },
+      { name: 'Payroll',    href: '/payroll',    icon: Banknote },
+      { name: 'Salary',     href: '/salary',     icon: Wallet },
     ]
   },
   {
     label: 'Business',
     items: [
-      { name: 'Finance', href: '/finance', icon: TrendingUp },
-      { name: 'Procurement', href: '/procurement', icon: Package },
-      { name: 'CRM', href: '/crm', icon: Target },
+      { name: 'Finance',    href: '/finance',    icon: TrendingUp },
+      { name: 'Procurement',href: '/procurement',icon: Package },
+      { name: 'CRM',        href: '/crm',        icon: Target },
     ]
   },
   {
     label: 'Operations',
     items: [
-      { name: 'Projects', href: '/projects', icon: Zap },
-      { name: 'Support', href: '/support', icon: MessageSquare },
-      { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+      { name: 'Projects',   href: '/projects',   icon: Zap },
+      { name: 'Support',    href: '/support',    icon: MessageSquare },
+      { name: 'Analytics',  href: '/analytics',  icon: BarChart3 },
     ]
   },
   {
     label: 'Admin',
     items: [
-      { name: 'Settings', href: '/settings', icon: Settings },
+      { name: 'Settings',   href: '/settings',   icon: Settings },
     ]
   }
 ]
 
+type UserProfile = {
+  full_name: string
+  email: string
+  designation: string
+  role: string
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
+  const router   = useRouter()
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [collapsed,   setCollapsed]   = useState(false)
+  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const [user,        setUser]        = useState<UserProfile | null>(null)
+  const [notifCount,  setNotifCount]  = useState(0)
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/v1/me')
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.employee)
+        }
+      } catch { /* silent */ }
+    }
+    async function loadNotifs() {
+      try {
+        const res = await fetch('/api/v1/notifications')
+        if (res.ok) {
+          const data = await res.json()
+          setNotifCount(data.unread_count ?? 0)
+        }
+      } catch { /* silent */ }
+    }
+    loadUser()
+    loadNotifs()
+  }, [pathname])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -65,37 +98,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.refresh()
   }
 
-  const currentPage = NAV_GROUPS.flatMap(g => g.items).find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+  const initials = (name: string) =>
+    name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 
+  const currentPage = NAV_GROUPS.flatMap(g => g.items)
+    .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+
+  /* ── Sidebar Content ─────────────────────────────────────────────────── */
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
+
       {/* Logo */}
       <div className={cn(
-        'flex items-center h-14 border-b flex-shrink-0 transition-all duration-200',
-        'border-white/8 px-4',
+        'flex items-center h-[52px] border-b border-slate-200 flex-shrink-0 px-3',
         collapsed ? 'justify-center' : 'justify-between'
       )}>
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
               <Building2 className="h-4 w-4 text-white" />
             </div>
             <div>
-              <span className="text-sm font-bold text-white tracking-tight">PRSK</span>
-              <span className="block text-[10px] text-slate-500 leading-none">Enterprise Suite</span>
+              <span className="text-sm font-bold text-slate-900 tracking-tight">PRSK</span>
+              <span className="block text-[10px] text-slate-400 leading-none mt-0.5">Enterprise Suite</span>
             </div>
           </div>
         )}
         {collapsed && (
-          <div className="h-7 w-7 rounded-lg bg-indigo-500 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
             <Building2 className="h-4 w-4 text-white" />
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden md:flex p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/8 transition-colors"
+          className="hidden md:flex p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
         >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          {collapsed
+            ? <ChevronRight className="h-3.5 w-3.5" />
+            : <ChevronLeft  className="h-3.5 w-3.5" />
+          }
         </button>
       </div>
 
@@ -104,10 +145,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {NAV_GROUPS.map(group => (
           <div key={group.label}>
             {!collapsed && (
-              <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-2 mb-1">
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] px-2 mb-1">
                 {group.label}
               </p>
             )}
+            {collapsed && <div className="h-px bg-slate-100 mx-1 mb-2" />}
             <ul className="space-y-0.5">
               {group.items.map(item => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -118,14 +160,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       onClick={() => setMobileOpen(false)}
                       title={collapsed ? item.name : undefined}
                       className={cn(
-                        'flex items-center rounded-md text-sm font-medium transition-all duration-150',
+                        'flex items-center rounded-lg text-[13px] font-medium transition-all duration-150',
                         collapsed ? 'justify-center h-9 w-9 mx-auto' : 'gap-2.5 px-2.5 h-8',
                         isActive
-                          ? 'bg-indigo-600 text-white'
-                          : 'text-slate-400 hover:text-slate-100 hover:bg-white/6'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                       )}
                     >
-                      <item.icon className={cn('flex-shrink-0', collapsed ? 'h-4.5 w-4.5' : 'h-4 w-4')} />
+                      <item.icon className={cn(
+                        'flex-shrink-0 transition-colors',
+                        collapsed ? 'h-[18px] w-[18px]' : 'h-[15px] w-[15px]',
+                        isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      )} />
                       {!collapsed && item.name}
                     </Link>
                   </li>
@@ -136,29 +182,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ))}
       </nav>
 
-      {/* Bottom */}
-      <div className="border-t border-white/8 p-2 space-y-0.5">
+      {/* User */}
+      <div className="border-t border-slate-200 p-2">
+        {!collapsed ? (
+          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-50 transition-colors mb-0.5 cursor-default">
+            <div className="h-7 w-7 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+              {user ? initials(user.full_name) : '?'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-800 truncate leading-tight">
+                {user?.full_name ?? 'Loading...'}
+              </p>
+              <p className="text-[10px] text-slate-400 truncate">
+                {user?.designation ?? user?.role ?? ''}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center mb-1">
+            <div className="h-7 w-7 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              {user ? initials(user.full_name) : '?'}
+            </div>
+          </div>
+        )}
         <button
           onClick={handleLogout}
           className={cn(
-            'flex items-center rounded-md text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-white/6 transition-colors w-full',
-            collapsed ? 'justify-center h-9 w-9 mx-auto' : 'gap-2.5 px-2.5 h-8'
+            'flex items-center rounded-lg text-xs font-medium text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors w-full',
+            collapsed ? 'justify-center h-9 w-9 mx-auto' : 'gap-2 px-2.5 h-8'
           )}
-          title={collapsed ? 'Logout' : undefined}
+          title={collapsed ? 'Sign out' : undefined}
         >
-          <LogOut className="h-4 w-4 flex-shrink-0" />
-          {!collapsed && 'Logout'}
+          <LogOut className="h-3.5 w-3.5 flex-shrink-0" />
+          {!collapsed && 'Sign out'}
         </button>
       </div>
     </div>
   )
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-screen bg-slate-100 overflow-hidden">
+
       {/* Desktop Sidebar */}
       <aside className={cn(
-        'hidden md:flex flex-col flex-shrink-0 bg-slate-950 border-r border-white/6 transition-all duration-200',
-        collapsed ? 'w-16' : 'w-60'
+        'hidden md:flex flex-col flex-shrink-0 border-r border-slate-200 shadow-sm transition-all duration-200',
+        collapsed ? 'w-[60px]' : 'w-[228px]'
       )}>
         <SidebarContent />
       </aside>
@@ -166,8 +234,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Sidebar */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-60 bg-slate-950 border-r border-white/6 flex flex-col">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-[228px] border-r border-slate-200 shadow-xl flex flex-col">
             <SidebarContent />
           </aside>
         </div>
@@ -175,54 +243,57 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
         {/* Header */}
-        <header className="h-14 flex items-center justify-between gap-4 px-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+        <header
+          className="flex items-center justify-between gap-4 px-5 bg-white border-b border-slate-200 flex-shrink-0"
+          style={{ height: '52px' }}
+        >
           <div className="flex items-center gap-3">
-            {/* Mobile menu */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="md:hidden p-1.5 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="md:hidden p-1.5 rounded-md text-slate-500 hover:bg-slate-100"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-sm">
-              <span className="text-slate-400 dark:text-slate-500">PRSK</span>
-              <ChevronRight className="h-3 w-3 text-slate-300 dark:text-slate-600" />
-              <span className="font-medium text-slate-700 dark:text-slate-200">
+              <span className="text-slate-400 text-xs font-medium">PRSK</span>
+              <ChevronRight className="h-3 w-3 text-slate-300" />
+              <span className="font-semibold text-slate-700 text-sm">
                 {currentPage?.name || 'Dashboard'}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Search trigger */}
-            <button className="hidden sm:flex items-center gap-2 h-8 px-3 text-sm text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 hover:border-slate-300 transition-colors">
-              <Search className="h-3.5 w-3.5" />
-              <span className="text-xs">Search...</span>
-              <kbd className="text-[10px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-1 ml-2">⌘K</kbd>
-            </button>
-            {/* Notifications */}
-            <button className="relative p-1.5 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-              <Bell className="h-4.5 w-4.5" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
-            </button>
-            {/* Avatar */}
-            <button className="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-              <span className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold flex items-center justify-center">
-                AD
+            {/* Notification bell */}
+            <Link
+              href="/home"
+              className="relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+              {notifCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 h-[7px] w-[7px] bg-red-500 rounded-full ring-1 ring-white" />
+              )}
+            </Link>
+
+            {/* User chip */}
+            <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-default">
+              <div className="h-6 w-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                {user ? initials(user.full_name) : '?'}
+              </div>
+              <span className="hidden sm:block text-xs font-semibold text-slate-700">
+                {user?.full_name?.split(' ')[0] ?? 'You'}
               </span>
-              <span className="hidden sm:block text-xs font-medium text-slate-700 dark:text-slate-200">Admin</span>
-              <ChevronDown className="h-3 w-3 text-slate-400" />
-            </button>
+            </div>
           </div>
         </header>
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-screen-2xl mx-auto p-6">
+          <div className="max-w-screen-2xl mx-auto p-5">
             {children}
           </div>
         </main>

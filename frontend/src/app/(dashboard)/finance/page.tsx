@@ -8,9 +8,9 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import {
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, Plus, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Eye, Edit2
+  FileText, CheckCircle2, Clock, AlertCircle, Eye, Edit2, FlaskConical
 } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const MONTHLY = [
   { month: 'Oct', revenue: 9800000, expenses: 6200000, profit: 3600000 },
@@ -63,6 +63,12 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Demo banner */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+        <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
+        <span><strong>Preview mode</strong> — Finance module data is illustrative. Connect your accounting system to enable live data.</span>
+      </div>
+
       <PageHeader
         title="Finance"
         description="Accounts receivable, expenses, P&L, and financial reporting"
@@ -76,9 +82,9 @@ export default function FinancePage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Revenue MTD" value={fmtLakh(currentMonth.revenue)} delta={{ value: '8.3%', positive: true }} icon={<TrendingUp className="h-4 w-4" />} />
-        <StatCard label="Accounts Receivable" value={fmtLakh(totalAR)} icon={<ArrowUpRight className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
-        <StatCard label="Operating Expenses" value={fmtLakh(totalExpenses)} icon={<ArrowDownLeft className="h-4 w-4" />} iconColor="bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400" />
-        <StatCard label="Overdue AR" value={fmtLakh(totalOverdue)} delta={{ value: 'Needs attention', positive: false }} icon={<TrendingDown className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
+        <StatCard label="Accounts Receivable" value={fmtLakh(totalAR)} icon={<ArrowUpRight className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Operating Expenses" value={fmtLakh(totalExpenses)} icon={<ArrowDownLeft className="h-4 w-4" />} iconColor="bg-red-50 text-red-500" />
+        <StatCard label="Overdue AR" value={fmtLakh(totalOverdue)} delta={{ value: 'Needs attention', positive: false }} icon={<TrendingDown className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
       </div>
 
       <TabBar
@@ -93,12 +99,11 @@ export default function FinancePage() {
 
       {tab === 'overview' && (
         <div className="space-y-4">
-          {/* P&L Snapshot */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: 'Gross Revenue', value: fmtLakh(currentMonth.revenue), note: 'May 2026', color: 'text-emerald-600 dark:text-emerald-400' },
-              { label: 'Operating Expenses', value: fmtLakh(currentMonth.expenses), note: 'May 2026', color: 'text-red-500 dark:text-red-400' },
-              { label: 'Net Profit', value: fmtLakh(currentMonth.profit), note: `${((currentMonth.profit / currentMonth.revenue) * 100).toFixed(1)}% margin`, color: 'text-indigo-600 dark:text-indigo-400' },
+              { label: 'Gross Revenue', value: fmtLakh(currentMonth.revenue), note: 'May 2026', color: 'text-emerald-600' },
+              { label: 'Operating Expenses', value: fmtLakh(currentMonth.expenses), note: 'May 2026', color: 'text-red-500' },
+              { label: 'Net Profit', value: fmtLakh(currentMonth.profit), note: `${((currentMonth.profit / currentMonth.revenue) * 100).toFixed(1)}% margin`, color: 'text-blue-600' },
             ].map(s => (
               <Card key={s.label}>
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{s.label}</p>
@@ -108,15 +113,14 @@ export default function FinancePage() {
             ))}
           </div>
 
-          {/* Revenue Chart */}
           <Card>
-            <CardHeader title="Revenue & Profit Trend" description="Last 8 months" />
+            <CardHeader title="Revenue & Profit Trend" description="Last 8 months (illustrative)" />
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={MONTHLY} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                 <defs>
                   <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="profit" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
@@ -127,7 +131,7 @@ export default function FinancePage() {
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => `₹${(v / 1000000).toFixed(1)}M`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={54} />
                 <Tooltip formatter={(v, n) => [formatCurrency(v as number), (n as string) === 'revenue' ? 'Revenue' : 'Profit']} labelStyle={{ fontSize: 12 }} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} fill="url(#rev)" />
+                <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#rev)" />
                 <Area type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} fill="url(#profit)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -150,8 +154,8 @@ export default function FinancePage() {
             <Tbody>
               {filteredInvoices.map(inv => (
                 <Tr key={inv.id}>
-                  <Td><span className="font-mono text-xs font-medium text-indigo-600">{inv.id}</span></Td>
-                  <Td><span className="font-medium text-slate-800 dark:text-slate-200">{inv.client}</span></Td>
+                  <Td><span className="font-mono text-xs font-medium text-blue-600">{inv.id}</span></Td>
+                  <Td><span className="font-medium text-slate-800">{inv.client}</span></Td>
                   <Td><span className="text-xs text-slate-500">{inv.issued}</span></Td>
                   <Td>
                     <span className={`text-xs ${inv.status === 'Overdue' ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
@@ -177,7 +181,7 @@ export default function FinancePage() {
       {tab === 'expenses' && (
         <Card padding="none">
           <div className="px-5 pt-5 pb-4 flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">All Expenses</p>
+            <p className="text-sm font-semibold text-slate-700">All Expenses</p>
             <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />}>Add Expense</Button>
           </div>
           <Table>
@@ -185,8 +189,8 @@ export default function FinancePage() {
             <Tbody>
               {EXPENSES.map(exp => (
                 <Tr key={exp.id}>
-                  <Td><span className="font-medium text-slate-800 dark:text-slate-200">{exp.category}</span></Td>
-                  <Td><span className="text-slate-600 dark:text-slate-400">{exp.vendor}</span></Td>
+                  <Td><span className="font-medium text-slate-800">{exp.category}</span></Td>
+                  <Td><span className="text-slate-600">{exp.vendor}</span></Td>
                   <Td><span className="text-xs text-slate-500">{exp.account}</span></Td>
                   <Td><span className="text-xs text-slate-500">{exp.date}</span></Td>
                   <Td align="right"><span className="data-value font-medium">{formatCurrency(exp.amount)}</span></Td>
@@ -197,8 +201,8 @@ export default function FinancePage() {
               ))}
             </Tbody>
           </Table>
-          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <p className="text-xs text-slate-500">Total approved: <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(totalExpenses)}</span></p>
+          <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500">Total approved: <span className="font-semibold text-slate-700">{formatCurrency(totalExpenses)}</span></p>
           </div>
         </Card>
       )}
