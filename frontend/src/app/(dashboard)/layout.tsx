@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, Clock, Banknote, Wallet,
   Settings, Bell, ChevronLeft, ChevronRight,
   TrendingUp, Package, Target, Zap, MessageSquare,
-  BarChart3, Home, LogOut, Building2
+  BarChart3, Home, LogOut, Building2, ShieldCheck
 } from 'lucide-react'
 
 const NAV_GROUPS = [
