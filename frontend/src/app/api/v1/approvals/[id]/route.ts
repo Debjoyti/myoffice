@@ -114,6 +114,29 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // When approved, deduct days from the employee's leave balance for this type
+  if (action === 'approve' && old.days_count) {
+    const { data: balance } = await supabase
+      .from('leave_balances')
+      .select('id, used_days, available_days')
+      .eq('employee_id', old.employee_id)
+      .eq('leave_type', old.type)
+      .maybeSingle()
+
+    if (balance) {
+      const newUsed      = (Number(balance.used_days)      || 0) + Number(old.days_count)
+      const newAvailable = Math.max(0, (Number(balance.available_days) || 0) - Number(old.days_count))
+      await supabase
+        .from('leave_balances')
+        .update({
+          used_days:      newUsed,
+          available_days: newAvailable,
+          updated_at:     new Date().toISOString(),
+        })
+        .eq('id', balance.id)
+    }
+  }
+
   logAudit({
     supabase, actorId: actor.id, actorEmail: actor.email,
     action: action as any, resourceType: 'leave_request', resourceId: id,

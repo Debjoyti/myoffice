@@ -41,9 +41,14 @@ export async function GET(req: Request) {
     `)
     .order('full_name')
 
-  // Non-HR employees can only see their own department teammates
+  // Non-HR employees can only see teammates in their department.
+  // If the employee has no department_id, restrict to their own record to avoid returning everyone.
   if (!['admin', 'hr'].includes(employee.role)) {
-    query = query.eq('department_id', employee.department_id ?? '')
+    if (employee.department_id) {
+      query = query.eq('department_id', employee.department_id)
+    } else {
+      query = query.eq('id', employee.id)
+    }
   }
 
   if (status !== 'all') query = query.eq('status', status)
@@ -85,6 +90,16 @@ export async function POST(req: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Auto-create default Mon–Fri work schedule so attendance tracking starts immediately
+  const defaultSchedule = [1, 2, 3, 4, 5].map(day => ({
+    employee_id: data.id,
+    day_of_week: day,  // 1=Mon … 5=Fri
+    start_time: '09:00',
+    end_time:   '18:00',
+    is_working_day: true,
+  }))
+  await supabase.from('work_schedules').insert(defaultSchedule)
 
   logAudit({
     supabase, actorId: actor.id, actorEmail: actor.email,

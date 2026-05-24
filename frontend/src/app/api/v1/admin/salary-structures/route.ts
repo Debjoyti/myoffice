@@ -61,10 +61,10 @@ export async function POST(req: Request) {
     }, { status: 400 })
   }
 
-  // Deactivate existing active structure
+  // Deactivate existing active structure — fetch full row so we can record old CTC
   const { data: prevActive } = await supabase
     .from('salary_structures')
-    .select('id')
+    .select('id, ctc_monthly')
     .eq('employee_id', employee_id)
     .eq('is_active', true)
     .is('effective_to', null)
@@ -90,12 +90,12 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Auto-create salary revision record
+  // Auto-create salary revision record — old_ctc_monthly now correctly populated
   await supabase.from('salary_revisions').insert({
     employee_id,
     revision_date: effective_from,
     revision_type: prevActive ? 'increment' : 'joining',
-    old_ctc_monthly: prevActive ? null : null,  // fetched above if needed
+    old_ctc_monthly: prevActive?.ctc_monthly ?? null,
     new_ctc_monthly: parsed.data.ctc_monthly,
     old_structure_id: prevActive?.id ?? null,
     new_structure_id: data.id,

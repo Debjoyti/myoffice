@@ -26,14 +26,22 @@ export async function GET(
     .select(`
       *,
       head:head_id (id, full_name, designation, avatar_url),
-      parent:parent_id (id, name),
-      employees!department_id (id, full_name, designation, status, avatar_url)
+      parent:parent_id (id, name)
     `)
     .eq('id', id)
     .single()
 
   if (error) return NextResponse.json({ error: 'Department not found' }, { status: 404 })
-  return NextResponse.json({ department: data })
+
+  // Fetch department members separately — embedded !foreign-key joins are unreliable via REST
+  const { data: members } = await supabase
+    .from('employees')
+    .select('id, full_name, designation, status, avatar_url')
+    .eq('department_id', id)
+    .eq('status', 'active')
+    .order('full_name')
+
+  return NextResponse.json({ department: { ...data, employees: members ?? [] } })
 }
 
 export async function PATCH(
