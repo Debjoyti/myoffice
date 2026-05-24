@@ -16,11 +16,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, leftIcon, rightIcon, children, disabled, ...props }, ref) => {
     const base = 'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none'
     const variants = {
-      primary: 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 focus-visible:ring-indigo-500 shadow-sm',
-      secondary: 'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 focus-visible:ring-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
-      ghost: 'text-slate-600 hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-slate-400 dark:text-slate-400 dark:hover:bg-slate-800',
+      primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus-visible:ring-blue-500 shadow-sm',
+      secondary: 'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 focus-visible:ring-slate-400',
+      ghost: 'text-slate-600 hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-slate-400',
       danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500 shadow-sm',
-      outline: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-slate-400 dark:border-slate-700 dark:bg-transparent dark:text-slate-200 dark:hover:bg-slate-800',
+      outline: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-slate-400',
     }
     const sizes = {
       sm: 'h-7 px-3 text-xs rounded-md gap-1.5',
@@ -108,13 +108,15 @@ export function CardHeader({ title, description, action, className }: {
 
 /* ─── Stat Card ──────────────────────────────────────────────────────────── */
 const STAT_ACCENTS = {
-  indigo: { bar: 'accent-bar-indigo', iconBg: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400' },
-  emerald: { bar: 'accent-bar-emerald', iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400' },
-  amber: { bar: 'accent-bar-amber', iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400' },
-  sky: { bar: 'accent-bar-sky', iconBg: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400' },
-  rose: { bar: 'accent-bar-rose', iconBg: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400' },
-  violet: { bar: 'accent-bar-violet', iconBg: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400' },
-  purple: { bar: 'accent-bar-purple', iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400' },
+  blue:    { bar: 'accent-bar-blue',    iconBg: 'bg-blue-50 text-blue-600' },
+  indigo:  { bar: 'accent-bar-indigo',  iconBg: 'bg-indigo-50 text-indigo-600' },
+  emerald: { bar: 'accent-bar-emerald', iconBg: 'bg-emerald-50 text-emerald-600' },
+  amber:   { bar: 'accent-bar-amber',   iconBg: 'bg-amber-50 text-amber-600' },
+  sky:     { bar: 'accent-bar-sky',     iconBg: 'bg-sky-50 text-sky-600' },
+  rose:    { bar: 'accent-bar-rose',    iconBg: 'bg-rose-50 text-rose-600' },
+  violet:  { bar: 'accent-bar-violet',  iconBg: 'bg-violet-50 text-violet-600' },
+  teal:    { bar: 'accent-bar-teal',    iconBg: 'bg-teal-50 text-teal-600' },
+  purple:  { bar: 'accent-bar-violet',  iconBg: 'bg-purple-50 text-purple-600' },
 }
 
 interface StatCardProps {
@@ -126,34 +128,36 @@ interface StatCardProps {
   iconColor?: string
   className?: string
   onClick?: () => void
+  loading?: boolean
 }
 
-export function StatCard({ label, value, delta, icon, accent = 'indigo', iconColor, className, onClick }: StatCardProps) {
-  const a = STAT_ACCENTS[accent]
+export function StatCard({ label, value, delta, icon, accent = 'blue', iconColor, className, onClick, loading }: StatCardProps) {
+  const a = STAT_ACCENTS[accent] ?? STAT_ACCENTS.blue
   return (
     <div
       onClick={onClick}
       className={cn(
-        'relative overflow-hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800',
+        'relative overflow-hidden bg-white rounded-xl border border-slate-200',
         'shadow-sm hover:shadow-md transition-all duration-200',
-        onClick && 'cursor-pointer hover:border-slate-300 dark:hover:border-slate-700',
+        onClick && 'cursor-pointer hover:border-slate-300',
         className
       )}
     >
       <div className={cn('absolute top-0 inset-x-0 h-[3px]', a.bar)} />
-      <div className="p-5 pt-5">
-        <div className="flex items-start justify-between gap-2 mb-4">
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-snug">{label}</span>
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-snug">{label}</span>
           {icon && <span className={cn('p-2 rounded-lg flex-shrink-0', iconColor || a.iconBg)}>{icon}</span>}
         </div>
-        <div className="text-[2rem] font-bold text-slate-900 dark:text-slate-50 leading-none tracking-tight data-value">{value}</div>
-        {delta && (
+        {loading
+          ? <div className="skeleton h-8 w-24 mt-1" />
+          : <div className="text-[1.875rem] font-bold text-slate-900 leading-none tracking-tight data-value">{value}</div>
+        }
+        {delta && !loading && (
           <div className="flex items-center gap-2 mt-2.5">
             <span className={cn(
               'inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md',
-              delta.positive
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+              delta.positive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
             )}>
               {delta.positive ? '↑' : '↓'} {delta.value}
             </span>
@@ -190,7 +194,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref} id={inputId}
             className={cn(
               'w-full h-8 rounded-md border bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-colors',
-              'border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20',
+              'border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20',
               leftIcon ? 'pl-8' : 'pl-3',
               rightIcon ? 'pr-8' : 'pr-3',
               error && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
@@ -219,7 +223,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && <label htmlFor={inputId} className="text-xs font-medium text-slate-700 dark:text-slate-300">{label}{props.required && <span className="text-red-500 ml-0.5">*</span>}</label>}
-        <textarea ref={ref} id={inputId} className={cn('w-full rounded-md border bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-colors px-3 py-2 resize-none', 'border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20', error && 'border-red-500', className)} {...props} />
+        <textarea ref={ref} id={inputId} className={cn('w-full rounded-md border bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-colors px-3 py-2 resize-none', 'border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20', error && 'border-red-500', className)} {...props} />
         {error && <p className="text-xs text-red-600">{error}</p>}
         {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
       </div>
@@ -240,7 +244,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && <label htmlFor={selectId} className="text-xs font-medium text-slate-700 dark:text-slate-300">{label}</label>}
-        <select ref={ref} id={selectId} className={cn('w-full h-8 rounded-md border bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 px-3 transition-colors', 'border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20', error && 'border-red-500', className)} {...props}>
+        <select ref={ref} id={selectId} className={cn('w-full h-8 rounded-md border bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 px-3 transition-colors', 'border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20', error && 'border-red-500', className)} {...props}>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         {error && <p className="text-xs text-red-600">{error}</p>}
@@ -382,11 +386,11 @@ export function TabBar({ tabs, active, onChange, className }: {
       {tabs.map(tab => (
         <button key={tab.id} onClick={() => onChange(tab.id)}
           className={cn('flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px',
-            active === tab.id ? 'text-indigo-600 border-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200'
+            active === tab.id ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300'
           )}>
           {tab.label}
           {tab.count !== undefined && (
-            <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', active === tab.id ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400')}>
+            <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', active === tab.id ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500')}>
               {tab.count}
             </span>
           )}
@@ -404,7 +408,7 @@ export function SearchInput({ placeholder = 'Search...', value, onChange, classN
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
       <input type="search" placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
-        className="w-full h-8 pl-8 pr-3 text-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors"
+        className="w-full h-8 pl-8 pr-3 text-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
       />
     </div>
   )
@@ -470,7 +474,7 @@ export function KV({ label, value, className }: { label: string; value: React.Re
 /* ─── Inline Loading Spinner ─────────────────────────────────────────────── */
 export function Spinner({ size = 'sm', className }: { size?: 'xs' | 'sm' | 'md'; className?: string }) {
   const sizes = { xs: 'h-3 w-3', sm: 'h-4 w-4', md: 'h-5 w-5' }
-  return <span className={cn('inline-block rounded-full border-2 border-slate-200 border-t-indigo-600 animate-spin', sizes[size], className)} />
+  return <span className={cn('inline-block rounded-full border-2 border-slate-200 border-t-blue-600 animate-spin', sizes[size], className)} />
 }
 
 /* ─── Page-level Loading ─────────────────────────────────────────────────── */
