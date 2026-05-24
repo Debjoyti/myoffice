@@ -46,6 +46,12 @@ const NAV_GROUPS = [
     ]
   },
   {
+    label: 'IATF & Compliance',
+    items: [
+      { name: 'IATF Hub', href: '/iatf', icon: ShieldCheck },
+    ]
+  },
+  {
     label: 'Admin',
     items: [
       { name: 'Settings',   href: '/settings',   icon: Settings },
@@ -141,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5">
         {NAV_GROUPS.map(group => (
           <div key={group.label}>
             {!collapsed && (
