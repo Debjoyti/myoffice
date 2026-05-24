@@ -10,13 +10,15 @@ import {
   ShoppingCart, LogOut, ChevronLeft, ChevronRight,
   Building2, Target, FileText,
   Settings, Bell, Search, ChevronDown,
-  TrendingUp, Zap, Package, MessageSquare, BarChart3
+  TrendingUp, Zap, Package, MessageSquare, BarChart3,
+  Home
 } from 'lucide-react'
 
 const NAV_GROUPS = [
   {
     label: 'Workspace',
     items: [
+      { name: 'My Home', href: '/home', icon: Home },
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     ]
   },
