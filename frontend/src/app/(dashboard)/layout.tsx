@@ -11,7 +11,7 @@ import {
   Building2, Target, FileText,
   Settings, Bell, Search, ChevronDown,
   TrendingUp, Zap, Package, MessageSquare, BarChart3,
-  Home
+  Home, Wallet
 } from 'lucide-react'
 
 const NAV_GROUPS = [
@@ -28,6 +28,7 @@ const NAV_GROUPS = [
       { name: 'HRMS', href: '/hrms', icon: Users },
       { name: 'Attendance', href: '/attendance', icon: Clock },
       { name: 'Payroll', href: '/payroll', icon: Banknote },
+      { name: 'Salary', href: '/salary', icon: Wallet },
     ]
   },
   {
