@@ -17,7 +17,7 @@ export type Employee = {
   date_of_birth: string | null
   employment_type: string
   status: string
-  role: 'admin' | 'hr' | 'manager' | 'employee'
+  role: 'admin' | 'hr' | 'manager' | 'employee' | 'accountant'
   user_id: string | null
   pan_number: string | null
   bank_account: string | null
@@ -76,6 +76,27 @@ export async function requireManager(): Promise<AuthResult | NextResponse> {
   if (result instanceof NextResponse) return result
   if (!['admin', 'hr', 'manager'].includes(result.employee.role)) {
     return NextResponse.json({ error: 'Manager or above access required' }, { status: 403 })
+  }
+  return result
+}
+
+/** Requires accountant, HR, or Admin. Returns 403 otherwise.
+ *  Use for finance-related endpoints (payroll view, salary, procurement). */
+export async function requireFinance(): Promise<AuthResult | NextResponse> {
+  const result = await getAuthenticatedEmployee()
+  if (result instanceof NextResponse) return result
+  if (!['admin', 'hr', 'accountant'].includes(result.employee.role)) {
+    return NextResponse.json({ error: 'Finance access required' }, { status: 403 })
+  }
+  return result
+}
+
+/** Requires HR, Admin, or Accountant — for payroll-related endpoints. */
+export async function requirePayrollAccess(): Promise<AuthResult | NextResponse> {
+  const result = await getAuthenticatedEmployee()
+  if (result instanceof NextResponse) return result
+  if (!['admin', 'hr', 'accountant'].includes(result.employee.role)) {
+    return NextResponse.json({ error: 'HR, Admin, or Accountant access required' }, { status: 403 })
   }
   return result
 }

@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server'
-import { requireHR } from '@/lib/supabase/employee'
+import { requireHR, requirePayrollAccess } from '@/lib/supabase/employee'
 import { logAudit } from '@/lib/services/audit'
 import { lockPayroll } from '@/lib/services/payroll'
 
-/** GET /api/v1/payroll/[id] — payroll run detail with all payslips */
+/** GET /api/v1/payroll/[id] — payroll run detail with all payslips (HR/Admin/Accountant) */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const result = await requireHR()
+  const result = await requirePayrollAccess()
   if (result instanceof NextResponse) return result
   const { supabase } = result
 

@@ -205,8 +205,10 @@ export default function AttendancePage() {
         fetch('/api/v1/leave/balance'),
       ])
 
+      let meEmployee: { role: string } | null = null
       if (meRes.ok) {
         const d = await meRes.json()
+        meEmployee = d.employee
         setMe(d.employee)
         setIsHR(['admin', 'hr', 'manager'].includes(d.employee?.role))
       }
@@ -214,9 +216,8 @@ export default function AttendancePage() {
       if (myReqRes.ok) { const d = await myReqRes.json(); setMyRequests(d.approvals ?? []) }
       if (balRes.ok)   { const d = await balRes.json();   setBalances(d.balances ?? []) }
 
-      // Fetch pending approvals if manager/HR
-      const meData = meRes.ok ? await meRes.clone().json().catch(() => null) : null
-      if (meData && ['admin', 'hr', 'manager'].includes(meData?.employee?.role)) {
+      // Fetch pending approvals if manager/HR (use already-parsed meEmployee, not clone)
+      if (meEmployee && ['admin', 'hr', 'manager'].includes(meEmployee.role)) {
         const pendRes = await fetch('/api/v1/approvals?mode=pending_for_me')
         if (pendRes.ok) {
           const d = await pendRes.json()

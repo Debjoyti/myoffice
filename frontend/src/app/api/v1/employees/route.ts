@@ -14,7 +14,7 @@ const createSchema = z.object({
   manager_id:      z.string().uuid().optional(),
   employment_type: z.enum(['full_time','part_time','contract','intern']).default('full_time'),
   date_of_joining: z.string().optional(),
-  role:            z.enum(['admin','hr','manager','employee']).default('employee'),
+  role:            z.enum(['admin','hr','manager','employee','accountant']).default('employee'),
 })
 
 /** GET /api/v1/employees — HR/Admin sees all employees */
@@ -41,9 +41,10 @@ export async function GET(req: Request) {
     `)
     .order('full_name')
 
-  // Non-HR employees can only see teammates in their department.
+  // Non-HR/accountant employees can only see teammates in their department.
+  // Accountants can see all for analytics/payroll. HR/Admin can see all.
   // If the employee has no department_id, restrict to their own record to avoid returning everyone.
-  if (!['admin', 'hr'].includes(employee.role)) {
+  if (!['admin', 'hr', 'accountant'].includes(employee.role)) {
     if (employee.department_id) {
       query = query.eq('department_id', employee.department_id)
     } else {

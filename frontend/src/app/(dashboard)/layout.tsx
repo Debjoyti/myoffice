@@ -9,10 +9,15 @@ import {
   LayoutDashboard, Users, Clock, Banknote, Wallet,
   Settings, Bell, ChevronLeft, ChevronRight,
   TrendingUp, Package, Target, Zap, MessageSquare,
-  BarChart3, Home, LogOut, Building2, ShieldCheck
+  BarChart3, Home, LogOut, Building2, ShieldCheck, Crown,
+  UserCircle,
 } from 'lucide-react'
 
-const NAV_GROUPS = [
+/* ── Nav item definition ─────────────────────────────────────────── */
+type NavItem = { name: string; href: string; icon: React.ElementType }
+type NavGroup = { label: string; items: NavItem[] }
+
+const ALL_NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     items: [
@@ -58,6 +63,36 @@ const NAV_GROUPS = [
     ]
   }
 ]
+
+/* ── Role → allowed hrefs (null = all) ───────────────────────────── */
+const ROLE_ACCESS: Record<string, Set<string> | null> = {
+  admin:      null, // sees everything
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/analytics', '/iatf']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/support', '/salary']),
+  accountant: new Set(['/home', '/finance', '/payroll', '/salary', '/procurement', '/analytics']),
+  employee:   new Set(['/home', '/attendance', '/salary']),
+}
+
+function getNavGroups(role: string): NavGroup[] {
+  const allowed = ROLE_ACCESS[role] ?? null
+  if (!allowed) return ALL_NAV_GROUPS // admin sees all
+
+  return ALL_NAV_GROUPS
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => allowed.has(item.href)),
+    }))
+    .filter(group => group.items.length > 0)
+}
+
+/* ── Role badge config ───────────────────────────────────────────── */
+const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
+  admin:      { label: 'Admin',      color: 'text-red-600 bg-red-50',      icon: Crown },
+  hr:         { label: 'HR',         color: 'text-blue-600 bg-blue-50',    icon: Users },
+  manager:    { label: 'Manager',    color: 'text-amber-600 bg-amber-50',  icon: UserCircle },
+  accountant: { label: 'Accountant', color: 'text-violet-600 bg-violet-50',icon: Wallet },
+  employee:   { label: 'Employee',   color: 'text-slate-600 bg-slate-100', icon: UserCircle },
+}
 
 type UserProfile = {
   full_name: string
@@ -107,10 +142,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const initials = (name: string) =>
     name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 
-  const currentPage = NAV_GROUPS.flatMap(g => g.items)
+  const navGroups = getNavGroups(user?.role ?? 'employee')
+
+  const currentPage = ALL_NAV_GROUPS.flatMap(g => g.items)
     .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
 
-  /* ── Sidebar Content ─────────────────────────────────────────────────── */
+  const roleConfig = ROLE_CONFIG[user?.role ?? 'employee'] ?? ROLE_CONFIG.employee
+
+  /* ── Sidebar Content ─────────────────────────────────────────────────────── */
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
 
@@ -146,9 +185,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </button>
       </div>
 
+      {/* Role banner (only when expanded) */}
+      {!collapsed && user?.role && (
+        <div className={cn(
+          'mx-2 mt-2 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5',
+          roleConfig.color
+        )}>
+          <roleConfig.icon className="h-3 w-3 flex-shrink-0" />
+          <span className="text-[11px] font-semibold truncate">{roleConfig.label} Portal</span>
+        </div>
+      )}
+
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5">
-        {NAV_GROUPS.map(group => (
+        {navGroups.map(group => (
           <div key={group.label}>
             {!collapsed && (
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] px-2 mb-1">
@@ -274,6 +324,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Role badge in header */}
+            {user?.role && (
+              <span className={cn(
+                'hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold',
+                roleConfig.color
+              )}>
+                <roleConfig.icon className="h-3 w-3" />
+                {roleConfig.label}
+              </span>
+            )}
+
             {/* Notification bell */}
             <Link
               href="/home"
