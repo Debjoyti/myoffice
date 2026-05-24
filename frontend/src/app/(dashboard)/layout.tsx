@@ -10,7 +10,8 @@ import {
   ShoppingCart, LogOut, ChevronLeft, ChevronRight,
   Building2, Target, FileText,
   Settings, Bell, Search, ChevronDown,
-  TrendingUp, Zap, Package, MessageSquare, BarChart3
+  TrendingUp, Zap, Package, MessageSquare, BarChart3,
+  ShieldCheck
 } from 'lucide-react'
 
 const NAV_GROUPS = [
@@ -42,6 +43,12 @@ const NAV_GROUPS = [
       { name: 'Projects', href: '/projects', icon: Zap },
       { name: 'Support', href: '/support', icon: MessageSquare },
       { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    ]
+  },
+  {
+    label: 'IATF & Compliance',
+    items: [
+      { name: 'IATF Hub', href: '/iatf', icon: ShieldCheck },
     ]
   },
   {
