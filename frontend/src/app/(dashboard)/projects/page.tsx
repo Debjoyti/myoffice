@@ -5,7 +5,7 @@ import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, ProgressBar, EmptyState
 } from '@/components/ui'
-import { Zap, CheckCircle2, Clock, AlertTriangle, Plus, CalendarDays, Users } from 'lucide-react'
+import { Zap, CheckCircle2, Clock, AlertTriangle, Plus, CalendarDays, FlaskConical } from 'lucide-react'
 
 type ProjStatus = 'In Progress' | 'Planning' | 'Completed' | 'On Hold'
 type TaskStatus = 'Todo' | 'In Progress' | 'In Review' | 'Blocked' | 'Done'
@@ -63,6 +63,12 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Demo banner */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+        <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
+        <span><strong>Preview mode</strong> — Projects data is illustrative. Full project management integration is on the roadmap.</span>
+      </div>
+
       <PageHeader
         title="Projects"
         description="Track projects, milestones, and team delivery"
@@ -70,10 +76,10 @@ export default function ProjectsPage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Active Projects" value={active} icon={<Zap className="h-4 w-4" />} iconColor="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" />
-        <StatCard label="Completed" value={completed} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" />
-        <StatCard label="Open Tasks" value={openTasks} icon={<Clock className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" />
-        <StatCard label="Blocked" value={blocked} icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400" />
+        <StatCard label="Active Projects" value={active} icon={<Zap className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Completed" value={completed} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Open Tasks" value={openTasks} icon={<Clock className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
+        <StatCard label="Blocked" value={blocked} icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-red-50 text-red-500" />
       </div>
 
       <TabBar
@@ -88,7 +94,7 @@ export default function ProjectsPage() {
             <Card key={p.id} hover onClick={() => setSelected(p)}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight">{p.name}</h3>
+                  <h3 className="font-semibold text-slate-900 text-sm leading-tight">{p.name}</h3>
                   <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{p.description}</p>
                 </div>
                 <Badge variant={PROJ_STATUS_COLOR[p.status]} className="ml-2 flex-shrink-0">{p.status}</Badge>
@@ -97,9 +103,9 @@ export default function ProjectsPage() {
               <div className="mb-3">
                 <div className="flex justify-between mb-1.5">
                   <span className="text-xs text-slate-500">Progress</span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">{p.tasks.done}/{p.tasks.total} tasks</span>
+                  <span className="text-xs font-semibold text-slate-700 tabular-nums">{p.tasks.done}/{p.tasks.total} tasks</span>
                 </div>
-                <ProgressBar value={p.tasks.done} max={p.tasks.total} color={p.progress === 100 ? 'emerald' : 'indigo'} size="sm" showLabel />
+                <ProgressBar value={p.tasks.done} max={p.tasks.total} color={p.progress === 100 ? 'emerald' : 'blue'} size="sm" showLabel />
               </div>
 
               <div className="flex items-center justify-between">
@@ -110,10 +116,10 @@ export default function ProjectsPage() {
                 </div>
                 <div className="flex -space-x-1.5">
                   {p.team.slice(0, 3).map(name => (
-                    <Avatar key={name} name={name} size="xs" className="ring-1 ring-white dark:ring-slate-900" />
+                    <Avatar key={name} name={name} size="xs" className="ring-1 ring-white" />
                   ))}
                   {p.team.length > 3 && (
-                    <span className="h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-400 flex items-center justify-center ring-1 ring-white dark:ring-slate-900">
+                    <span className="h-5 w-5 rounded-full bg-slate-200 text-[9px] font-bold text-slate-600 flex items-center justify-center ring-1 ring-white">
                       +{p.team.length - 3}
                     </span>
                   )}
@@ -137,7 +143,7 @@ export default function ProjectsPage() {
               <Tbody>
                 {filteredTasks.map(t => (
                   <Tr key={t.id}>
-                    <Td><span className="font-medium text-slate-800 dark:text-slate-200">{t.title}</span></Td>
+                    <Td><span className="font-medium text-slate-800">{t.title}</span></Td>
                     <Td><Badge variant="neutral" size="sm">{t.project}</Badge></Td>
                     <Td>
                       <div className="flex items-center gap-1.5">
@@ -167,7 +173,7 @@ export default function ProjectsPage() {
           <div className="space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{selected.name}</h3>
+                <h3 className="font-semibold text-slate-900">{selected.name}</h3>
                 <p className="text-sm text-slate-500 mt-0.5">{selected.description}</p>
               </div>
               <Badge variant={PROJ_STATUS_COLOR[selected.status]}>{selected.status}</Badge>
@@ -177,16 +183,16 @@ export default function ProjectsPage() {
                 <span>Overall Progress</span>
                 <span>{selected.progress}%</span>
               </div>
-              <ProgressBar value={selected.progress} color={selected.progress === 100 ? 'emerald' : 'indigo'} size="md" />
+              <ProgressBar value={selected.progress} color={selected.progress === 100 ? 'emerald' : 'blue'} size="md" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-slate-400 mb-0.5">Due Date</p><p className="text-sm font-medium text-slate-800 dark:text-slate-200">{selected.due}</p></div>
+              <div><p className="text-xs text-slate-400 mb-0.5">Due Date</p><p className="text-sm font-medium text-slate-800">{selected.due}</p></div>
               <div><p className="text-xs text-slate-400 mb-0.5">Priority</p><Badge variant={PRIORITY_COLOR[selected.priority]}>{selected.priority}</Badge></div>
-              <div><p className="text-xs text-slate-400 mb-0.5">Tasks Done</p><p className="text-sm font-medium text-slate-800 dark:text-slate-200">{selected.tasks.done} / {selected.tasks.total}</p></div>
+              <div><p className="text-xs text-slate-400 mb-0.5">Tasks Done</p><p className="text-sm font-medium text-slate-800">{selected.tasks.done} / {selected.tasks.total}</p></div>
               <div>
                 <p className="text-xs text-slate-400 mb-1">Team ({selected.team.length})</p>
                 <div className="flex -space-x-1">
-                  {selected.team.map(name => <Avatar key={name} name={name} size="sm" className="ring-1 ring-white dark:ring-slate-900" />)}
+                  {selected.team.map(name => <Avatar key={name} name={name} size="sm" className="ring-1 ring-white" />)}
                 </div>
               </div>
             </div>
