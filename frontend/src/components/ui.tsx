@@ -445,11 +445,11 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: {
 }
 
 /* ─── Progress Bar ───────────────────────────────────────────────────────── */
-export function ProgressBar({ value, max = 100, color = 'indigo', size = 'sm', showLabel = false, className }: {
-  value: number; max?: number; color?: 'indigo' | 'emerald' | 'amber' | 'red' | 'sky'; size?: 'xs' | 'sm' | 'md'; showLabel?: boolean; className?: string
+export function ProgressBar({ value, max = 100, color = 'blue', size = 'sm', showLabel = false, className }: {
+  value: number; max?: number; color?: 'blue' | 'indigo' | 'emerald' | 'amber' | 'red' | 'sky'; size?: 'xs' | 'sm' | 'md'; showLabel?: boolean; className?: string
 }) {
   const pct = Math.min(100, Math.round((value / max) * 100))
-  const colors = { indigo: 'bg-indigo-500', emerald: 'bg-emerald-500', amber: 'bg-amber-500', red: 'bg-red-500', sky: 'bg-sky-500' }
+  const colors = { blue: 'bg-blue-500', indigo: 'bg-blue-500', emerald: 'bg-emerald-500', amber: 'bg-amber-500', red: 'bg-red-500', sky: 'bg-sky-500' }
   const heights = { xs: 'h-1', sm: 'h-1.5', md: 'h-2' }
   return (
     <div className={cn('flex items-center gap-2', className)}>
