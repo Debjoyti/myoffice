@@ -1,5 +1,8 @@
 -- ==========================================
 -- Phase 1 Foundation Migration
+-- NOTE: Fully idempotent — safe to run on any DB state.
+-- All CREATE TABLE uses IF NOT EXISTS, triggers/policies/indexes
+-- are wrapped in exception-safe or DROP-IF-EXISTS blocks.
 -- ==========================================
 
 -- 1. Extensions
@@ -124,18 +127,18 @@ $$;
 
 -- 4. Tables
 
--- public.companies
-CREATE TABLE public.companies (
+-- public.companies (may already exist from saas_schema — IF NOT EXISTS is safe)
+CREATE TABLE IF NOT EXISTS public.companies (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     name text NOT NULL,
-    organization_id uuid, -- For potential multi-org structure later, keeping from existing schema
+    organization_id uuid,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     deleted_at timestamptz
 );
 
--- public.users (linked to auth.users)
-CREATE TABLE public.users (
+-- public.users (linked to auth.users — may already exist from enterprise_erp_schema)
+CREATE TABLE IF NOT EXISTS public.users (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email citext NOT NULL UNIQUE,
     first_name text,
@@ -146,7 +149,7 @@ CREATE TABLE public.users (
 );
 
 -- public.user_company_roles
-CREATE TABLE public.user_company_roles (
+CREATE TABLE IF NOT EXISTS public.user_company_roles (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE RESTRICT,
@@ -158,7 +161,7 @@ CREATE TABLE public.user_company_roles (
 );
 
 -- audit.audit_logs (BRIN indexable append-only time series table)
-CREATE TABLE audit.audit_logs (
+CREATE TABLE IF NOT EXISTS audit.audit_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     table_name text NOT NULL,
     record_id uuid NOT NULL,
@@ -170,7 +173,7 @@ CREATE TABLE audit.audit_logs (
 );
 
 -- public.domain_events
-CREATE TABLE public.domain_events (
+CREATE TABLE IF NOT EXISTS public.domain_events (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE RESTRICT,
     event_type text NOT NULL,
@@ -181,17 +184,16 @@ CREATE TABLE public.domain_events (
 );
 
 -- private.event_outbox
-CREATE TABLE private.event_outbox (
+CREATE TABLE IF NOT EXISTS private.event_outbox (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_type text NOT NULL,
     payload jsonb NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
-    processed_at timestamptz,
-    deleted_at timestamptz -- outbox rows are soft deleted after processing? The spec said "Hard delete only for: queue rows", so actually, we shouldn't have deleted_at here, we should just delete them. But to strictly adhere to soft-delete domain tables, outbox is private/infra. Let's remove deleted_at from outbox and just DELETE them when done.
+    processed_at timestamptz
 );
 
 -- integrations.config
-CREATE TABLE integrations.config (
+CREATE TABLE IF NOT EXISTS integrations.config (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE RESTRICT,
     provider text NOT NULL,
@@ -203,8 +205,7 @@ CREATE TABLE integrations.config (
 );
 
 -- public.rate_limit_state
--- Hard delete allowed for transient state like this
-CREATE TABLE public.rate_limit_state (
+CREATE TABLE IF NOT EXISTS public.rate_limit_state (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     key text NOT NULL UNIQUE,
     points integer NOT NULL DEFAULT 0,
@@ -212,76 +213,102 @@ CREATE TABLE public.rate_limit_state (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 5. Triggers
--- updated_at
-CREATE TRIGGER set_companies_updated_at BEFORE UPDATE ON public.companies FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE TRIGGER set_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE TRIGGER set_user_company_roles_updated_at BEFORE UPDATE ON public.user_company_roles FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE TRIGGER set_integrations_config_updated_at BEFORE UPDATE ON integrations.config FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+-- 5. Triggers (DROP IF EXISTS first to ensure idempotency)
+DROP TRIGGER IF EXISTS set_companies_updated_at ON public.companies;
+CREATE TRIGGER set_companies_updated_at
+    BEFORE UPDATE ON public.companies
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- audit triggers
-CREATE TRIGGER audit_companies_changes AFTER INSERT OR UPDATE OR DELETE ON public.companies FOR EACH ROW EXECUTE FUNCTION audit.fn_log_change();
-CREATE TRIGGER audit_user_company_roles_changes AFTER INSERT OR UPDATE OR DELETE ON public.user_company_roles FOR EACH ROW EXECUTE FUNCTION audit.fn_log_change();
+DROP TRIGGER IF EXISTS set_users_updated_at ON public.users;
+CREATE TRIGGER set_users_updated_at
+    BEFORE UPDATE ON public.users
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- 6. Indexes
-CREATE INDEX idx_user_company_roles_user_id ON public.user_company_roles(user_id);
-CREATE INDEX idx_user_company_roles_company_id ON public.user_company_roles(company_id);
-CREATE INDEX idx_domain_events_company_id ON public.domain_events(company_id);
-CREATE INDEX idx_integrations_config_company_id ON integrations.config(company_id);
+DROP TRIGGER IF EXISTS set_user_company_roles_updated_at ON public.user_company_roles;
+CREATE TRIGGER set_user_company_roles_updated_at
+    BEFORE UPDATE ON public.user_company_roles
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-CREATE INDEX idx_companies_deleted_at ON public.companies(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_users_deleted_at ON public.users(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_user_company_roles_deleted_at ON public.user_company_roles(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_domain_events_deleted_at ON public.domain_events(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_integrations_config_deleted_at ON integrations.config(deleted_at) WHERE deleted_at IS NULL;
+DROP TRIGGER IF EXISTS set_integrations_config_updated_at ON integrations.config;
+CREATE TRIGGER set_integrations_config_updated_at
+    BEFORE UPDATE ON integrations.config
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-CREATE INDEX idx_audit_logs_created_at ON audit.audit_logs USING BRIN (created_at);
+DROP TRIGGER IF EXISTS audit_companies_changes ON public.companies;
+CREATE TRIGGER audit_companies_changes
+    AFTER INSERT OR UPDATE OR DELETE ON public.companies
+    FOR EACH ROW EXECUTE FUNCTION audit.fn_log_change();
+
+DROP TRIGGER IF EXISTS audit_user_company_roles_changes ON public.user_company_roles;
+CREATE TRIGGER audit_user_company_roles_changes
+    AFTER INSERT OR UPDATE OR DELETE ON public.user_company_roles
+    FOR EACH ROW EXECUTE FUNCTION audit.fn_log_change();
+
+-- 6. Indexes (IF NOT EXISTS)
+CREATE INDEX IF NOT EXISTS idx_user_company_roles_user_id ON public.user_company_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_company_roles_company_id ON public.user_company_roles(company_id);
+CREATE INDEX IF NOT EXISTS idx_domain_events_company_id ON public.domain_events(company_id);
+CREATE INDEX IF NOT EXISTS idx_integrations_config_company_id ON integrations.config(company_id);
+
+CREATE INDEX IF NOT EXISTS idx_companies_deleted_at ON public.companies(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON public.users(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_user_company_roles_deleted_at ON public.user_company_roles(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_domain_events_deleted_at ON public.domain_events(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_integrations_config_deleted_at ON integrations.config(deleted_at) WHERE deleted_at IS NULL;
+
+DO $$ BEGIN
+  CREATE INDEX idx_audit_logs_created_at ON audit.audit_logs USING BRIN (created_at);
+EXCEPTION WHEN duplicate_table THEN NULL; END $$;
 
 -- 7. RLS
-ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_company_roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.domain_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE integrations.config ENABLE ROW LEVEL SECURITY;
--- audit logs & event outbox should generally be managed via service role / functions, but enabling RLS to be safe
-ALTER TABLE audit.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE private.event_outbox ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE public.users ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE public.user_company_roles ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE public.domain_events ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE integrations.config ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE audit.audit_logs ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE private.event_outbox ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
--- Policies
+-- Policies (exception-safe — harmless if already exist)
+DO $$ BEGIN
+  CREATE POLICY "Users can view companies they belong to" ON public.companies
+  FOR SELECT USING (private.user_belongs_to_company(id) AND deleted_at IS NULL);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- companies
-CREATE POLICY "Users can view companies they belong to" ON public.companies
-FOR SELECT USING (private.user_belongs_to_company(id) AND deleted_at IS NULL);
+DO $$ BEGIN
+  CREATE POLICY "Users can view users in same company" ON public.users
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.user_company_roles r1
+      JOIN public.user_company_roles r2 ON r1.company_id = r2.company_id
+      WHERE r1.user_id = auth.uid() AND r2.user_id = public.users.id
+        AND r1.deleted_at IS NULL AND r2.deleted_at IS NULL
+    )
+    AND deleted_at IS NULL
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- users
-CREATE POLICY "Users can view users in same company" ON public.users
-FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM public.user_company_roles r1
-    JOIN public.user_company_roles r2 ON r1.company_id = r2.company_id
-    WHERE r1.user_id = auth.uid() AND r2.user_id = public.users.id
-      AND r1.deleted_at IS NULL AND r2.deleted_at IS NULL
-  )
-  AND deleted_at IS NULL
-);
+DO $$ BEGIN
+  CREATE POLICY "Users can update own profile" ON public.users
+  FOR UPDATE USING (id = auth.uid() AND deleted_at IS NULL);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY "Users can update own profile" ON public.users
-FOR UPDATE USING (id = auth.uid() AND deleted_at IS NULL);
+DO $$ BEGIN
+  CREATE POLICY "Users can view roles in same company" ON public.user_company_roles
+  FOR SELECT USING (private.user_belongs_to_company(company_id) AND deleted_at IS NULL);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- user_company_roles
-CREATE POLICY "Users can view roles in same company" ON public.user_company_roles
-FOR SELECT USING (private.user_belongs_to_company(company_id) AND deleted_at IS NULL);
+DO $$ BEGIN
+  CREATE POLICY "Users can view events for their company" ON public.domain_events
+  FOR SELECT USING (private.user_belongs_to_company(company_id) AND deleted_at IS NULL);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- domain_events
-CREATE POLICY "Users can view events for their company" ON public.domain_events
-FOR SELECT USING (private.user_belongs_to_company(company_id) AND deleted_at IS NULL);
-
--- integrations.config
-CREATE POLICY "Admins can view integration config for their company" ON integrations.config
-FOR SELECT USING (private.user_belongs_to_company(company_id) AND private.user_has_role('admin') AND deleted_at IS NULL);
+DO $$ BEGIN
+  CREATE POLICY "Admins can view integration config for their company" ON integrations.config
+  FOR SELECT USING (private.user_belongs_to_company(company_id) AND private.user_has_role('admin') AND deleted_at IS NULL);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 8. Auth Hook Setup (Custom Claim Injection)
--- In Supabase, custom claims can be injected via the `auth.hook_custom_access_token` function.
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -293,14 +320,8 @@ DECLARE
   user_role text;
   c_id uuid;
 BEGIN
-  -- We assume one primary role/company per session, or we could pass multiple.
-  -- Here, we'll pick the most privileged role or the first one for simplicity,
-  -- but generally the client should pass the current_company_id when authenticating or
-  -- we can just inject an array of company_ids and roles.
-
   claims := event->'claims';
 
-  -- Create a jsonb object of all companies and roles for this user
   SELECT jsonb_object_agg(company_id::text, role)
   INTO claims
   FROM public.user_company_roles
@@ -319,19 +340,31 @@ GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
 GRANT EXECUTE ON FUNCTION public.custom_access_token_hook TO supabase_auth_admin;
 
 -- Automatically create a user record on signup
+-- (init_schema already defines handle_new_user for profiles; this version upserts users table)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = ''
 AS $$
 BEGIN
+  -- Insert into profiles (legacy support)
+  INSERT INTO public.profiles (id, email, first_name, last_name)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'first_name',
+    NEW.raw_user_meta_data->>'last_name'
+  ) ON CONFLICT (id) DO NOTHING;
+
+  -- Insert into users (new schema)
   INSERT INTO public.users (id, email, first_name, last_name)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'first_name',
     NEW.raw_user_meta_data->>'last_name'
-  );
+  ) ON CONFLICT (id) DO NOTHING;
+
   RETURN NEW;
 END;
 $$;

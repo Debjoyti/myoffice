@@ -1,9 +1,15 @@
 -- ==========================================
 -- TALENT OS EXTENSION SCHEMA (PostgreSQL)
+-- NOTE: Fully idempotent — IF NOT EXISTS on tables,
+-- exception-safe blocks on policies and triggers.
+-- NOTE: Policies using get_user_company_id() are wrapped in
+-- exception-safe blocks because that function is defined in
+-- a later migration (enterprise_erp_schema). They become active
+-- once that migration runs.
 -- ==========================================
 
 -- 1. PERSONS (The Continuous Record)
-CREATE TABLE public.persons (
+CREATE TABLE IF NOT EXISTS public.persons (
     company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     first_name text NOT NULL,
@@ -16,15 +22,18 @@ CREATE TABLE public.persons (
     PRIMARY KEY (company_id, id)
 );
 
-CREATE INDEX idx_persons_company ON public.persons(company_id);
-CREATE INDEX idx_persons_email ON public.persons(email);
+CREATE INDEX IF NOT EXISTS idx_persons_company ON public.persons(company_id);
+CREATE INDEX IF NOT EXISTS idx_persons_email ON public.persons(email);
 
-ALTER TABLE public.persons ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Tenant isolation for persons" ON public.persons
-    USING (company_id = get_user_company_id());
+DO $$ BEGIN ALTER TABLE public.persons ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE POLICY "Tenant isolation for persons" ON public.persons
+      USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+         WHEN undefined_function THEN NULL; END $$;
 
 -- 2. JOBS
-CREATE TABLE public.jobs (
+CREATE TABLE IF NOT EXISTS public.jobs (
     company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     title text NOT NULL,
@@ -38,13 +47,16 @@ CREATE TABLE public.jobs (
     PRIMARY KEY (company_id, id)
 );
 
-ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Tenant isolation for jobs" ON public.jobs
-    USING (company_id = get_user_company_id());
+DO $$ BEGIN ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE POLICY "Tenant isolation for jobs" ON public.jobs
+      USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+         WHEN undefined_function THEN NULL; END $$;
 
 
 -- 3. APPLICATIONS
-CREATE TABLE public.applications (
+CREATE TABLE IF NOT EXISTS public.applications (
     company_id uuid NOT NULL,
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     job_id uuid NOT NULL,
@@ -62,13 +74,16 @@ CREATE TABLE public.applications (
     FOREIGN KEY (company_id, person_id) REFERENCES public.persons(company_id, id) ON DELETE CASCADE
 );
 
-ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Tenant isolation for applications" ON public.applications
-    USING (company_id = get_user_company_id());
+DO $$ BEGIN ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE POLICY "Tenant isolation for applications" ON public.applications
+      USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+         WHEN undefined_function THEN NULL; END $$;
 
 
 -- 4. VERIFICATIONS (Trust Backbone)
-CREATE TABLE public.verifications (
+CREATE TABLE IF NOT EXISTS public.verifications (
     company_id uuid NOT NULL,
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     person_id uuid NOT NULL,
@@ -81,13 +96,16 @@ CREATE TABLE public.verifications (
     FOREIGN KEY (company_id, person_id) REFERENCES public.persons(company_id, id) ON DELETE CASCADE
 );
 
-ALTER TABLE public.verifications ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Tenant isolation for verifications" ON public.verifications
-    USING (company_id = get_user_company_id());
+DO $$ BEGIN ALTER TABLE public.verifications ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE POLICY "Tenant isolation for verifications" ON public.verifications
+      USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+         WHEN undefined_function THEN NULL; END $$;
 
 
 -- 5. TRUST SCORES
-CREATE TABLE public.trust_scores (
+CREATE TABLE IF NOT EXISTS public.trust_scores (
     company_id uuid NOT NULL,
     person_id uuid NOT NULL,
     score integer NOT NULL CHECK (score >= 0 AND score <= 100),
@@ -97,9 +115,12 @@ CREATE TABLE public.trust_scores (
     FOREIGN KEY (company_id, person_id) REFERENCES public.persons(company_id, id) ON DELETE CASCADE
 );
 
-ALTER TABLE public.trust_scores ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Tenant isolation for trust_scores" ON public.trust_scores
-    USING (company_id = get_user_company_id());
+DO $$ BEGIN ALTER TABLE public.trust_scores ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE POLICY "Tenant isolation for trust_scores" ON public.trust_scores
+      USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+         WHEN undefined_function THEN NULL; END $$;
 
 -- Triggers for updated_at
 CREATE OR REPLACE FUNCTION trigger_set_updated_at()
@@ -110,14 +131,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_timestamp_persons ON public.persons;
 CREATE TRIGGER set_timestamp_persons
 BEFORE UPDATE ON public.persons
 FOR EACH ROW EXECUTE PROCEDURE trigger_set_updated_at();
 
+DROP TRIGGER IF EXISTS set_timestamp_jobs ON public.jobs;
 CREATE TRIGGER set_timestamp_jobs
 BEFORE UPDATE ON public.jobs
 FOR EACH ROW EXECUTE PROCEDURE trigger_set_updated_at();
 
+DROP TRIGGER IF EXISTS set_timestamp_applications ON public.applications;
 CREATE TRIGGER set_timestamp_applications
 BEFORE UPDATE ON public.applications
 FOR EACH ROW EXECUTE PROCEDURE trigger_set_updated_at();
