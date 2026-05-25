@@ -9,7 +9,7 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   UserPlus, Download, Users, UserCheck, UserX, MoreHorizontal,
-  Mail, Phone, Briefcase, Calendar, Edit2, RefreshCw
+  Mail, Phone, Briefcase, Calendar, Edit2, RefreshCw, IndianRupee
 } from 'lucide-react'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
@@ -154,10 +154,27 @@ function AddEmployeeModal({
 
 /* ── Employee Detail Drawer ─────────────────────────────────────────────────── */
 function EmployeeDetailModal({
-  employee, onClose, onDeactivate,
+  employee, onClose, onDeactivate, canManage, onSetSalary,
 }: {
   employee: Employee | null; onClose: () => void; onDeactivate: (id: string) => void
+  canManage: boolean; onSetSalary: (emp: Employee) => void
 }) {
+  const [activeCTC, setActiveCTC] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (employee && canManage) {
+      fetch(`/api/v1/admin/salary-structures?employee_id=${employee.id}`)
+        .then(r => r.json())
+        .then(d => {
+          const active = d.salary_structures?.find((s: any) => s.is_active)
+          setActiveCTC(active?.ctc_monthly ?? null)
+        })
+        .catch(() => setActiveCTC(null))
+    } else {
+      setActiveCTC(null)
+    }
+  }, [employee, canManage])
+
   if (!employee) return null
   return (
     <Modal open={!!employee} onClose={onClose} title="Employee Profile" size="lg">
@@ -185,13 +202,36 @@ function EmployeeDetailModal({
         <Divider />
 
         <DetailGrid cols={2} items={[
-          { label: 'Email',        value: employee.email },
-          { label: 'Phone',        value: employee.phone ?? '—' },
-          { label: 'Department',   value: employee.dept?.name ?? employee.department ?? '—' },
-          { label: 'Manager',      value: employee.manager?.full_name ?? '—' },
+          { label: 'Email',           value: employee.email },
+          { label: 'Phone',           value: employee.phone ?? '—' },
+          { label: 'Department',      value: employee.dept?.name ?? employee.department ?? '—' },
+          { label: 'Manager',         value: employee.manager?.full_name ?? '—' },
           { label: 'Date of Joining', value: formatDate(employee.date_of_joining) },
-          { label: 'Status',       value: STATUS_LABEL[employee.status] ?? employee.status },
+          { label: 'Status',          value: STATUS_LABEL[employee.status] ?? employee.status },
         ]} />
+
+        {/* Salary row — visible only to HR/Admin */}
+        {canManage && (
+          <>
+            <Divider label="Compensation" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Current CTC (Monthly)</p>
+                {activeCTC !== null ? (
+                  <p className="text-lg font-bold text-slate-800">{formatCurrency(activeCTC)}</p>
+                ) : (
+                  <p className="text-sm text-slate-400 italic">Not set — salary structure pending</p>
+                )}
+              </div>
+              {employee.status === 'active' && (
+                <Button size="sm" variant="outline" leftIcon={<IndianRupee className="h-3.5 w-3.5" />}
+                  onClick={() => onSetSalary(employee)}>
+                  {activeCTC ? 'Revise Salary' : 'Set Salary'}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
 
         {employee.status === 'active' && (
           <div className="flex justify-end pt-2">
@@ -199,6 +239,162 @@ function EmployeeDetailModal({
               Deactivate Employee
             </Button>
           </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+/* ── Salary Breakdown Calc (Indian Payroll) ─────────────────────────────────── */
+function calcSalaryComponents(ctcMonthly: number) {
+  const basic              = Math.round(ctcMonthly * 0.40)
+  const hra                = Math.round(basic * 0.50)
+  const transport          = 1600
+  const medical            = 1250
+  const lta                = Math.round(basic * 0.05 / 12)
+  const pfEmployee         = Math.min(Math.round(basic * 0.12), 1800)
+  const pfEmployer         = Math.min(Math.round(basic * 0.12), 1800)
+  const gratuity           = Math.round(basic * 0.0481)
+  const insurance          = Math.round(ctcMonthly * 0.005)
+  const grossEarnings      = basic + hra + transport + medical + lta
+  const esiEmployee        = grossEarnings <= 21000 ? Math.round(grossEarnings * 0.0075) : 0
+  const esiEmployer        = grossEarnings <= 21000 ? Math.round(grossEarnings * 0.0325) : 0
+  const pt                 = grossEarnings > 10000 ? 200 : 0
+  const totalBenefits      = pfEmployer + gratuity + insurance
+  const special            = Math.max(0, ctcMonthly - basic - hra - transport - medical - lta - totalBenefits)
+  return {
+    basic, hra, special_allowance: special, transport_allowance: transport,
+    medical_allowance: medical, lta_monthly: lta,
+    pf_employee: pfEmployee, pf_employer: pfEmployer,
+    esi_employee: esiEmployee, esi_employer: esiEmployer,
+    professional_tax: pt, gratuity_monthly: gratuity, insurance_monthly: insurance,
+  }
+}
+
+/* ── Set Salary Modal ────────────────────────────────────────────────────────── */
+function SetSalaryModal({ employee, open, onClose, onSuccess }: {
+  employee: Employee | null; open: boolean; onClose: () => void; onSuccess: () => void
+}) {
+  const [ctc, setCtc]           = useState('')
+  const [effective, setEffective] = useState(new Date().toISOString().split('T')[0])
+  const [saving, setSaving]     = useState(false)
+  const [error, setError]       = useState<string | null>(null)
+  const [existingCTC, setExistingCTC] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (open && employee) {
+      setCtc('')
+      setError(null)
+      // Load existing structure
+      fetch(`/api/v1/admin/salary-structures?employee_id=${employee.id}`)
+        .then(r => r.json())
+        .then(d => {
+          const active = d.salary_structures?.find((s: any) => s.is_active)
+          setExistingCTC(active?.ctc_monthly ?? null)
+        })
+        .catch(() => {})
+    }
+  }, [open, employee])
+
+  const ctcNum = parseFloat(ctc) || 0
+  const comps  = ctcNum > 0 ? calcSalaryComponents(ctcNum) : null
+
+  const handleSave = async () => {
+    if (!employee || ctcNum <= 0) return
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/v1/admin/salary-structures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_id: employee.id,
+          effective_from: effective,
+          ctc_monthly: ctcNum,
+          ...(comps ?? {}),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to save salary structure')
+        return
+      }
+      onSuccess()
+      onClose()
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!employee) return null
+  return (
+    <Modal open={open} onClose={onClose} title="Set Salary Structure" size="lg"
+      footer={<>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+        <Button size="sm" loading={saving} onClick={handleSave} disabled={ctcNum <= 0}>
+          Save Structure
+        </Button>
+      </>}
+    >
+      <div className="space-y-4">
+        {existingCTC !== null && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+            <IndianRupee className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>Current CTC: <strong>{formatCurrency(existingCTC)}/month</strong>. Saving will create a new revision.</span>
+          </div>
+        )}
+        {error && (
+          <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{error}</div>
+        )}
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="CTC Monthly (₹)"
+            type="number"
+            placeholder="e.g. 100000"
+            value={ctc}
+            onChange={e => setCtc(e.target.value)}
+            required
+          />
+          <Input
+            label="Effective From"
+            type="date"
+            value={effective}
+            onChange={e => setEffective(e.target.value)}
+          />
+        </div>
+
+        {comps && (
+          <>
+            <Divider label="Auto-calculated components (Indian Payroll)" />
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+              {[
+                ['Basic', comps.basic],
+                ['HRA', comps.hra],
+                ['Special Allowance', comps.special_allowance],
+                ['Transport', comps.transport_allowance],
+                ['Medical', comps.medical_allowance],
+                ['LTA', comps.lta_monthly],
+                ['PF (Employee)', comps.pf_employee],
+                ['PF (Employer)', comps.pf_employer],
+                ['ESI (Employee)', comps.esi_employee],
+                ['ESI (Employer)', comps.esi_employer],
+                ['Professional Tax', comps.professional_tax],
+                ['Gratuity', comps.gratuity_monthly],
+                ['Insurance', comps.insurance_monthly],
+              ].map(([label, val]) => (
+                <div key={label as string} className="flex justify-between border-b border-slate-50 pb-1">
+                  <span className="text-slate-500">{label}</span>
+                  <span className="font-medium text-slate-700 tabular-nums">{formatCurrency(val as number)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between items-center py-2 bg-blue-50 rounded-lg px-3 mt-1">
+              <span className="text-sm font-semibold text-blue-800">Total CTC Monthly</span>
+              <span className="text-sm font-bold text-blue-700 tabular-nums">{formatCurrency(ctcNum)}</span>
+            </div>
+          </>
         )}
       </div>
     </Modal>
@@ -215,11 +411,12 @@ export default function HRMSPage() {
   const [deptFilter,   setDeptFilter]   = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [tab,          setTab]          = useState('all')
-  const [addOpen,      setAddOpen]      = useState(false)
-  const [selected,     setSelected]     = useState<Employee | null>(null)
-  const [confirmDeact, setConfirmDeact] = useState<string | null>(null)
-  const [deacting,     setDeacting]     = useState(false)
-  const [canCreate,    setCanCreate]    = useState(false)
+  const [addOpen,        setAddOpen]        = useState(false)
+  const [selected,       setSelected]       = useState<Employee | null>(null)
+  const [confirmDeact,   setConfirmDeact]   = useState<string | null>(null)
+  const [deacting,       setDeacting]       = useState(false)
+  const [canCreate,      setCanCreate]      = useState(false)
+  const [salaryTarget,   setSalaryTarget]   = useState<Employee | null>(null)
 
   /* Fetch employees + check role */
   const fetchEmployees = useCallback(async () => {
@@ -473,6 +670,14 @@ export default function HRMSPage() {
       <EmployeeDetailModal
         employee={selected} onClose={() => setSelected(null)}
         onDeactivate={id => setConfirmDeact(id)}
+        canManage={canCreate}
+        onSetSalary={emp => { setSelected(null); setSalaryTarget(emp) }}
+      />
+      <SetSalaryModal
+        employee={salaryTarget}
+        open={!!salaryTarget}
+        onClose={() => setSalaryTarget(null)}
+        onSuccess={fetchEmployees}
       />
       <ConfirmDialog
         open={!!confirmDeact} onClose={() => setConfirmDeact(null)}

@@ -1,82 +1,151 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, DetailGrid, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { Target, TrendingUp, Users, Plus, Phone, Mail, Building2, Calendar, ArrowRight, DollarSign, FlaskConical } from 'lucide-react'
+import {
+  Target, TrendingUp, Users, Plus, Phone, Mail, Building2,
+  Calendar, ArrowRight, DollarSign, FlaskConical, RefreshCw
+} from 'lucide-react'
 
-type Stage = 'Discovery' | 'Qualified' | 'Proposal' | 'Negotiation' | 'Closed Won' | 'Closed Lost'
-
-type Lead = {
-  id: string; name: string; company: string; value: number; stage: Stage; prob: number;
-  owner: string; source: string; last: string; email: string; phone: string; notes: string
+// ─── Stage config ────────────────────────────────────────────────────────────
+type Stage = 'new' | 'contacted' | 'proposal' | 'negotiation' | 'won' | 'lost'
+const STAGE_LABELS: Record<Stage, string> = {
+  new: 'Discovery', contacted: 'Qualified', proposal: 'Proposal',
+  negotiation: 'Negotiation', won: 'Closed Won', lost: 'Closed Lost',
 }
-
-const LEADS: Lead[] = [
-  { id: '1', name: 'Ravi Krishnan', company: 'Mahindra Group', value: 4800000, stage: 'Proposal', prob: 60, owner: 'Karan Singh', source: 'LinkedIn', last: '12 May', email: 'ravi.k@mahindra.com', phone: '+91 98111 22233', notes: 'Interested in HRMS + Payroll bundle. Procurement cycle ~6 weeks.' },
-  { id: '2', name: 'Sunita Bajaj', company: 'Bajaj Auto', value: 2400000, stage: 'Discovery', prob: 30, owner: 'Sneha Reddy', source: 'Referral', last: '11 May', email: 'sunita.b@bajaj.com', phone: '+91 98222 33344', notes: 'Initial call done. Evaluating 3 vendors.' },
-  { id: '3', name: 'Ashok Verma', company: 'Reliance Industries', value: 8500000, stage: 'Negotiation', prob: 80, owner: 'Karan Singh', source: 'Cold Outreach', last: '10 May', email: 'ashok.v@ril.com', phone: '+91 98333 44455', notes: 'Shortlisted to 2 vendors. Price negotiation in progress.' },
-  { id: '4', name: 'Meena Pillai', company: 'HDFC Bank', value: 3200000, stage: 'Closed Won', prob: 100, owner: 'Sneha Reddy', source: 'Event', last: '08 May', email: 'meena.p@hdfc.com', phone: '+91 98444 55566', notes: 'Contract signed. Implementation starts June.' },
-  { id: '5', name: 'Deepak Nair', company: 'Airtel', value: 1800000, stage: 'Qualified', prob: 45, owner: 'Karan Singh', source: 'Website', last: '07 May', email: 'deepak.n@airtel.com', phone: '+91 98555 66677', notes: 'Qualified via demo. Decision expected in 2 weeks.' },
-  { id: '6', name: 'Preethi Kumar', company: 'Infosys', value: 6200000, stage: 'Proposal', prob: 55, owner: 'Sneha Reddy', source: 'Partner', last: '06 May', email: 'preethi.k@infosys.com', phone: '+91 98666 77788', notes: 'RFP submitted. Evaluation committee review pending.' },
-]
-
 const STAGE_COLORS: Record<Stage, 'neutral' | 'info' | 'warning' | 'success' | 'danger'> = {
-  Discovery: 'neutral', Qualified: 'info', Proposal: 'warning',
-  Negotiation: 'info', 'Closed Won': 'success', 'Closed Lost': 'danger',
+  new: 'neutral', contacted: 'info', proposal: 'warning',
+  negotiation: 'info', won: 'success', lost: 'danger',
 }
+const PIPELINE_STAGES: Stage[] = ['new', 'contacted', 'proposal', 'negotiation', 'won']
+const STAGE_OPTIONS = Object.entries(STAGE_LABELS).map(([value, label]) => ({ label, value }))
 
-const STAGES: Stage[] = ['Discovery', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won']
-
-const STAGE_OPTIONS = [
-  { label: 'Discovery', value: 'Discovery' }, { label: 'Qualified', value: 'Qualified' },
-  { label: 'Proposal', value: 'Proposal' }, { label: 'Negotiation', value: 'Negotiation' },
-  { label: 'Closed Won', value: 'Closed Won' }, { label: 'Closed Lost', value: 'Closed Lost' },
+// ─── Fallback mock data ──────────────────────────────────────────────────────
+const MOCK_LEADS = [
+  { id: '1', name: 'Ravi Krishnan', company: 'Mahindra Group', value: 4800000, status: 'proposal', owner: { full_name: 'Karan Singh' }, email: 'ravi.k@mahindra.com', phone: '+91 98111 22233', updated_at: '2026-05-12T00:00:00Z' },
+  { id: '2', name: 'Sunita Bajaj', company: 'Bajaj Auto', value: 2400000, status: 'new', owner: { full_name: 'Sneha Reddy' }, email: 'sunita.b@bajaj.com', phone: '+91 98222 33344', updated_at: '2026-05-11T00:00:00Z' },
+  { id: '3', name: 'Ashok Verma', company: 'Reliance Industries', value: 8500000, status: 'negotiation', owner: { full_name: 'Karan Singh' }, email: 'ashok.v@ril.com', phone: '+91 98333 44455', updated_at: '2026-05-10T00:00:00Z' },
+  { id: '4', name: 'Meena Pillai', company: 'HDFC Bank', value: 3200000, status: 'won', owner: { full_name: 'Sneha Reddy' }, email: 'meena.p@hdfc.com', phone: '+91 98444 55566', updated_at: '2026-05-08T00:00:00Z' },
+  { id: '5', name: 'Deepak Nair', company: 'Airtel', value: 1800000, status: 'contacted', owner: { full_name: 'Karan Singh' }, email: 'deepak.n@airtel.com', phone: '+91 98555 66677', updated_at: '2026-05-07T00:00:00Z' },
+  { id: '6', name: 'Preethi Kumar', company: 'Infosys', value: 6200000, status: 'proposal', owner: { full_name: 'Sneha Reddy' }, email: 'preethi.k@infosys.com', phone: '+91 98666 77788', updated_at: '2026-05-06T00:00:00Z' },
 ]
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+type Lead = {
+  id: string; name: string; company?: string; value: number; status: string
+  owner?: { full_name: string } | null; email?: string; phone?: string
+  updated_at: string
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function CRMPage() {
   const [tab, setTab] = useState('pipeline')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Lead | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [isPreview, setIsPreview] = useState(false)
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', value: '', status: 'new' })
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/v1/crm')
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      if (data.leads?.length > 0) {
+        setLeads(data.leads)
+        setIsPreview(false)
+      } else {
+        setLeads(MOCK_LEADS as any)
+        setIsPreview(true)
+      }
+    } catch {
+      setLeads(MOCK_LEADS as any)
+      setIsPreview(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleAddLead = async () => {
+    if (!form.name.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/v1/crm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, value: Number(form.value) || 0 }),
+      })
+      if (res.ok) {
+        setAddOpen(false)
+        setForm({ name: '', company: '', email: '', phone: '', value: '', status: 'new' })
+        fetchData()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const pipelineValue = useMemo(() =>
-    LEADS.filter(l => !l.stage.includes('Closed')).reduce((s, l) => s + l.value * l.prob / 100, 0), [])
+    leads.filter(l => !['won', 'lost'].includes(l.status)).reduce((s, l) => s + Number(l.value), 0), [leads])
   const closedWon = useMemo(() =>
-    LEADS.filter(l => l.stage === 'Closed Won').reduce((s, l) => s + l.value, 0), [])
-  const activeLeads = LEADS.filter(l => !l.stage.includes('Closed')).length
+    leads.filter(l => l.status === 'won').reduce((s, l) => s + Number(l.value), 0), [leads])
+  const activeLeads = useMemo(() =>
+    leads.filter(l => !['won', 'lost'].includes(l.status)).length, [leads])
+  const avgDeal = leads.length > 0 ? leads.reduce((s, l) => s + Number(l.value), 0) / leads.length : 0
 
   const filtered = useMemo(() =>
-    LEADS.filter(l => !search || l.name.toLowerCase().includes(search.toLowerCase()) || l.company.toLowerCase().includes(search.toLowerCase())), [search])
+    leads.filter(l => !search ||
+      l.name.toLowerCase().includes(search.toLowerCase()) ||
+      (l.company ?? '').toLowerCase().includes(search.toLowerCase())
+    ), [leads, search])
+
+  function fmtDate(d: string) {
+    return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+  }
+
+  const stageLabel = (s: string) => STAGE_LABELS[s as Stage] ?? s
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Demo banner */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-        <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
-        <span><strong>Preview mode</strong> — CRM data is illustrative. Full CRM integration is on the roadmap.</span>
-      </div>
+      {isPreview && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+          <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
+          <span><strong>Preview mode</strong> — CRM data is illustrative. Add your first lead to see live data.</span>
+        </div>
+      )}
 
       <PageHeader
         title="CRM"
         description="Leads, deals, and sales pipeline management"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setAddOpen(true)}>Add Lead</Button>}
+        actions={
+          <>
+            <Button variant="outline" size="sm" leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />} onClick={fetchData}>Refresh</Button>
+            <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setAddOpen(true)}>Add Lead</Button>
+          </>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Weighted Pipeline" value={formatCurrency(pipelineValue)} icon={<Target className="h-4 w-4" />} delta={{ value: '18.2%', positive: true }} />
+        <StatCard label="Weighted Pipeline" value={formatCurrency(pipelineValue)} icon={<Target className="h-4 w-4" />} />
         <StatCard label="Active Leads" value={activeLeads} icon={<Users className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
-        <StatCard label="Closed Won MTD" value={formatCurrency(closedWon)} icon={<TrendingUp className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
-        <StatCard label="Avg Deal Size" value={formatCurrency(LEADS.reduce((s, l) => s + l.value, 0) / LEADS.length)} icon={<DollarSign className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
+        <StatCard label="Closed Won" value={formatCurrency(closedWon)} icon={<TrendingUp className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Avg Deal Size" value={formatCurrency(avgDeal)} icon={<DollarSign className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
       </div>
 
       <TabBar
         tabs={[
           { id: 'pipeline', label: 'Pipeline Board' },
-          { id: 'list', label: 'All Leads', count: LEADS.length },
+          { id: 'list', label: 'All Leads', count: leads.length },
         ]}
         active={tab}
         onChange={setTab}
@@ -84,13 +153,13 @@ export default function CRMPage() {
 
       {tab === 'pipeline' && (
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-          {STAGES.map(stage => {
-            const stageLeads = LEADS.filter(l => l.stage === stage)
-            const stageValue = stageLeads.reduce((s, l) => s + l.value, 0)
+          {PIPELINE_STAGES.map(stage => {
+            const stageLeads = leads.filter(l => l.status === stage)
+            const stageValue = stageLeads.reduce((s, l) => s + Number(l.value), 0)
             return (
               <div key={stage} className="space-y-2">
                 <div className="flex items-center justify-between px-1">
-                  <Badge variant={STAGE_COLORS[stage]} size="sm">{stage}</Badge>
+                  <Badge variant={STAGE_COLORS[stage]} size="sm">{STAGE_LABELS[stage]}</Badge>
                   <span className="text-xs font-semibold text-slate-400">{stageLeads.length}</span>
                 </div>
                 {stageValue > 0 && <p className="text-xs text-slate-400 px-1 tabular-nums">{formatCurrency(stageValue)}</p>}
@@ -98,19 +167,25 @@ export default function CRMPage() {
                   {stageLeads.map(lead => (
                     <Card key={lead.id} padding="sm" hover onClick={() => setSelected(lead)}>
                       <p className="text-xs font-semibold text-slate-800 leading-tight">{lead.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                        <Building2 className="h-2.5 w-2.5" />{lead.company}
-                      </p>
+                      {lead.company && (
+                        <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                          <Building2 className="h-2.5 w-2.5" />{lead.company}
+                        </p>
+                      )}
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs font-bold text-blue-600 tabular-nums">{formatCurrency(lead.value)}</span>
-                        <span className="text-xs text-slate-400">{lead.prob}%</span>
+                        <span className="text-xs font-bold text-blue-600 tabular-nums">{formatCurrency(Number(lead.value))}</span>
                       </div>
                       <div className="flex items-center justify-between mt-1.5">
-                        <Avatar name={lead.owner} size="xs" />
-                        <span className="text-[10px] text-slate-400">{lead.last}</span>
+                        <Avatar name={(lead.owner as any)?.full_name ?? lead.name} size="xs" />
+                        <span className="text-[10px] text-slate-400">{fmtDate(lead.updated_at)}</span>
                       </div>
                     </Card>
                   ))}
+                  {stageLeads.length === 0 && (
+                    <div className="h-16 flex items-center justify-center border-2 border-dashed border-slate-100 rounded-lg">
+                      <span className="text-xs text-slate-300">Empty</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )
@@ -123,42 +198,37 @@ export default function CRMPage() {
           <div className="px-5 pt-5 pb-4">
             <SearchInput placeholder="Search leads or companies..." value={search} onChange={setSearch} className="w-72" />
           </div>
-          <Table>
-            <Thead><tr><Th>Lead</Th><Th>Company</Th><Th>Stage</Th><Th>Probability</Th><Th align="right">Value</Th><Th>Owner</Th><Th>Last Contact</Th></tr></Thead>
-            <Tbody>
-              {filtered.map(lead => (
-                <Tr key={lead.id} onClick={() => setSelected(lead)}>
-                  <Td>
-                    <div className="flex items-center gap-2">
-                      <Avatar name={lead.name} size="sm" />
-                      <div>
-                        <p className="font-medium text-slate-800 text-sm">{lead.name}</p>
-                        <p className="text-xs text-slate-400">{lead.source}</p>
+          {loading ? (
+            <div className="py-16 text-center text-slate-400 text-sm">Loading leads…</div>
+          ) : (
+            <Table>
+              <Thead><tr><Th>Lead</Th><Th>Company</Th><Th>Stage</Th><Th align="right">Value</Th><Th>Owner</Th><Th>Last Update</Th></tr></Thead>
+              <Tbody>
+                {filtered.length === 0 ? (
+                  <Tr><Td colSpan={6}><div className="py-8 text-center text-slate-400 text-sm">No leads yet</div></Td></Tr>
+                ) : filtered.map(lead => (
+                  <Tr key={lead.id} onClick={() => setSelected(lead)}>
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <Avatar name={lead.name} size="sm" />
+                        <span className="font-medium text-slate-800 text-sm">{lead.name}</span>
                       </div>
-                    </div>
-                  </Td>
-                  <Td><span className="font-medium text-slate-700">{lead.company}</span></Td>
-                  <Td><Badge variant={STAGE_COLORS[lead.stage]}>{lead.stage}</Badge></Td>
-                  <Td>
-                    <div className="flex items-center gap-2 w-20">
-                      <div className="flex-1 bg-slate-100 rounded-full h-1.5">
-                        <div className="h-full rounded-full bg-blue-500" style={{ width: `${lead.prob}%` }} />
+                    </Td>
+                    <Td><span className="font-medium text-slate-700">{lead.company ?? '—'}</span></Td>
+                    <Td><Badge variant={STAGE_COLORS[lead.status as Stage] ?? 'neutral'}>{stageLabel(lead.status)}</Badge></Td>
+                    <Td align="right"><span className="data-value font-medium">{formatCurrency(Number(lead.value))}</span></Td>
+                    <Td>
+                      <div className="flex items-center gap-1.5">
+                        <Avatar name={(lead.owner as any)?.full_name ?? '?'} size="xs" />
+                        <span className="text-xs text-slate-500">{(lead.owner as any)?.full_name ?? '—'}</span>
                       </div>
-                      <span className="text-xs text-slate-500 tabular-nums w-7 text-right">{lead.prob}%</span>
-                    </div>
-                  </Td>
-                  <Td align="right"><span className="data-value font-medium">{formatCurrency(lead.value)}</span></Td>
-                  <Td>
-                    <div className="flex items-center gap-1.5">
-                      <Avatar name={lead.owner} size="xs" />
-                      <span className="text-xs text-slate-500">{lead.owner}</span>
-                    </div>
-                  </Td>
-                  <Td><span className="text-xs text-slate-500">{lead.last}</span></Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+                    </Td>
+                    <Td><span className="text-xs text-slate-500">{fmtDate(lead.updated_at)}</span></Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
         </Card>
       )}
 
@@ -166,7 +236,6 @@ export default function CRMPage() {
       <Modal open={!!selected} onClose={() => setSelected(null)} title="Lead Details" size="lg"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
-          <Button variant="outline" size="sm">Log Activity</Button>
           <Button size="sm" leftIcon={<ArrowRight className="h-3.5 w-3.5" />}>Move Stage</Button>
         </>}
       >
@@ -176,29 +245,22 @@ export default function CRMPage() {
               <Avatar name={selected.name} size="lg" />
               <div>
                 <p className="font-semibold text-slate-900">{selected.name}</p>
-                <p className="text-sm text-slate-500 flex items-center gap-1"><Building2 className="h-3 w-3" />{selected.company}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <Badge variant={STAGE_COLORS[selected.stage]}>{selected.stage}</Badge>
-                  <Badge variant="neutral" size="sm">{selected.source}</Badge>
+                {selected.company && (
+                  <p className="text-sm text-slate-500 flex items-center gap-1"><Building2 className="h-3 w-3" />{selected.company}</p>
+                )}
+                <div className="mt-1.5">
+                  <Badge variant={STAGE_COLORS[selected.status as Stage] ?? 'neutral'}>{stageLabel(selected.status)}</Badge>
                 </div>
               </div>
             </div>
             <Divider />
             <DetailGrid items={[
-              { label: 'Deal Value', value: <span className="text-blue-600 font-bold">{formatCurrency(selected.value)}</span> },
-              { label: 'Probability', value: `${selected.prob}%` },
-              { label: 'Weighted Value', value: formatCurrency(selected.value * selected.prob / 100) },
-              { label: 'Owner', value: selected.owner },
-              { label: 'Email', value: <a href={`mailto:${selected.email}`} className="text-blue-600 hover:underline flex items-center gap-1"><Mail className="h-3 w-3" />{selected.email}</a> },
-              { label: 'Phone', value: <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{selected.phone}</span> },
-              { label: 'Last Contact', value: <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{selected.last}</span> },
+              { label: 'Deal Value', value: <span className="text-blue-600 font-bold">{formatCurrency(Number(selected.value))}</span> },
+              { label: 'Owner', value: (selected.owner as any)?.full_name ?? '—' },
+              ...(selected.email ? [{ label: 'Email', value: <a href={`mailto:${selected.email}`} className="text-blue-600 hover:underline flex items-center gap-1"><Mail className="h-3 w-3" />{selected.email}</a> }] : []),
+              ...(selected.phone ? [{ label: 'Phone', value: <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{selected.phone}</span> }] : []),
+              { label: 'Last Update', value: <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{fmtDate(selected.updated_at)}</span> },
             ]} />
-            {selected.notes && (
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Notes</p>
-                <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3">{selected.notes}</p>
-              </div>
-            )}
           </div>
         )}
       </Modal>
@@ -207,19 +269,18 @@ export default function CRMPage() {
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add New Lead" size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setAddOpen(false)}>Cancel</Button>
-          <Button size="sm">Add Lead</Button>
+          <Button size="sm" loading={saving} onClick={handleAddLead}>Add Lead</Button>
         </>}
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Contact Name" placeholder="Ravi Krishnan" required />
-            <Input label="Company" placeholder="Mahindra Group" required />
-            <Input label="Email" type="email" placeholder="ravi@company.com" />
-            <Input label="Phone" placeholder="+91 98765 43210" />
-            <Input label="Deal Value (₹)" type="number" placeholder="5000000" />
-            <Select label="Stage" options={STAGE_OPTIONS} />
+            <Input label="Contact Name" placeholder="Ravi Krishnan" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            <Input label="Company" placeholder="Mahindra Group" value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
+            <Input label="Email" type="email" placeholder="ravi@company.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            <Input label="Phone" placeholder="+91 98765 43210" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            <Input label="Deal Value (₹)" type="number" placeholder="5000000" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} />
+            <Select label="Stage" options={STAGE_OPTIONS} value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} />
           </div>
-          <Textarea label="Notes" placeholder="Context, requirements, next steps..." rows={3} />
         </div>
       </Modal>
     </div>
