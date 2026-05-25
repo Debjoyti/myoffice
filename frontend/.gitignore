@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files – local overrides stay private; production public vars are committed
+.env.local
+.env*.local
+# .env.production is committed so Vercel picks up NEXT_PUBLIC_* at build time
+# (contains only anon/public keys — never put service role keys here)
 
 # vercel
 .vercel
