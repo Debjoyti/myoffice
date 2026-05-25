@@ -67,9 +67,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 /* ── Role → allowed hrefs (null = all) ───────────────────────────── */
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
-  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/analytics', '/iatf']),
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/crm', '/analytics', '/iatf']),
   manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/support', '/salary']),
-  accountant: new Set(['/home', '/finance', '/payroll', '/salary', '/procurement', '/analytics']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/payroll', '/salary', '/procurement', '/analytics']),
   employee:   new Set(['/home', '/attendance', '/salary']),
 }
 
