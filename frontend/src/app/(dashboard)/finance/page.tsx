@@ -77,7 +77,9 @@ export default function FinancePage() {
   const [monthly, setMonthly] = useState<Monthly[]>([])
 
   // New invoice form state
+  const [newExpense, setNewExpense] = useState(false)
   const [form, setForm] = useState({ invoice_number: '', client: '', issue_date: '', due_date: '', total_amount: '' })
+  const [expenseForm, setExpenseForm] = useState({ category: '', description: '', amount: '' })
   const [saving, setSaving] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -111,6 +113,25 @@ export default function FinancePage() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  const handleCreateExpense = async () => {
+    if (!expenseForm.category || !expenseForm.amount) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/v1/finance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'expense', ...expenseForm }),
+      })
+      if (res.ok) {
+        setNewExpense(false)
+        setExpenseForm({ category: '', description: '', amount: '' })
+        fetchData()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleCreateInvoice = async () => {
     if (!form.invoice_number || !form.total_amount) return
@@ -272,7 +293,7 @@ export default function FinancePage() {
         <Card padding="none">
           <div className="px-5 pt-5 pb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-slate-700">Expense Claims</p>
-            <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => {}}>Add Expense</Button>
+            <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewExpense(true)}>Add Expense</Button>
           </div>
           {loading ? (
             <div className="py-16 text-center text-slate-400 text-sm">Loading expenses…</div>
@@ -306,6 +327,47 @@ export default function FinancePage() {
           )}
         </Card>
       )}
+
+      {/* Add Expense Modal */}
+      <Modal open={newExpense} onClose={() => setNewExpense(false)} title="Add Expense Claim" size="md"
+        footer={<>
+          <Button variant="ghost" size="sm" onClick={() => setNewExpense(false)}>Cancel</Button>
+          <Button size="sm" loading={saving} onClick={handleCreateExpense}>Submit Claim</Button>
+        </>}
+      >
+        <div className="space-y-4">
+          <Select
+            label="Category"
+            options={[
+              { label: 'Office Rent', value: 'Office Rent' },
+              { label: 'Cloud Infrastructure', value: 'Cloud Infrastructure' },
+              { label: 'Software Licenses', value: 'Software Licenses' },
+              { label: 'Team Travel', value: 'Team Travel' },
+              { label: 'Marketing', value: 'Marketing' },
+              { label: 'Utilities', value: 'Utilities' },
+              { label: 'Equipment', value: 'Equipment' },
+              { label: 'Other', value: 'Other' },
+            ]}
+            value={expenseForm.category}
+            onChange={e => setExpenseForm(f => ({ ...f, category: (e.target as HTMLSelectElement).value }))}
+          />
+          <Input
+            label="Amount (₹)"
+            type="number"
+            placeholder="50000"
+            required
+            value={expenseForm.amount}
+            onChange={e => setExpenseForm(f => ({ ...f, amount: e.target.value }))}
+          />
+          <Textarea
+            label="Description"
+            placeholder="Brief description of this expense..."
+            rows={2}
+            value={expenseForm.description}
+            onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))}
+          />
+        </div>
+      </Modal>
 
       {/* New Invoice Modal */}
       <Modal open={newInvoice} onClose={() => setNewInvoice(false)} title="Create Invoice" size="lg"

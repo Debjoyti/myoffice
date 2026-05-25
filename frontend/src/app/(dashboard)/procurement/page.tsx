@@ -63,6 +63,7 @@ export default function ProcurementPage() {
   const [orders, setOrders] = useState<PO[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [vendorForm, setVendorForm] = useState({ name: '', contact_email: '', contact_phone: '' })
+  const [poForm, setPoForm] = useState({ vendor_id: '', po_number: '', expected_delivery: '', total_amount: '', description: '' })
   const [saving, setSaving] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -91,6 +92,32 @@ export default function ProcurementPage() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  const handleCreatePO = async () => {
+    if (!poForm.vendor_id || !poForm.total_amount) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/v1/procurement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'order',
+          vendor_id: poForm.vendor_id,
+          po_number: poForm.po_number || undefined,
+          expected_delivery: poForm.expected_delivery || undefined,
+          total_amount: Number(poForm.total_amount),
+          description: poForm.description,
+        }),
+      })
+      if (res.ok) {
+        setNewPO(false)
+        setPoForm({ vendor_id: '', po_number: '', expected_delivery: '', total_amount: '', description: '' })
+        fetchData()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleAddVendor = async () => {
     if (!vendorForm.name) return
@@ -279,17 +306,44 @@ export default function ProcurementPage() {
       <Modal open={newPO} onClose={() => setNewPO(false)} title="Create Purchase Order" size="lg"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewPO(false)}>Cancel</Button>
-          <Button size="sm">Save Draft</Button>
+          <Button size="sm" loading={saving} onClick={handleCreatePO}>Save Draft</Button>
         </>}
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Select label="Vendor" options={[{ label: 'Select vendor', value: '' }, ...vendors.map(v => ({ label: v.name, value: v.id }))]} />
-            <Input label="PO Number" placeholder="PO-2026-001" />
-            <Input label="Expected Delivery" type="date" />
-            <Input label="Total Amount (₹)" type="number" placeholder="500000" />
+            <Select
+              label="Vendor"
+              options={[{ label: 'Select vendor', value: '' }, ...vendors.map(v => ({ label: v.name, value: v.id }))]}
+              value={poForm.vendor_id}
+              onChange={e => setPoForm(f => ({ ...f, vendor_id: (e.target as HTMLSelectElement).value }))}
+            />
+            <Input
+              label="PO Number"
+              placeholder="PO-2026-001"
+              value={poForm.po_number}
+              onChange={e => setPoForm(f => ({ ...f, po_number: e.target.value }))}
+            />
+            <Input
+              label="Expected Delivery"
+              type="date"
+              value={poForm.expected_delivery}
+              onChange={e => setPoForm(f => ({ ...f, expected_delivery: e.target.value }))}
+            />
+            <Input
+              label="Total Amount (₹)"
+              type="number"
+              placeholder="500000"
+              value={poForm.total_amount}
+              onChange={e => setPoForm(f => ({ ...f, total_amount: e.target.value }))}
+            />
           </div>
-          <Textarea label="Items Description" placeholder="e.g. 10 × Dell Latitude 5540 Laptops (16GB RAM, 512GB SSD)" rows={3} />
+          <Textarea
+            label="Items Description"
+            placeholder="e.g. 10 × Dell Latitude 5540 Laptops (16GB RAM, 512GB SSD)"
+            rows={3}
+            value={poForm.description}
+            onChange={e => setPoForm(f => ({ ...f, description: e.target.value }))}
+          />
         </div>
       </Modal>
     </div>

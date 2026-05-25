@@ -51,7 +51,9 @@ export default function CRMPage() {
   const [isPreview, setIsPreview] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
   const [saving, setSaving] = useState(false)
+  const [stageSaving, setStageSaving] = useState(false)
   const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', value: '', status: 'new' })
+  const [moveStage, setMoveStage] = useState<Stage | ''>('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -75,6 +77,26 @@ export default function CRMPage() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  const handleMoveStage = async () => {
+    if (!selected || !moveStage || moveStage === selected.status) return
+    setStageSaving(true)
+    try {
+      const res = await fetch(`/api/v1/crm/${selected.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: moveStage }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setSelected({ ...selected, status: updated.status, updated_at: updated.updated_at })
+        setLeads(prev => prev.map(l => l.id === updated.id ? { ...l, status: updated.status } : l))
+        setMoveStage('')
+      }
+    } finally {
+      setStageSaving(false)
+    }
+  }
 
   const handleAddLead = async () => {
     if (!form.name.trim()) return
@@ -165,7 +187,7 @@ export default function CRMPage() {
                 {stageValue > 0 && <p className="text-xs text-slate-400 px-1 tabular-nums">{formatCurrency(stageValue)}</p>}
                 <div className="space-y-2 min-h-32">
                   {stageLeads.map(lead => (
-                    <Card key={lead.id} padding="sm" hover onClick={() => setSelected(lead)}>
+                    <Card key={lead.id} padding="sm" hover onClick={() => { setSelected(lead); setMoveStage('') }}>
                       <p className="text-xs font-semibold text-slate-800 leading-tight">{lead.name}</p>
                       {lead.company && (
                         <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
@@ -207,7 +229,7 @@ export default function CRMPage() {
                 {filtered.length === 0 ? (
                   <Tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">No leads yet</td></Tr>
                 ) : filtered.map(lead => (
-                  <Tr key={lead.id} onClick={() => setSelected(lead)}>
+                  <Tr key={lead.id} onClick={() => { setSelected(lead); setMoveStage('') }}>
                     <Td>
                       <div className="flex items-center gap-2">
                         <Avatar name={lead.name} size="sm" />
@@ -233,10 +255,29 @@ export default function CRMPage() {
       )}
 
       {/* Lead Detail Modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title="Lead Details" size="lg"
+      <Modal open={!!selected} onClose={() => { setSelected(null); setMoveStage('') }} title="Lead Details" size="lg"
         footer={<>
-          <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
-          <Button size="sm" leftIcon={<ArrowRight className="h-3.5 w-3.5" />}>Move Stage</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelected(null); setMoveStage('') }}>Close</Button>
+          <div className="flex items-center gap-2">
+            <select
+              className="text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={moveStage || selected?.status || ''}
+              onChange={e => setMoveStage(e.target.value as Stage)}
+            >
+              {STAGE_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              leftIcon={<ArrowRight className="h-3.5 w-3.5" />}
+              loading={stageSaving}
+              disabled={!moveStage || moveStage === selected?.status}
+              onClick={handleMoveStage}
+            >
+              Update Stage
+            </Button>
+          </div>
         </>}
       >
         {selected && (
