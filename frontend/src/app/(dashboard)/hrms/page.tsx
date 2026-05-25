@@ -221,14 +221,17 @@ export default function HRMSPage() {
   const [deacting,     setDeacting]     = useState(false)
   const [canCreate,    setCanCreate]    = useState(false)
 
-  /* Fetch employees */
+  /* Fetch employees + check role */
   const fetchEmployees = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const params = new URLSearchParams({ status: statusFilter || 'all' })
       if (deptFilter) params.set('department_id', deptFilter)
-      const res = await fetch(`/api/v1/employees?${params}`)
+      const [res, meRes] = await Promise.all([
+        fetch(`/api/v1/employees?${params}`),
+        fetch('/api/v1/me'),
+      ])
       if (!res.ok) {
         const d = await res.json()
         if (res.status === 403) { setCanCreate(false); setEmployees([]); setLoading(false); return }
@@ -236,7 +239,13 @@ export default function HRMSPage() {
       }
       const data = await res.json()
       setEmployees(data.employees ?? [])
-      setCanCreate(true)
+      // Only admin/hr can add employees; accountant can only view
+      if (meRes.ok) {
+        const meData = await meRes.json()
+        setCanCreate(['admin', 'hr'].includes(meData.employee?.role ?? ''))
+      } else {
+        setCanCreate(false)
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {

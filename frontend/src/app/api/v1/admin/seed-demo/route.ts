@@ -20,6 +20,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 const DEMO_PASSWORD = 'Demo@123456'
 const DEMO_COMPANY_NAME = 'PRSK Technologies Pvt Ltd'
 
+type SalaryComponents = {
+  ctc_monthly: number
+  basic: number; hra: number; special_allowance: number
+  transport_allowance: number; medical_allowance: number; lta_monthly: number
+  pf_employer: number; gratuity_monthly: number; insurance_monthly: number
+  pf_employee: number; esi_employee: number; esi_employer: number; professional_tax: number
+}
+
 type DemoUser = {
   email: string
   full_name: string
@@ -28,6 +36,7 @@ type DemoUser = {
   role: 'admin' | 'hr' | 'accountant' | 'employee'
   employee_code: string
   employment_type: string
+  salary: SalaryComponents
 }
 
 const DEMO_USERS: DemoUser[] = [
@@ -39,6 +48,13 @@ const DEMO_USERS: DemoUser[] = [
     role: 'admin',
     employee_code: 'EMP001',
     employment_type: 'full_time',
+    salary: {
+      ctc_monthly: 250000,
+      basic: 100000, hra: 50000, special_allowance: 74673,
+      transport_allowance: 1600, medical_allowance: 1250, lta_monthly: 4167,
+      pf_employer: 12000, gratuity_monthly: 4810, insurance_monthly: 1500,
+      pf_employee: 12000, esi_employee: 0, esi_employer: 0, professional_tax: 200,
+    },
   },
   {
     email: 'hradmin@prsk.demo',
@@ -48,6 +64,13 @@ const DEMO_USERS: DemoUser[] = [
     role: 'hr',
     employee_code: 'EMP002',
     employment_type: 'full_time',
+    salary: {
+      ctc_monthly: 80000,
+      basic: 32000, hra: 16000, special_allowance: 21938,
+      transport_allowance: 1600, medical_allowance: 1250, lta_monthly: 1333,
+      pf_employer: 3840, gratuity_monthly: 1539, insurance_monthly: 500,
+      pf_employee: 3840, esi_employee: 0, esi_employer: 0, professional_tax: 200,
+    },
   },
   {
     email: 'accountant@prsk.demo',
@@ -57,6 +80,13 @@ const DEMO_USERS: DemoUser[] = [
     role: 'accountant',
     employee_code: 'EMP003',
     employment_type: 'full_time',
+    salary: {
+      ctc_monthly: 65000,
+      basic: 26000, hra: 13000, special_allowance: 17296,
+      transport_allowance: 1600, medical_allowance: 1250, lta_monthly: 1083,
+      pf_employer: 3120, gratuity_monthly: 1251, insurance_monthly: 400,
+      pf_employee: 3120, esi_employee: 0, esi_employer: 0, professional_tax: 200,
+    },
   },
   {
     email: 'employee@prsk.demo',
@@ -66,6 +96,13 @@ const DEMO_USERS: DemoUser[] = [
     role: 'employee',
     employee_code: 'EMP004',
     employment_type: 'full_time',
+    salary: {
+      ctc_monthly: 60000,
+      basic: 24000, hra: 12000, special_allowance: 15716,
+      transport_allowance: 1600, medical_allowance: 1250, lta_monthly: 1000,
+      pf_employer: 2880, gratuity_monthly: 1154, insurance_monthly: 400,
+      pf_employee: 2880, esi_employee: 0, esi_employer: 0, professional_tax: 200,
+    },
   },
 ]
 
@@ -190,14 +227,86 @@ export async function POST(req: NextRequest) {
         date_of_joining: '2024-01-01',
       }
 
+      let employeeId: string | null = null
+
       if (existingEmp) {
         await supabase.from('employees').update(employeePayload).eq('id', existingEmp.id)
+        employeeId = existingEmp.id
         action = 'updated'
       } else {
-        const { error: empError } = await supabase.from('employees').insert(employeePayload)
-        if (empError) {
-          results.push({ email: demo.email, status: 'error', error: empError.message })
+        const { data: newEmp, error: empError } = await supabase
+          .from('employees')
+          .insert(employeePayload)
+          .select('id')
+          .single()
+        if (empError || !newEmp) {
+          results.push({ email: demo.email, status: 'error', error: empError?.message ?? 'Failed to insert employee' })
           continue
+        }
+        employeeId = newEmp.id
+      }
+
+      // Create default work schedule (Mon–Fri, 9–6) if not exists
+      if (employeeId) {
+        const { data: existingSchedule } = await supabase
+          .from('work_schedules')
+          .select('id')
+          .eq('employee_id', employeeId)
+          .limit(1)
+          .maybeSingle()
+
+        if (!existingSchedule) {
+          const schedule = [1, 2, 3, 4, 5].map(day => ({
+            employee_id: employeeId,
+            day_of_week: day,
+            start_time: '09:00',
+            end_time: '18:00',
+            is_working_day: true,
+          }))
+          await supabase.from('work_schedules').insert(schedule)
+        }
+
+        // Upsert salary structure
+        const { data: existingSalary } = await supabase
+          .from('salary_structures')
+          .select('id')
+          .eq('employee_id', employeeId)
+          .eq('is_active', true)
+          .maybeSingle()
+
+        if (!existingSalary) {
+          await supabase.from('salary_structures').insert({
+            employee_id: employeeId,
+            ...demo.salary,
+            effective_from: '2024-01-01',
+            is_active: true,
+          })
+        }
+
+        // Upsert leave balances (standard Indian: 12 casual, 12 sick, 24 earned)
+        const leaveTypes = [
+          { leave_type: 'casual', total_days: 12 },
+          { leave_type: 'sick',   total_days: 12 },
+          { leave_type: 'earned', total_days: 24 },
+        ]
+        for (const lt of leaveTypes) {
+          const { data: existingBalance } = await supabase
+            .from('leave_balances')
+            .select('id')
+            .eq('employee_id', employeeId)
+            .eq('leave_type', lt.leave_type)
+            .maybeSingle()
+
+          if (!existingBalance) {
+            await supabase.from('leave_balances').insert({
+              employee_id: employeeId,
+              leave_type: lt.leave_type,
+              total_days: lt.total_days,
+              used_days: 0,
+              available_days: lt.total_days,
+              year: new Date().getFullYear(),
+            })
+          }
         }
       }
 
