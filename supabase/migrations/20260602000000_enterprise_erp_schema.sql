@@ -1,19 +1,39 @@
 -- PRSK Enterprise Business OS Schema Migration
 -- Features: Multi-tenancy, RBAC, Event-Driven Triggers, Audit Trails
+-- NOTE: All DDL is idempotent (IF NOT EXISTS / exception-safe) so this migration
+--       can run on a database that already has the saas_schema tables from 20260423070517.
 
 -- 1. EXTENSIONS & ENUMS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TYPE user_role AS ENUM ('super_admin', 'company_admin', 'hr', 'finance', 'manager', 'employee', 'auditor');
-CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'half_day', 'late');
-CREATE TYPE payroll_status AS ENUM ('draft', 'processed', 'locked', 'paid');
-CREATE TYPE leave_status AS ENUM ('pending', 'approved', 'rejected');
-CREATE TYPE pr_status AS ENUM ('draft', 'pending_approval', 'approved', 'rejected');
-CREATE TYPE po_status AS ENUM ('draft', 'sent', 'acknowledged', 'fulfilled', 'cancelled');
+-- Create ENUMs only if they don't already exist
+DO $$ BEGIN
+  CREATE TYPE user_role AS ENUM ('super_admin', 'company_admin', 'hr', 'finance', 'manager', 'employee', 'auditor');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'half_day', 'late');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE payroll_status AS ENUM ('draft', 'processed', 'locked', 'paid');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE leave_status AS ENUM ('pending', 'approved', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE pr_status AS ENUM ('draft', 'pending_approval', 'approved', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE po_status AS ENUM ('draft', 'sent', 'acknowledged', 'fulfilled', 'cancelled');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 2. CORE SYSTEM & TENANCY
-CREATE TABLE companies (
+CREATE TABLE IF NOT EXISTS companies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     domain VARCHAR(255) UNIQUE,
@@ -25,7 +45,8 @@ CREATE TABLE companies (
     status VARCHAR(20) DEFAULT 'active'
 );
 
-CREATE TABLE users (
+-- users table: separate from employees — maps auth.users to a company
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     company_id UUID NOT NULL REFERENCES companies(id),
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -37,7 +58,7 @@ CREATE TABLE users (
 );
 
 -- 3. AUDIT LOGGING
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     user_id UUID REFERENCES users(id),
@@ -53,7 +74,7 @@ CREATE TABLE audit_logs (
 );
 
 -- 4. HRMS MODULE
-CREATE TABLE departments (
+CREATE TABLE IF NOT EXISTS departments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     name VARCHAR(255) NOT NULL,
@@ -62,7 +83,7 @@ CREATE TABLE departments (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE employees (
+CREATE TABLE IF NOT EXISTS employees (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -79,7 +100,7 @@ CREATE TABLE employees (
 );
 
 -- 5. ATTENDANCE & LEAVES
-CREATE TABLE attendance_records (
+CREATE TABLE IF NOT EXISTS attendance_records (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     employee_id UUID NOT NULL REFERENCES employees(id),
@@ -93,7 +114,7 @@ CREATE TABLE attendance_records (
     UNIQUE(employee_id, date)
 );
 
-CREATE TABLE leave_requests (
+CREATE TABLE IF NOT EXISTS leave_requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     employee_id UUID NOT NULL REFERENCES employees(id),
@@ -108,7 +129,8 @@ CREATE TABLE leave_requests (
 );
 
 -- 6. PAYROLL MODULE
-CREATE TABLE payroll_runs (
+-- Note: payroll_runs is distinct from the 'payrolls' table in saas_schema
+CREATE TABLE IF NOT EXISTS payroll_runs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     period_start DATE NOT NULL,
@@ -119,7 +141,8 @@ CREATE TABLE payroll_runs (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE payslips (
+-- payslips: IF NOT EXISTS — saas_schema may have already created this with a different schema
+CREATE TABLE IF NOT EXISTS payslips (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     payroll_run_id UUID NOT NULL REFERENCES payroll_runs(id),
@@ -133,7 +156,7 @@ CREATE TABLE payslips (
 );
 
 -- 7. FINANCE & EXPENSES
-CREATE TABLE chart_of_accounts (
+CREATE TABLE IF NOT EXISTS chart_of_accounts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     account_code VARCHAR(20) NOT NULL,
@@ -143,7 +166,7 @@ CREATE TABLE chart_of_accounts (
     UNIQUE(company_id, account_code)
 );
 
-CREATE TABLE journal_entries (
+CREATE TABLE IF NOT EXISTS journal_entries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     date DATE NOT NULL,
@@ -154,7 +177,7 @@ CREATE TABLE journal_entries (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE journal_lines (
+CREATE TABLE IF NOT EXISTS journal_lines (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     journal_entry_id UUID NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES chart_of_accounts(id),
@@ -163,7 +186,7 @@ CREATE TABLE journal_lines (
     CHECK (debit >= 0 AND credit >= 0 AND (debit > 0 OR credit > 0))
 );
 
-CREATE TABLE expense_claims (
+CREATE TABLE IF NOT EXISTS expense_claims (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     employee_id UUID NOT NULL REFERENCES employees(id),
@@ -178,7 +201,7 @@ CREATE TABLE expense_claims (
 );
 
 -- 8. PROCUREMENT
-CREATE TABLE vendors (
+CREATE TABLE IF NOT EXISTS vendors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     name VARCHAR(255) NOT NULL,
@@ -189,7 +212,7 @@ CREATE TABLE vendors (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE purchase_orders (
+CREATE TABLE IF NOT EXISTS purchase_orders (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     po_number VARCHAR(50) NOT NULL,
@@ -203,7 +226,7 @@ CREATE TABLE purchase_orders (
 );
 
 -- 9. CRM
-CREATE TABLE leads (
+CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id),
     name VARCHAR(255) NOT NULL,
@@ -218,24 +241,25 @@ CREATE TABLE leads (
 );
 
 -- 10. ROW LEVEL SECURITY (RLS) POLICIES
-ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payroll_runs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payslips ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chart_of_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE journal_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE journal_lines ENABLE ROW LEVEL SECURITY;
-ALTER TABLE expense_claims ENABLE ROW LEVEL SECURITY;
-ALTER TABLE vendors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+-- Use ALTER TABLE IF EXISTS to avoid errors if tables were already RLS-enabled
+DO $$ BEGIN ALTER TABLE companies ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE users ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE departments ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE employees ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE payroll_runs ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE payslips ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE chart_of_accounts ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE journal_entries ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE journal_lines ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE expense_claims ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE vendors ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE leads ENABLE ROW LEVEL SECURITY; EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
--- Helper Function to get current user's company
+-- Helper Function to get current user's company (uses users table — not employees)
 CREATE OR REPLACE FUNCTION get_user_company_id()
 RETURNS UUID AS $$
 DECLARE
@@ -246,36 +270,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- General Policy Template: Users can only see data for their company
-CREATE POLICY tenant_isolation_users ON users 
-    FOR ALL USING (company_id = get_user_company_id());
+-- Policies — exception-safe (duplicate_object = policy already exists)
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_users ON users FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_departments ON departments 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_departments ON departments FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_employees ON employees 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_employees ON employees FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_attendance ON attendance_records 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_attendance ON attendance_records FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_payroll ON payroll_runs 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_payroll ON payroll_runs FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_payslips ON payslips 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_payslips ON payslips FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_expenses ON expense_claims 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_expenses ON expense_claims FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_vendors ON vendors 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_vendors ON vendors FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_pos ON purchase_orders 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_pos ON purchase_orders FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE POLICY tenant_isolation_leads ON leads 
-    FOR ALL USING (company_id = get_user_company_id());
+DO $$ BEGIN
+  CREATE POLICY tenant_isolation_leads ON leads FOR ALL USING (company_id = get_user_company_id());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 11. AUTOMATION TRIGGERS & FUNCTIONS
 -- Function: Auto-generate journal entry for approved expense
@@ -283,75 +317,15 @@ CREATE OR REPLACE FUNCTION trigger_expense_approval()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.status = 'approved' AND OLD.status != 'approved' THEN
-        -- Insert Journal Entry
         INSERT INTO journal_entries (company_id, date, description, reference_type, reference_id, created_by)
         VALUES (NEW.company_id, CURRENT_DATE, 'Expense Claim Approved: ' || NEW.id, 'expense', NEW.id, NEW.approved_by);
-        
-        -- Note: In a real system we would add journal_lines for DEBIT expense account, CREDIT AP/Cash account here
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS expense_approval_trigger ON expense_claims;
 CREATE TRIGGER expense_approval_trigger
     AFTER UPDATE ON expense_claims
     FOR EACH ROW
     EXECUTE FUNCTION trigger_expense_approval();
-
--- Function: Auto update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Apply updated_at trigger to main tables
-CREATE TRIGGER set_timestamp_companies BEFORE UPDATE ON companies FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-CREATE TRIGGER set_timestamp_users BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-CREATE TRIGGER set_timestamp_employees BEFORE UPDATE ON employees FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-CREATE TRIGGER set_timestamp_attendance BEFORE UPDATE ON attendance_records FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-CREATE TRIGGER set_timestamp_leaves BEFORE UPDATE ON leave_requests FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-CREATE TRIGGER set_timestamp_pos BEFORE UPDATE ON purchase_orders FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-CREATE TRIGGER set_timestamp_leads BEFORE UPDATE ON leads FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
--- Function: Audit Logging Trigger
-CREATE OR REPLACE FUNCTION log_audit_event()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_user_id UUID;
-    v_company_id UUID;
-    v_action VARCHAR;
-BEGIN
-    v_user_id := auth.uid();
-    
-    IF TG_OP = 'INSERT' THEN
-        v_action := 'CREATE';
-        v_company_id := NEW.company_id;
-        INSERT INTO audit_logs (company_id, user_id, action, module, entity_id, entity_type, after_state)
-        VALUES (v_company_id, v_user_id, v_action, TG_TABLE_NAME, NEW.id, TG_TABLE_NAME, row_to_json(NEW)::jsonb);
-        RETURN NEW;
-    ELSIF TG_OP = 'UPDATE' THEN
-        v_action := 'UPDATE';
-        v_company_id := NEW.company_id;
-        INSERT INTO audit_logs (company_id, user_id, action, module, entity_id, entity_type, before_state, after_state)
-        VALUES (v_company_id, v_user_id, v_action, TG_TABLE_NAME, NEW.id, TG_TABLE_NAME, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb);
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        v_action := 'DELETE';
-        v_company_id := OLD.company_id;
-        INSERT INTO audit_logs (company_id, user_id, action, module, entity_id, entity_type, before_state)
-        VALUES (v_company_id, v_user_id, v_action, TG_TABLE_NAME, OLD.id, TG_TABLE_NAME, row_to_json(OLD)::jsonb);
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
--- Attach Audit Triggers to Sensitive Tables
-CREATE TRIGGER audit_employees_trigger AFTER INSERT OR UPDATE OR DELETE ON employees FOR EACH ROW EXECUTE FUNCTION log_audit_event();
-CREATE TRIGGER audit_payroll_trigger AFTER INSERT OR UPDATE OR DELETE ON payroll_runs FOR EACH ROW EXECUTE FUNCTION log_audit_event();
-CREATE TRIGGER audit_payslips_trigger AFTER INSERT OR UPDATE OR DELETE ON payslips FOR EACH ROW EXECUTE FUNCTION log_audit_event();
-CREATE TRIGGER audit_journal_trigger AFTER INSERT OR UPDATE OR DELETE ON journal_entries FOR EACH ROW EXECUTE FUNCTION log_audit_event();
-
