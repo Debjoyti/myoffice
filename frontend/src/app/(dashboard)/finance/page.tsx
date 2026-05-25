@@ -240,7 +240,7 @@ export default function FinancePage() {
               <Thead><tr><Th>Invoice</Th><Th>Client</Th><Th>Issued</Th><Th>Due Date</Th><Th align="right">Amount</Th><Th>Status</Th><Th></Th></tr></Thead>
               <Tbody>
                 {filteredInvoices.length === 0 ? (
-                  <Tr><Td colSpan={7}><div className="py-8 text-center text-slate-400 text-sm">No invoices yet</div></Td></Tr>
+                  <Tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">No invoices yet</td></Tr>
                 ) : filteredInvoices.map(inv => (
                   <Tr key={inv.id}>
                     <Td><span className="font-mono text-xs font-medium text-blue-600">{inv.invoice_number}</span></Td>
@@ -282,7 +282,7 @@ export default function FinancePage() {
                 <Thead><tr><Th>Category</Th><Th>Employee</Th><Th>Description</Th><Th>Date</Th><Th align="right">Amount</Th><Th>Status</Th></tr></Thead>
                 <Tbody>
                   {expenses.length === 0 ? (
-                    <Tr><Td colSpan={6}><div className="py-8 text-center text-slate-400 text-sm">No expense claims yet</div></Td></Tr>
+                    <Tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">No expense claims yet</td></Tr>
                   ) : expenses.map(exp => (
                     <Tr key={exp.id}>
                       <Td><span className="font-medium text-slate-800">{exp.category}</span></Td>

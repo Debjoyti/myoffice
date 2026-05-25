@@ -205,7 +205,7 @@ export default function CRMPage() {
               <Thead><tr><Th>Lead</Th><Th>Company</Th><Th>Stage</Th><Th align="right">Value</Th><Th>Owner</Th><Th>Last Update</Th></tr></Thead>
               <Tbody>
                 {filtered.length === 0 ? (
-                  <Tr><Td colSpan={6}><div className="py-8 text-center text-slate-400 text-sm">No leads yet</div></Td></Tr>
+                  <Tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">No leads yet</td></Tr>
                 ) : filtered.map(lead => (
                   <Tr key={lead.id} onClick={() => setSelected(lead)}>
                     <Td>
@@ -279,7 +279,7 @@ export default function CRMPage() {
             <Input label="Email" type="email" placeholder="ravi@company.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
             <Input label="Phone" placeholder="+91 98765 43210" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             <Input label="Deal Value (₹)" type="number" placeholder="5000000" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} />
-            <Select label="Stage" options={STAGE_OPTIONS} value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} />
+            <Select label="Stage" options={STAGE_OPTIONS} value={form.status} onChange={e => setForm(f => ({ ...f, status: (e.target as HTMLSelectElement).value }))} />
           </div>
         </div>
       </Modal>

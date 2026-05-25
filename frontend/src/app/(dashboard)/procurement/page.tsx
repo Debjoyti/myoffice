@@ -174,7 +174,7 @@ export default function ProcurementPage() {
                 </Thead>
                 <Tbody>
                   {filteredPOs.length === 0 ? (
-                    <Tr><Td colSpan={6}><div className="py-8 text-center text-slate-400 text-sm">No purchase orders yet</div></Td></Tr>
+                    <Tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">No purchase orders yet</td></Tr>
                   ) : filteredPOs.map(po => (
                     <Tr key={po.id} onClick={() => setSelectedPO(po)}>
                       <Td><span className="font-mono text-xs font-medium text-blue-600">{po.po_number}</span></Td>
@@ -210,7 +210,7 @@ export default function ProcurementPage() {
               </Thead>
               <Tbody>
                 {vendors.length === 0 ? (
-                  <Tr><Td colSpan={4}><div className="py-8 text-center text-slate-400 text-sm">No vendors yet</div></Td></Tr>
+                  <Tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400 text-sm">No vendors yet</td></Tr>
                 ) : vendors.map(v => (
                   <Tr key={v.id}>
                     <Td>
@@ -284,7 +284,7 @@ export default function ProcurementPage() {
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Select label="Vendor" options={vendors.map(v => ({ label: v.name, value: v.id }))} placeholder="Select vendor" />
+            <Select label="Vendor" options={[{ label: 'Select vendor', value: '' }, ...vendors.map(v => ({ label: v.name, value: v.id }))]} />
             <Input label="PO Number" placeholder="PO-2026-001" />
             <Input label="Expected Delivery" type="date" />
             <Input label="Total Amount (₹)" type="number" placeholder="500000" />

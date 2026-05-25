@@ -135,14 +135,14 @@ All accounts use password: **`Demo@123456`**
 | Module | Admin | HR | Accountant | Employee |
 |---|:---:|:---:|:---:|:---:|
 | My Home | ✅ | ✅ | ✅ | ✅ |
-| Dashboard | ✅ | ✅ | ❌ | ❌ |
-| HRMS | ✅ | ✅ | ❌ | ❌ |
+| Dashboard | ✅ | ✅ | ✅ (finance KPIs) | ❌ |
+| HRMS | ✅ full | ✅ full | ✅ view-only | ❌ |
 | Attendance | ✅ | ✅ | ❌ | ✅ (own) |
-| Payroll | ✅ | ✅ | ✅ (view) | ❌ |
+| Payroll | ✅ run | ✅ run | ✅ view | ❌ |
 | Salary | ✅ | ✅ | ✅ | ✅ (own) |
-| Finance | ✅ | ❌ | ✅ | ❌ |
-| Procurement | ✅ | ❌ | ✅ | ❌ |
-| CRM | ✅ | ❌ | ❌ | ❌ |
+| Finance | ✅ | ❌ | ✅ full | ❌ |
+| Procurement | ✅ | ❌ | ✅ full | ❌ |
+| CRM | ✅ | ✅ | ❌ | ❌ |
 | Projects | ✅ | ❌ | ❌ | ❌ |
 | Support | ✅ | ❌ | ❌ | ❌ |
 | Analytics | ✅ | ✅ | ✅ | ❌ |
@@ -175,6 +175,40 @@ curl -X POST http://localhost:3000/api/v1/admin/seed-demo
 
 ---
 
+## New Features (Added This Session)
+
+### Finance & Procurement — Real Data
+The Finance and Procurement pages now fetch **live data from Supabase** with mock data as fallback:
+- Create invoices at `/finance` → they persist to the `invoices` table
+- Add vendors at `/procurement` → they persist to the `vendors` table
+- A "Preview mode" amber banner shows only when the DB has no records yet
+
+### HRMS — Salary Structure Assignment
+In the HRMS employee detail modal (click any employee):
+- HR/Admin see a **Compensation** section showing current CTC
+- "Set Salary" / "Revise Salary" button opens a salary calculator
+- Enter CTC monthly → all Indian payroll components auto-calculate:
+  - Basic (40%), HRA (50% of Basic), Special Allowance, Transport (₹1,600), Medical (₹1,250)
+  - PF 12%, ESI 0.75%/3.25%, Professional Tax ₹200, Gratuity 4.81%
+- Saving creates a salary revision record automatically
+
+### CRM — Real Data Pipeline
+The CRM pipeline board now uses live data from the `leads` table with a mock fallback. Add leads via the "Add Lead" button and they appear in the pipeline board.
+
+### Dashboard — Role-Specific Views
+Each role sees a different dashboard:
+- **Admin/HR**: Headcount, attendance, leave approvals, recent hires
+- **Accountant**: Payroll total, expense claims, P&L snapshot
+- Quick links change per role
+
+### Home Page — Role Banner
+Non-employee roles see a contextual banner on `/home`:
+- **Admin/HR**: Indigo banner with pending approval count
+- **Accountant**: Teal banner with Finance and Payroll links
+- **Manager**: Sky banner with team management links
+
+---
+
 ## Troubleshooting
 
 **"Employee record not found" after login:**
@@ -187,6 +221,10 @@ curl -X POST http://localhost:3000/api/v1/admin/seed-demo
 **"Invalid seed token":**
 - Pass `?token=<SEED_DEMO_SECRET>` matching what you set in Vercel env
 
+**Payroll run fails with "function calculate_payslip does not exist":**
+- Apply the production schema sync migration: `supabase db push`
+- Or apply `supabase/migrations/20260626000000_production_schema_sync.sql` in SQL editor
+
 **Login redirects loop:**
 - Clear browser cookies and try again
 - Check Supabase URL and anon key are correct in Vercel env
@@ -194,3 +232,7 @@ curl -X POST http://localhost:3000/api/v1/admin/seed-demo
 **Can't see some menu items:**
 - Role-based nav is active — each role sees only their permitted modules
 - Check employee record has the correct `role` in Supabase employees table
+
+**supabase db reset fails:**
+- All migrations are now idempotent (IF NOT EXISTS, exception-safe blocks)
+- If issues persist, check that `public.companies` table exists after `saas_schema` migration
