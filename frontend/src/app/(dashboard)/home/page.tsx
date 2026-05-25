@@ -3,13 +3,103 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui'
+import Link from 'next/link'
 import {
   Clock, CheckCircle2, LogIn, LogOut, Calendar, Bell,
   BriefcaseIcon, Users, AlertTriangle, ChevronRight,
   Coffee, Sun, Sunset, Moon, Wifi, CircleCheck,
   FileText, Plane, Home, Receipt, TrendingUp, PartyPopper,
-  MapPin, RefreshCw
+  MapPin, RefreshCw, LayoutDashboard, ArrowRight, X,
+  Banknote, ShieldCheck, BarChart3
 } from 'lucide-react'
+
+// ── Admin / HR / Accountant shortcut banner ───────────────────────────────────
+type RoleBannerProps = { role: string; pendingApprovals?: number }
+function RoleBanner({ role, pendingApprovals = 0 }: RoleBannerProps) {
+  const [dismissed, setDismissed] = useState(false)
+  if (dismissed) return null
+
+  if (role === 'admin' || role === 'hr') {
+    return (
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl text-white shadow-lg shadow-indigo-900/20">
+        <LayoutDashboard className="h-4.5 w-4.5 flex-shrink-0 opacity-90" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">
+            {role === 'admin' ? 'Admin Dashboard' : 'HR Dashboard'}
+          </p>
+          <p className="text-xs text-indigo-200 mt-0.5">
+            {pendingApprovals > 0
+              ? `${pendingApprovals} pending approval${pendingApprovals > 1 ? 's' : ''} waiting`
+              : 'Company-wide view, payroll & analytics'
+            }
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {pendingApprovals > 0 && (
+            <span className="h-5 w-5 rounded-full bg-amber-400 text-amber-900 text-[10px] font-bold flex items-center justify-center">
+              {pendingApprovals}
+            </span>
+          )}
+          <Link href="/dashboard"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+            Open Dashboard <ArrowRight className="h-3 w-3" />
+          </Link>
+          <button onClick={() => setDismissed(true)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (role === 'accountant') {
+    return (
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl text-white shadow-lg shadow-teal-900/20">
+        <Banknote className="h-4.5 w-4.5 flex-shrink-0 opacity-90" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">Finance & Payroll</p>
+          <p className="text-xs text-teal-200 mt-0.5">Accounts receivable, payroll runs, and compliance</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Link href="/finance"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+            Finance <ArrowRight className="h-3 w-3" />
+          </Link>
+          <Link href="/payroll"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+            Payroll
+          </Link>
+          <button onClick={() => setDismissed(true)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (role === 'manager') {
+    return (
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-gradient-to-r from-sky-600 to-blue-600 rounded-2xl text-white shadow-lg shadow-blue-900/20">
+        <BarChart3 className="h-4.5 w-4.5 flex-shrink-0 opacity-90" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">Manager Dashboard</p>
+          <p className="text-xs text-sky-200 mt-0.5">Team overview, approvals & project tracker</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Link href="/dashboard"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+            Open Dashboard <ArrowRight className="h-3 w-3" />
+          </Link>
+          <button onClick={() => setDismissed(true)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Employee = {
@@ -101,6 +191,8 @@ export default function EmployeeHome() {
   const [checkLoading, setCheckLoading] = useState(false)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
+  const [myRole, setMyRole]       = useState<string>('employee')
+  const [adminPending, setAdminPending] = useState(0)
 
   // ── Live 1-second ticker ────────────────────────────────────────────────────
   useEffect(() => {
@@ -141,6 +233,17 @@ export default function EmployeeHome() {
       setApprovals(appr.approvals ?? [])
       setNotifs(notif.notifications ?? [])
       setUnread(notif.unread_count ?? 0)
+
+      // For admin/hr/manager: also fetch pending approvals count for the banner
+      const role: string = me.employee?.role ?? 'employee'
+      setMyRole(role)
+      if (['admin', 'hr', 'manager'].includes(role)) {
+        const pendRes = await fetch('/api/v1/approvals?mode=pending_for_me')
+        if (pendRes.ok) {
+          const pendData = await pendRes.json()
+          setAdminPending(pendData.leave_requests?.length ?? 0)
+        }
+      }
     } catch {
       setError('Failed to load dashboard. Please refresh.')
     } finally {
@@ -236,6 +339,11 @@ export default function EmployeeHome() {
 
   return (
     <div className="space-y-4 animate-fadeIn">
+
+      {/* ── Role banner (admin / hr / accountant / manager only) ───────────── */}
+      {myRole !== 'employee' && (
+        <RoleBanner role={myRole} pendingApprovals={adminPending} />
+      )}
 
       {/* ── Greeting strip ─────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3">

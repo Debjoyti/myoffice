@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 
 export type Employee = {
   id: string
+  company_id: string
   employee_code: string
   full_name: string
   email: string
