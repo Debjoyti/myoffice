@@ -4,7 +4,7 @@ import os
 # Add backend directory to sys.path to be able to import backend modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
 
-from ai_recruitment import parse_jd
+from ai_recruitment import parse_jd, evaluate_answer
 
 def test_parse_jd_skill_extraction():
     jd_text = "We are looking for someone with experience in Python, AWS, and React."
@@ -100,3 +100,36 @@ def test_parse_jd_weightage_rounding():
     assert skills[0]["weightage"] == 34
     assert skills[1]["weightage"] == 33
     assert skills[2]["weightage"] == 33
+
+def test_parse_jd_large_number_of_skills():
+    # Test case with many skills.
+    # We use skills that are in the possible_skills list to avoid fallback
+    jd_text = "python, java, react, fastapi, sql, aws, system design, communication, leadership, apis"
+    result = parse_jd(jd_text)
+
+    skills = result["parsed_skills"]
+    n = len(skills)
+    assert n == 10
+
+    total_weightage = sum(s["weightage"] for s in skills)
+    assert total_weightage == 100
+
+    # 100 // 10 = 10. No remainder.
+    for s in skills:
+        assert s["weightage"] == 10
+
+def test_parse_jd_seven_skills():
+    jd_text = "python, java, react, fastapi, sql, aws, apis"
+    result = parse_jd(jd_text)
+
+    skills = result["parsed_skills"]
+    assert len(skills) == 7
+
+    total_weightage = sum(s["weightage"] for s in skills)
+    assert total_weightage == 100
+
+    # 100 // 7 = 14. 14 * 7 = 98. Remainder 2.
+    # First skill should be 14 + 2 = 16.
+    assert skills[0]["weightage"] == 16
+    for i in range(1, 7):
+        assert skills[i]["weightage"] == 14

@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta, timezone
 import uuid
 
@@ -10,12 +11,25 @@ from starlette.middleware.cors import CORSMiddleware
 app = FastAPI(title="MyOffice Backend")
 handler = app
 
+# ── CORS: lock to explicit origins from env ───────────────────────
+_allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "").strip()
+if _allowed_origins_env:
+    _ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+else:
+    _ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://myoffice-saas.vercel.app",
+    ]
+_ALLOWED_ORIGIN_REGEX = os.environ.get("ALLOWED_ORIGIN_REGEX", r"https://.*\.vercel\.app") or None
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=_ALLOWED_ORIGIN_REGEX,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 SECRET_KEY = "myoffice-fallback-secret-key"

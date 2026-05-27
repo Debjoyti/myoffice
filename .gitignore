@@ -78,9 +78,13 @@ agenthub/agents/youtube/db
 
 # Mobile development
 android-sdk/ -e 
-# Environment files
+# Environment files – local/secret files stay private; committed public vars allowed
 *.env
 *.env.*
 
+# Allow .env.production (contains only NEXT_PUBLIC_* anon keys — safe to commit)
+!frontend/.env.production
+
 frontend/.env
 backend/.env
+.vercel
