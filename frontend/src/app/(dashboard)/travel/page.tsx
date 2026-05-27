@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, SearchInput, Modal, Input, Select, Textarea, EmptyState
+  StatCard, SearchInput, Modal, Input, Textarea, EmptyState, Alert
 } from '@/components/ui'
 import { MapPin, Navigation, Clock, CheckCircle2, Plus, FlaskConical } from 'lucide-react'
 
@@ -15,7 +15,7 @@ type TravelRequest = {
   estimatedCost: number; status: TravelStatus
 }
 
-const TRAVEL_REQUESTS: TravelRequest[] = [
+const MOCK_REQUESTS: TravelRequest[] = [
   { id: 'TR-001', employee: 'Rahul Mehta', from: 'Bangalore', to: 'Mumbai', purpose: 'Client pitch — Vertex Global', startDate: '02 Jun 2026', endDate: '04 Jun 2026', estimatedCost: 18000, status: 'Approved' },
   { id: 'TR-002', employee: 'Priya Sharma', from: 'Bangalore', to: 'Delhi', purpose: 'HR conference 2026', startDate: '10 Jun 2026', endDate: '12 Jun 2026', estimatedCost: 22000, status: 'Pending' },
   { id: 'TR-003', employee: 'Karan Singh', from: 'Bangalore', to: 'Pune', purpose: 'Partner integration meeting', startDate: '28 May 2026', endDate: '28 May 2026', estimatedCost: 5000, status: 'Completed' },
@@ -26,22 +26,56 @@ const STATUS_COLOR: Record<TravelStatus, 'warning' | 'success' | 'info' | 'neutr
   Pending: 'warning', Approved: 'success', 'In Progress': 'info', Completed: 'neutral', Cancelled: 'danger',
 }
 
+function fmtDate(d: string) {
+  try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
+  catch { return d }
+}
+
+const INITIAL_FORM = { from: '', to: '', startDate: '', endDate: '', purpose: '', estimatedCost: '', notes: '' }
+
 export default function TravelPage() {
+  const [requests, setRequests] = useState<TravelRequest[]>(MOCK_REQUESTS)
   const [search, setSearch] = useState('')
   const [newModal, setNewModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [formError, setFormError] = useState('')
 
-  const approved = TRAVEL_REQUESTS.filter(r => r.status === 'Approved').length
-  const pending = TRAVEL_REQUESTS.filter(r => r.status === 'Pending').length
-  const totalCost = TRAVEL_REQUESTS.reduce((s, r) => s + r.estimatedCost, 0)
+  const approved = requests.filter(r => r.status === 'Approved').length
+  const pending = requests.filter(r => r.status === 'Pending').length
+  const totalCost = requests.reduce((s, r) => s + r.estimatedCost, 0)
 
   const filtered = useMemo(() =>
-    TRAVEL_REQUESTS.filter(r => !search ||
+    requests.filter(r => !search ||
       r.employee.toLowerCase().includes(search.toLowerCase()) ||
       r.to.toLowerCase().includes(search.toLowerCase()) ||
       r.purpose.toLowerCase().includes(search.toLowerCase())
     ),
-    [search]
+    [requests, search]
   )
+
+  const handleSubmit = async () => {
+    if (!form.from.trim() || !form.to.trim()) { setFormError('From and To cities are required'); return }
+    if (!form.startDate) { setFormError('Departure date is required'); return }
+    if (!form.purpose.trim()) { setFormError('Purpose of travel is required'); return }
+    setSaving(true)
+    setFormError('')
+    await new Promise(r => setTimeout(r, 400))
+    setRequests(prev => [{
+      id: `TR-${String(prev.length + 1).padStart(3, '0')}`,
+      employee: 'You',
+      from: form.from.trim(),
+      to: form.to.trim(),
+      purpose: form.purpose.trim(),
+      startDate: fmtDate(form.startDate),
+      endDate: form.endDate ? fmtDate(form.endDate) : fmtDate(form.startDate),
+      estimatedCost: Number(form.estimatedCost) || 0,
+      status: 'Pending',
+    }, ...prev])
+    setNewModal(false)
+    setForm(INITIAL_FORM)
+    setSaving(false)
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -53,11 +87,15 @@ export default function TravelPage() {
       <PageHeader
         title="Travel Tracker"
         description="Request, approve, and track business travel with cost management"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewModal(true)}>Request Travel</Button>}
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setNewModal(true); setFormError('') }}>
+            Request Travel
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Total Requests" value={TRAVEL_REQUESTS.length} icon={<MapPin className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Total Requests" value={requests.length} icon={<MapPin className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
         <StatCard label="Approved" value={approved} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
         <StatCard label="Pending" value={pending} icon={<Clock className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
         <StatCard label="Estimated Cost" value={`₹${totalCost.toLocaleString('en-IN')}`} icon={<Navigation className="h-4 w-4" />} iconColor="bg-violet-50 text-violet-600" />
@@ -102,24 +140,70 @@ export default function TravelPage() {
         )}
       </Card>
 
-      <Modal open={newModal} onClose={() => setNewModal(false)} title="Request Travel" size="md"
+      <Modal
+        open={newModal}
+        onClose={() => { setNewModal(false); setFormError('') }}
+        title="Request Travel"
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewModal(false)}>Cancel</Button>
-          <Button size="sm">Submit Request</Button>
+          <Button size="sm" loading={saving} onClick={handleSubmit}>Submit Request</Button>
         </>}
       >
         <div className="space-y-4">
+          {formError && <Alert variant="danger">{formError}</Alert>}
           <div className="grid grid-cols-2 gap-4">
-            <Input label="From City" placeholder="e.g. Bangalore" required />
-            <Input label="To City" placeholder="e.g. Mumbai" required />
+            <Input
+              label="From City"
+              placeholder="e.g. Bangalore"
+              required
+              value={form.from}
+              onChange={e => setForm(f => ({ ...f, from: e.target.value }))}
+            />
+            <Input
+              label="To City"
+              placeholder="e.g. Mumbai"
+              required
+              value={form.to}
+              onChange={e => setForm(f => ({ ...f, to: e.target.value }))}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Departure Date" type="date" required />
-            <Input label="Return Date" type="date" required />
+            <Input
+              label="Departure Date"
+              type="date"
+              required
+              value={form.startDate}
+              onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+            />
+            <Input
+              label="Return Date"
+              type="date"
+              value={form.endDate}
+              onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+            />
           </div>
-          <Input label="Purpose of Travel" placeholder="e.g. Client meeting, Conference" required />
-          <Input label="Estimated Cost (₹)" type="number" placeholder="0" />
-          <Textarea label="Additional Notes" placeholder="Hotel preferences, special requirements..." rows={2} />
+          <Input
+            label="Purpose of Travel"
+            placeholder="e.g. Client meeting, Conference"
+            required
+            value={form.purpose}
+            onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))}
+          />
+          <Input
+            label="Estimated Cost (₹)"
+            type="number"
+            placeholder="0"
+            value={form.estimatedCost}
+            onChange={e => setForm(f => ({ ...f, estimatedCost: e.target.value }))}
+          />
+          <Textarea
+            label="Additional Notes"
+            placeholder="Hotel preferences, special requirements..."
+            rows={2}
+            value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+          />
         </div>
       </Modal>
     </div>

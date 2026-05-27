@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, Modal, Input, Select, Textarea, EmptyState
+  PageHeader, Card, Badge, Avatar, Button, Modal, Input, Textarea, EmptyState, Alert, StatCard
 } from '@/components/ui'
 import { Target, Clock, CheckCircle2, AlertTriangle, Plus, FlaskConical } from 'lucide-react'
 
@@ -15,7 +14,7 @@ type PIPRecord = {
   progress: number; status: PIPStatus; concerns: string
 }
 
-const PIPS: PIPRecord[] = [
+const MOCK_PIPS: PIPRecord[] = [
   { id: 'PIP-001', employee: 'Sanjay Verma', department: 'Engineering', manager: 'Rahul Mehta', startDate: '01 May 2026', endDate: '31 Jul 2026', goals: 'Complete 3 PRs weekly; reduce bug reopen rate to <5%; attend all sprint ceremonies', progress: 40, status: 'Active', concerns: 'Low code quality and missed deadlines in Q1 2026' },
   { id: 'PIP-002', employee: 'Rekha Sharma', department: 'Sales', manager: 'Karan Singh', startDate: '01 Apr 2026', endDate: '30 Jun 2026', goals: 'Achieve 80% of monthly sales target; improve follow-up response time to <24h', progress: 75, status: 'Active', concerns: 'Consistently missing Q4 2025 and Q1 2026 sales targets' },
   { id: 'PIP-003', employee: 'Vivek Rao', department: 'Finance', manager: 'Ananya Iyer', startDate: '01 Mar 2026', endDate: '31 May 2026', goals: 'Zero reconciliation errors; submit monthly reports by 5th of each month', progress: 100, status: 'Completed', concerns: 'Multiple financial reporting errors in FY 2025–26' },
@@ -25,12 +24,60 @@ const STATUS_COLOR: Record<PIPStatus, 'warning' | 'success' | 'info' | 'danger'>
   Active: 'warning', Completed: 'success', Extended: 'info', Terminated: 'danger',
 }
 
+function fmtDate(d: string) {
+  try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
+  catch { return d }
+}
+
+const INITIAL_FORM = { employee: '', startDate: '', endDate: '', concerns: '', goals: '' }
+
 export default function PIPPage() {
+  const [pips, setPips] = useState<PIPRecord[]>(MOCK_PIPS)
   const [selected, setSelected] = useState<PIPRecord | null>(null)
   const [newModal, setNewModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [formError, setFormError] = useState('')
+  const [progressVal, setProgressVal] = useState('')
 
-  const active = PIPS.filter(p => p.status === 'Active').length
-  const completed = PIPS.filter(p => p.status === 'Completed').length
+  const active = pips.filter(p => p.status === 'Active').length
+  const completed = pips.filter(p => p.status === 'Completed').length
+  const avgProgress = pips.length > 0 ? Math.round(pips.reduce((s, p) => s + p.progress, 0) / pips.length) : 0
+
+  const handleCreate = async () => {
+    if (!form.employee.trim()) { setFormError('Employee name is required'); return }
+    if (!form.startDate || !form.endDate) { setFormError('Start and review dates are required'); return }
+    if (!form.concerns.trim()) { setFormError('Performance concerns are required'); return }
+    if (!form.goals.trim()) { setFormError('Goals are required'); return }
+    setSaving(true)
+    setFormError('')
+    await new Promise(r => setTimeout(r, 400))
+    setPips(prev => [{
+      id: `PIP-${String(prev.length + 1).padStart(3, '0')}`,
+      employee: form.employee.trim(),
+      department: '—',
+      manager: 'You',
+      startDate: fmtDate(form.startDate),
+      endDate: fmtDate(form.endDate),
+      goals: form.goals.trim(),
+      progress: 0,
+      status: 'Active',
+      concerns: form.concerns.trim(),
+    }, ...prev])
+    setNewModal(false)
+    setForm(INITIAL_FORM)
+    setSaving(false)
+  }
+
+  const handleUpdateProgress = () => {
+    if (!selected) return
+    const val = Math.min(100, Math.max(0, Number(progressVal)))
+    if (isNaN(val)) return
+    const updated = { ...selected, progress: val, status: val === 100 ? 'Completed' as PIPStatus : selected.status }
+    setPips(prev => prev.map(p => p.id === selected.id ? updated : p))
+    setSelected(updated)
+    setProgressVal('')
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -42,22 +89,26 @@ export default function PIPPage() {
       <PageHeader
         title="Performance Improvement Plans"
         description="Track PIPs, goals, and employee performance recovery with manager oversight"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewModal(true)}>Create PIP</Button>}
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setNewModal(true); setFormError('') }}>
+            Create PIP
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Active PIPs" value={active} icon={<Target className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
         <StatCard label="Completed" value={completed} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
-        <StatCard label="Avg Progress" value={`${Math.round(PIPS.reduce((s, p) => s + p.progress, 0) / PIPS.length)}%`} icon={<Clock className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
-        <StatCard label="Departments" value={new Set(PIPS.map(p => p.department)).size} icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-red-50 text-red-500" />
+        <StatCard label="Avg Progress" value={`${avgProgress}%`} icon={<Clock className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Departments" value={new Set(pips.map(p => p.department)).size} icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-red-50 text-red-500" />
       </div>
 
-      {PIPS.length === 0 ? (
+      {pips.length === 0 ? (
         <Card><EmptyState icon={<Target className="h-6 w-6" />} title="No PIPs created" /></Card>
       ) : (
         <div className="space-y-3">
-          {PIPS.map(p => (
-            <Card key={p.id} hover onClick={() => setSelected(p)}>
+          {pips.map(p => (
+            <Card key={p.id} hover onClick={() => { setSelected(p); setProgressVal('') }}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <Avatar name={p.employee} size="md" />
@@ -66,9 +117,7 @@ export default function PIPPage() {
                     <p className="text-xs text-slate-500">{p.department} · Manager: {p.manager}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={STATUS_COLOR[p.status]}>{p.status}</Badge>
-                </div>
+                <Badge variant={STATUS_COLOR[p.status]}>{p.status}</Badge>
               </div>
               <p className="text-xs text-slate-600 mb-3 line-clamp-2">{p.goals}</p>
               <div className="space-y-1">
@@ -93,10 +142,16 @@ export default function PIPPage() {
       )}
 
       {/* Detail Modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title={`PIP — ${selected?.employee}`} size="lg"
+      <Modal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title={`PIP — ${selected?.employee}`}
+        size="lg"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
-          {selected?.status === 'Active' && <Button size="sm">Update Progress</Button>}
+          {selected?.status === 'Active' && (
+            <Button size="sm" onClick={handleUpdateProgress} disabled={!progressVal}>Update Progress</Button>
+          )}
         </>}
       >
         {selected && (
@@ -124,7 +179,7 @@ export default function PIPPage() {
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2.5">
                 <div
-                  className={`h-2.5 rounded-full ${selected.progress === 100 ? 'bg-emerald-500' : selected.progress >= 60 ? 'bg-blue-500' : 'bg-amber-400'}`}
+                  className={`h-2.5 rounded-full transition-all ${selected.progress === 100 ? 'bg-emerald-500' : selected.progress >= 60 ? 'bg-blue-500' : 'bg-amber-400'}`}
                   style={{ width: `${selected.progress}%` }}
                 />
               </div>
@@ -139,25 +194,76 @@ export default function PIPPage() {
                 <p className="text-sm font-semibold text-slate-800">{selected.endDate}</p>
               </div>
             </div>
+            {selected.status === 'Active' && (
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-xs font-semibold text-slate-700 mb-2">Update Progress</p>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="New progress % (0–100)"
+                  value={progressVal}
+                  onChange={e => setProgressVal(e.target.value)}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Setting to 100% will mark the PIP as Completed.</p>
+              </div>
+            )}
           </div>
         )}
       </Modal>
 
       {/* New PIP Modal */}
-      <Modal open={newModal} onClose={() => setNewModal(false)} title="Create PIP" size="md"
+      <Modal
+        open={newModal}
+        onClose={() => { setNewModal(false); setFormError('') }}
+        title="Create PIP"
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewModal(false)}>Cancel</Button>
-          <Button size="sm">Create PIP</Button>
+          <Button size="sm" loading={saving} onClick={handleCreate}>Create PIP</Button>
         </>}
       >
         <div className="space-y-4">
-          <Input label="Employee Name" placeholder="Select employee..." required />
+          {formError && <Alert variant="danger">{formError}</Alert>}
+          <Input
+            label="Employee Name"
+            placeholder="Search employee..."
+            required
+            value={form.employee}
+            onChange={e => setForm(f => ({ ...f, employee: e.target.value }))}
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Start Date" type="date" required />
-            <Input label="Review Date" type="date" required />
+            <Input
+              label="Start Date"
+              type="date"
+              required
+              value={form.startDate}
+              onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+            />
+            <Input
+              label="Review Date"
+              type="date"
+              required
+              value={form.endDate}
+              onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+            />
           </div>
-          <Textarea label="Performance Concerns" placeholder="Describe the performance issues observed..." rows={3} required />
-          <Textarea label="Goals & Expectations" placeholder="List specific, measurable goals..." rows={3} required />
+          <Textarea
+            label="Performance Concerns"
+            placeholder="Describe the performance issues observed..."
+            rows={3}
+            required
+            value={form.concerns}
+            onChange={e => setForm(f => ({ ...f, concerns: e.target.value }))}
+          />
+          <Textarea
+            label="Goals & Expectations"
+            placeholder="List specific, measurable goals..."
+            rows={3}
+            required
+            value={form.goals}
+            onChange={e => setForm(f => ({ ...f, goals: e.target.value }))}
+          />
         </div>
       </Modal>
     </div>
