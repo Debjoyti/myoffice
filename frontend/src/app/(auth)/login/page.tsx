@@ -87,10 +87,27 @@ export default function LoginPage() {
 
   const anyLoading = loading || oauthLoading !== null
 
-  const fillDemoCredentials = (demoEmail: string) => {
+  const fillDemoCredentials = async (demoEmail: string) => {
     setEmail(demoEmail)
     setPassword(DEMO_PASSWORD)
     setError(null)
+
+    // Try the hardcoded dev-login bypass first
+    try {
+      setLoading(true)
+      const res = await fetch('/api/dev-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: demoEmail }),
+      })
+      if (res.ok) {
+        router.push('/home')
+        router.refresh()
+        return
+      }
+    } catch { /* fall through to normal Supabase login */ }
+
+    setLoading(false)
   }
 
   return (

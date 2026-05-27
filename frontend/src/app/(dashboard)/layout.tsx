@@ -133,8 +133,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [pathname])
 
   const handleLogout = async () => {
+    // Clear dev session if active
+    await fetch('/api/dev-login', { method: 'DELETE' }).catch(() => {})
     const supabase = createClient()
-    await supabase.auth.signOut()
+    await supabase.auth.signOut().catch(() => {})
     router.push('/login')
     router.refresh()
   }
