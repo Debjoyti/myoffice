@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, SearchInput, TabBar, Modal, Input, Select, EmptyState
+  StatCard, SearchInput, TabBar, Modal, Input, Select, EmptyState, Alert
 } from '@/components/ui'
 import { Users, UserCheck, Mail, Clock, Plus, FlaskConical } from 'lucide-react'
 
@@ -28,7 +28,7 @@ const MEMBERS: Member[] = [
   { id: 'M6', name: 'Divya Nair', email: 'divya@prsk.ai', role: 'employee', department: 'Product', joined: '01 May 2024', status: 'Inactive' },
 ]
 
-const INVITES: Invite[] = [
+const MOCK_INVITES: Invite[] = [
   { id: 'I1', email: 'new.engineer@prsk.ai', role: 'employee', sent: '25 May 2026', status: 'Pending' },
   { id: 'I2', email: 'marketing.head@prsk.ai', role: 'manager', sent: '20 May 2026', status: 'Accepted' },
   { id: 'I3', email: 'finance.analyst@prsk.ai', role: 'accountant', sent: '10 May 2026', status: 'Expired' },
@@ -43,12 +43,19 @@ const INVITE_COLOR: Record<InviteStatus, 'warning' | 'success' | 'neutral'> = {
   Pending: 'warning', Accepted: 'success', Expired: 'neutral',
 }
 
+const INITIAL_FORM = { email: '', role: 'employee' as Role }
+
 export default function TeamPage() {
   const [tab, setTab] = useState('members')
   const [search, setSearch] = useState('')
+  const [invites, setInvites] = useState<Invite[]>(MOCK_INVITES)
   const [inviteModal, setInviteModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [formError, setFormError] = useState('')
 
   const active = MEMBERS.filter(m => m.status === 'Active').length
+  const pendingInvites = invites.filter(i => i.status === 'Pending').length
 
   const filteredMembers = useMemo(() =>
     MEMBERS.filter(m => !search ||
@@ -58,6 +65,25 @@ export default function TeamPage() {
     ),
     [search]
   )
+
+  const handleInvite = async () => {
+    if (!form.email.trim()) { setFormError('Email is required'); return }
+    if (!form.email.includes('@')) { setFormError('Enter a valid email address'); return }
+    setSaving(true)
+    setFormError('')
+    await new Promise(r => setTimeout(r, 400))
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    setInvites(prev => [{
+      id: `I${Date.now()}`,
+      email: form.email.trim().toLowerCase(),
+      role: form.role,
+      sent: today,
+      status: 'Pending',
+    }, ...prev])
+    setInviteModal(false)
+    setForm(INITIAL_FORM)
+    setSaving(false)
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -69,20 +95,24 @@ export default function TeamPage() {
       <PageHeader
         title="Team Members"
         description="Manage workspace members, roles, and pending invitations"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setInviteModal(true)}>Invite Member</Button>}
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setInviteModal(true); setFormError('') }}>
+            Invite Member
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Total Members" value={MEMBERS.length} icon={<Users className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
         <StatCard label="Active" value={active} icon={<UserCheck className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
-        <StatCard label="Pending Invites" value={INVITES.filter(i => i.status === 'Pending').length} icon={<Mail className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
+        <StatCard label="Pending Invites" value={pendingInvites} icon={<Mail className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
         <StatCard label="Departments" value={new Set(MEMBERS.map(m => m.department)).size} icon={<Clock className="h-4 w-4" />} iconColor="bg-violet-50 text-violet-600" />
       </div>
 
       <TabBar
         tabs={[
           { id: 'members', label: 'Members', count: MEMBERS.length },
-          { id: 'invites', label: 'Invitations', count: INVITES.length },
+          { id: 'invites', label: 'Invitations', count: invites.length },
         ]}
         active={tab}
         onChange={setTab}
@@ -124,13 +154,13 @@ export default function TeamPage() {
 
       {tab === 'invites' && (
         <Card padding="none">
-          {INVITES.length === 0 ? (
+          {invites.length === 0 ? (
             <div className="py-10"><EmptyState icon={<Mail className="h-6 w-6" />} title="No pending invitations" /></div>
           ) : (
             <Table>
               <Thead><tr><Th>Email</Th><Th>Role</Th><Th>Sent</Th><Th>Status</Th></tr></Thead>
               <Tbody>
-                {INVITES.map(i => (
+                {invites.map(i => (
                   <Tr key={i.id}>
                     <Td><span className="text-xs font-medium text-slate-700">{i.email}</span></Td>
                     <Td>
@@ -146,21 +176,38 @@ export default function TeamPage() {
         </Card>
       )}
 
-      <Modal open={inviteModal} onClose={() => setInviteModal(false)} title="Invite Team Member" size="md"
+      <Modal
+        open={inviteModal}
+        onClose={() => { setInviteModal(false); setFormError('') }}
+        title="Invite Team Member"
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setInviteModal(false)}>Cancel</Button>
-          <Button size="sm" leftIcon={<Mail className="h-3.5 w-3.5" />}>Send Invitation</Button>
+          <Button size="sm" loading={saving} leftIcon={<Mail className="h-3.5 w-3.5" />} onClick={handleInvite}>Send Invitation</Button>
         </>}
       >
         <div className="space-y-4">
-          <Input label="Email Address" type="email" placeholder="colleague@company.com" required />
-          <Select label="Role" options={[
-            { label: 'Employee', value: 'employee' },
-            { label: 'Manager', value: 'manager' },
-            { label: 'HR', value: 'hr' },
-            { label: 'Accountant', value: 'accountant' },
-            { label: 'Admin', value: 'admin' },
-          ]} />
+          {formError && <Alert variant="danger">{formError}</Alert>}
+          <Input
+            label="Email Address"
+            type="email"
+            placeholder="colleague@company.com"
+            required
+            value={form.email}
+            onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+          />
+          <Select
+            label="Role"
+            options={[
+              { label: 'Employee', value: 'employee' },
+              { label: 'Manager', value: 'manager' },
+              { label: 'HR', value: 'hr' },
+              { label: 'Accountant', value: 'accountant' },
+              { label: 'Admin', value: 'admin' },
+            ]}
+            value={form.role}
+            onChange={e => setForm(f => ({ ...f, role: (e.target as HTMLSelectElement).value as Role }))}
+          />
           <p className="text-xs text-slate-500">An invitation email will be sent. The invitee will be asked to set up their password on first login.</p>
         </div>
       </Modal>

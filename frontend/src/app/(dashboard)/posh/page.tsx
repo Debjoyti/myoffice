@@ -14,7 +14,7 @@ type Complaint = {
   status: ComplaintStatus; assignedTo: string; anonymous: boolean
 }
 
-const COMPLAINTS: Complaint[] = [
+const MOCK_COMPLAINTS: Complaint[] = [
   { id: 'POSH-001', subject: 'Inappropriate comment in team meeting', category: 'Verbal Harassment', reportedOn: '20 May 2026', status: 'Investigating', assignedTo: 'ICC Committee', anonymous: false },
   { id: 'POSH-002', subject: 'Uncomfortable communication via messaging app', category: 'Digital Harassment', reportedOn: '15 May 2026', status: 'Action Taken', assignedTo: 'ICC Committee', anonymous: true },
   { id: 'POSH-003', subject: 'Hostile work environment concern', category: 'Hostile Environment', reportedOn: '10 May 2026', status: 'Closed', assignedTo: 'HR + Legal', anonymous: false },
@@ -24,10 +24,43 @@ const STATUS_COLOR: Record<ComplaintStatus, 'warning' | 'info' | 'success' | 'ne
   'Under Review': 'warning', Investigating: 'info', 'Action Taken': 'success', Closed: 'neutral',
 }
 
-export default function POSHPage() {
-  const [newModal, setNewModal] = useState(false)
+const CATEGORY_MAP: Record<string, string> = {
+  verbal: 'Verbal Harassment', physical: 'Physical Harassment',
+  digital: 'Digital Harassment', hostile: 'Hostile Work Environment',
+  qpq: 'Quid Pro Quo', other: 'Other',
+}
 
-  const active = COMPLAINTS.filter(c => !['Closed'].includes(c.status)).length
+const INITIAL_FORM = { category: 'verbal', subject: '', description: '', anonymous: false }
+
+export default function POSHPage() {
+  const [complaints, setComplaints] = useState<Complaint[]>(MOCK_COMPLAINTS)
+  const [newModal, setNewModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [formError, setFormError] = useState('')
+
+  const active = complaints.filter(c => c.status !== 'Closed').length
+
+  const handleSubmit = async () => {
+    if (!form.subject.trim()) { setFormError('Subject is required'); return }
+    if (!form.description.trim()) { setFormError('A description is required'); return }
+    setSaving(true)
+    setFormError('')
+    await new Promise(r => setTimeout(r, 400))
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    setComplaints(prev => [{
+      id: `POSH-${String(prev.length + 1).padStart(3, '0')}`,
+      subject: form.subject.trim(),
+      category: CATEGORY_MAP[form.category] ?? form.category,
+      reportedOn: today,
+      status: 'Under Review',
+      assignedTo: 'ICC Committee',
+      anonymous: form.anonymous,
+    }, ...prev])
+    setNewModal(false)
+    setForm(INITIAL_FORM)
+    setSaving(false)
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -38,17 +71,20 @@ export default function POSHPage() {
       <PageHeader
         title="POSH Compliance"
         description="Prevention of Sexual Harassment — complaint management and ICC oversight"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewModal(true)}>File Complaint</Button>}
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setNewModal(true); setFormError('') }}>
+            File Complaint
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Total Complaints" value={COMPLAINTS.length} icon={<FileText className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Total Complaints" value={complaints.length} icon={<FileText className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
         <StatCard label="Active Cases" value={active} icon={<AlertTriangle className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
-        <StatCard label="Action Taken" value={COMPLAINTS.filter(c => c.status === 'Action Taken').length} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
-        <StatCard label="Closed" value={COMPLAINTS.filter(c => c.status === 'Closed').length} icon={<Shield className="h-4 w-4" />} iconColor="bg-neutral-100 text-neutral-600" />
+        <StatCard label="Action Taken" value={complaints.filter(c => c.status === 'Action Taken').length} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Closed" value={complaints.filter(c => c.status === 'Closed').length} icon={<Shield className="h-4 w-4" />} iconColor="bg-neutral-100 text-neutral-600" />
       </div>
 
-      {/* Policy Summary */}
       <Card>
         <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-blue-600" /> POSH Policy Summary
@@ -73,13 +109,13 @@ export default function POSHPage() {
             <Lock className="h-3.5 w-3.5 text-slate-500" /> Complaint Register (HR & ICC View)
           </h3>
         </div>
-        {COMPLAINTS.length === 0 ? (
+        {complaints.length === 0 ? (
           <div className="py-10"><EmptyState icon={<Shield className="h-6 w-6" />} title="No complaints filed" /></div>
         ) : (
           <Table>
             <Thead><tr><Th>ID</Th><Th>Subject</Th><Th>Category</Th><Th>Filed On</Th><Th>Assigned To</Th><Th>Anonymous</Th><Th>Status</Th></tr></Thead>
             <Tbody>
-              {COMPLAINTS.map(c => (
+              {complaints.map(c => (
                 <Tr key={c.id}>
                   <Td><span className="font-mono text-xs font-medium text-slate-600">{c.id}</span></Td>
                   <Td><span className="text-xs font-medium text-slate-800">{c.subject}</span></Td>
@@ -100,28 +136,58 @@ export default function POSHPage() {
         )}
       </Card>
 
-      <Modal open={newModal} onClose={() => setNewModal(false)} title="File a Complaint" size="md"
+      <Modal
+        open={newModal}
+        onClose={() => { setNewModal(false); setFormError('') }}
+        title="File a Complaint"
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewModal(false)}>Cancel</Button>
-          <Button size="sm">Submit Confidentially</Button>
+          <Button size="sm" loading={saving} onClick={handleSubmit}>Submit Confidentially</Button>
         </>}
       >
         <div className="space-y-4">
           <Alert variant="info">
             Your complaint will be treated with full confidentiality. Only the ICC committee will have access to the details.
           </Alert>
-          <Select label="Category of Complaint" options={[
-            { label: 'Verbal Harassment', value: 'verbal' },
-            { label: 'Physical Harassment', value: 'physical' },
-            { label: 'Digital Harassment', value: 'digital' },
-            { label: 'Hostile Work Environment', value: 'hostile' },
-            { label: 'Quid Pro Quo', value: 'qpq' },
-            { label: 'Other', value: 'other' },
-          ]} required />
-          <Input label="Subject" placeholder="Brief description of the incident" required />
-          <Textarea label="Detailed Description" placeholder="Describe the incident(s) in detail. Include dates, times, locations, and any witnesses." rows={4} required />
+          {formError && <Alert variant="danger">{formError}</Alert>}
+          <Select
+            label="Category of Complaint"
+            required
+            options={[
+              { label: 'Verbal Harassment', value: 'verbal' },
+              { label: 'Physical Harassment', value: 'physical' },
+              { label: 'Digital Harassment', value: 'digital' },
+              { label: 'Hostile Work Environment', value: 'hostile' },
+              { label: 'Quid Pro Quo', value: 'qpq' },
+              { label: 'Other', value: 'other' },
+            ]}
+            value={form.category}
+            onChange={e => setForm(f => ({ ...f, category: (e.target as HTMLSelectElement).value }))}
+          />
+          <Input
+            label="Subject"
+            placeholder="Brief description of the incident"
+            required
+            value={form.subject}
+            onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+          />
+          <Textarea
+            label="Detailed Description"
+            placeholder="Describe the incident(s) in detail. Include dates, times, locations, and any witnesses."
+            rows={4}
+            required
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+          />
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-            <input type="checkbox" id="anon" className="h-4 w-4 rounded text-blue-600" />
+            <input
+              type="checkbox"
+              id="anon"
+              className="h-4 w-4 rounded text-blue-600"
+              checked={form.anonymous}
+              onChange={e => setForm(f => ({ ...f, anonymous: e.target.checked }))}
+            />
             <label htmlFor="anon" className="text-xs text-slate-700">File anonymously (your identity will not be disclosed)</label>
           </div>
         </div>

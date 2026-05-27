@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, Badge, Avatar, Button, Modal, Input, Select, Textarea
+  PageHeader, Card, Badge, Avatar, Button, Modal, Input, Select, Textarea, Alert
 } from '@/components/ui'
-import { Megaphone, Clock, Pin, Plus, FlaskConical } from 'lucide-react'
+import { Clock, Pin, Plus, FlaskConical } from 'lucide-react'
 
 type Priority = 'High' | 'Normal' | 'Low'
 
@@ -13,7 +13,7 @@ type Announcement = {
   priority: Priority; date: string; pinned: boolean
 }
 
-const ANNOUNCEMENTS: Announcement[] = [
+const MOCK_ANNOUNCEMENTS: Announcement[] = [
   { id: 'A1', title: 'Q2 Performance Reviews Starting Next Week', content: 'Managers will coordinate with their teams to begin the Q2 appraisal cycle. Please ensure your self-assessment forms are filled by Friday, 30 May. HR will share detailed guidelines via email.', author: 'HR Central', priority: 'High', date: '27 May 2026', pinned: true },
   { id: 'A2', title: 'Office Security Patch Update – Sunday', content: 'IT will be patching all workstations this Sunday, 31 May, between 9 AM – 2 PM. Please save your work before leaving on Saturday. Remote access will be unavailable during this window.', author: 'IT Department', priority: 'Normal', date: '26 May 2026', pinned: true },
   { id: 'A3', title: 'New Pantry Vendor – Better Snacks!', content: 'Starting June 1st, we have a new pantry vendor. Expect healthier snack options and a wider beverage menu. Feedback forms will be available at the pantry.', author: 'Admin Team', priority: 'Low', date: '25 May 2026', pinned: false },
@@ -29,8 +29,35 @@ const PRIORITY_BAR: Record<Priority, string> = {
   High: 'bg-red-500', Normal: 'bg-blue-500', Low: 'bg-slate-300',
 }
 
+const INITIAL_FORM = { title: '', priority: 'Normal' as Priority, content: '' }
+
 export default function FeedPage() {
+  const [announcements, setAnnouncements] = useState<Announcement[]>(MOCK_ANNOUNCEMENTS)
   const [newModal, setNewModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [formError, setFormError] = useState('')
+
+  const handlePost = async () => {
+    if (!form.title.trim()) { setFormError('Title is required'); return }
+    if (!form.content.trim()) { setFormError('Content is required'); return }
+    setSaving(true)
+    setFormError('')
+    await new Promise(r => setTimeout(r, 400))
+    const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    setAnnouncements(prev => [{
+      id: `A${Date.now()}`,
+      title: form.title.trim(),
+      content: form.content.trim(),
+      author: 'You',
+      priority: form.priority,
+      date: dateStr,
+      pinned: false,
+    }, ...prev])
+    setNewModal(false)
+    setForm(INITIAL_FORM)
+    setSaving(false)
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -42,11 +69,15 @@ export default function FeedPage() {
       <PageHeader
         title="Office Feed"
         description="Company announcements, updates, and team notices"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewModal(true)}>Post Announcement</Button>}
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setNewModal(true); setFormError('') }}>
+            Post Announcement
+          </Button>
+        }
       />
 
       <div className="space-y-3">
-        {ANNOUNCEMENTS.map(a => (
+        {announcements.map(a => (
           <Card key={a.id} className="relative overflow-hidden">
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${PRIORITY_BAR[a.priority]}`} />
             <div className="pl-4">
@@ -76,20 +107,43 @@ export default function FeedPage() {
         ))}
       </div>
 
-      <Modal open={newModal} onClose={() => setNewModal(false)} title="Post Announcement" size="md"
+      <Modal
+        open={newModal}
+        onClose={() => { setNewModal(false); setFormError('') }}
+        title="Post Announcement"
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewModal(false)}>Cancel</Button>
-          <Button size="sm">Post</Button>
+          <Button size="sm" loading={saving} onClick={handlePost}>Post</Button>
         </>}
       >
         <div className="space-y-4">
-          <Input label="Title" placeholder="Announcement title..." required />
-          <Select label="Priority" options={[
-            { label: 'Normal', value: 'Normal' },
-            { label: 'High', value: 'High' },
-            { label: 'Low', value: 'Low' },
-          ]} />
-          <Textarea label="Content" placeholder="Write the announcement details..." rows={4} required />
+          {formError && <Alert variant="danger">{formError}</Alert>}
+          <Input
+            label="Title"
+            placeholder="Announcement title..."
+            required
+            value={form.title}
+            onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+          />
+          <Select
+            label="Priority"
+            options={[
+              { label: 'Normal', value: 'Normal' },
+              { label: 'High', value: 'High' },
+              { label: 'Low', value: 'Low' },
+            ]}
+            value={form.priority}
+            onChange={e => setForm(f => ({ ...f, priority: (e.target as HTMLSelectElement).value as Priority }))}
+          />
+          <Textarea
+            label="Content"
+            placeholder="Write the announcement details..."
+            rows={4}
+            required
+            value={form.content}
+            onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+          />
         </div>
       </Modal>
     </div>

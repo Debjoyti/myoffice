@@ -14,7 +14,7 @@ type GRN = {
   receivedOn: string; items: string; status: GRNStatus; notes: string
 }
 
-const GRNS: GRN[] = [
+const MOCK_GRNS: GRN[] = [
   { id: 'GRN-001', poRef: 'PO-002', vendor: 'Office Depot', receivedBy: 'Rahul Mehta', receivedOn: '20 May 2026', items: 'A4 Paper × 50 bundles, Pens × 200', status: 'Complete', notes: 'All items received in good condition' },
   { id: 'GRN-002', poRef: 'PO-001', vendor: 'Dell India', receivedBy: 'Karan Singh', receivedOn: '27 May 2026', items: 'Dell XPS 15 × 1 of 2, Monitor × 3 of 3', status: 'Partial', notes: 'One laptop backordered — expected 5 Jun' },
   { id: 'GRN-003', poRef: 'PO-003', vendor: 'Apple India', receivedBy: 'Priya Sharma', receivedOn: '26 May 2026', items: 'MacBook Air M2 × 3 of 5', status: 'Pending Verification', notes: 'Waiting for serial number verification from IT' },
@@ -25,10 +25,19 @@ const STATUS_COLOR: Record<GRNStatus, 'success' | 'warning' | 'info'> = {
 }
 
 export default function GoodsReceiptsPage() {
+  const [grns, setGrns] = useState<GRN[]>(MOCK_GRNS)
   const [selected, setSelected] = useState<GRN | null>(null)
 
-  const complete = GRNS.filter(g => g.status === 'Complete').length
-  const partial = GRNS.filter(g => g.status === 'Partial').length
+  const complete = grns.filter(g => g.status === 'Complete').length
+  const partial = grns.filter(g => g.status === 'Partial').length
+  const pendingVerification = grns.filter(g => g.status === 'Pending Verification').length
+
+  const handleVerify = () => {
+    if (!selected) return
+    const updated = { ...selected, status: 'Complete' as GRNStatus, notes: selected.notes + ' [Verified]' }
+    setGrns(prev => prev.map(g => g.id === selected.id ? updated : g))
+    setSelected(null)
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -43,20 +52,20 @@ export default function GoodsReceiptsPage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Total GRNs" value={GRNS.length} icon={<Truck className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Total GRNs" value={grns.length} icon={<Truck className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
         <StatCard label="Complete" value={complete} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
         <StatCard label="Partial" value={partial} icon={<Package className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
-        <StatCard label="Pending Verification" value={GRNS.filter(g => g.status === 'Pending Verification').length} icon={<Clock className="h-4 w-4" />} iconColor="bg-violet-50 text-violet-600" />
+        <StatCard label="Pending Verification" value={pendingVerification} icon={<Clock className="h-4 w-4" />} iconColor="bg-violet-50 text-violet-600" />
       </div>
 
       <Card padding="none">
-        {GRNS.length === 0 ? (
+        {grns.length === 0 ? (
           <div className="py-10"><EmptyState icon={<Truck className="h-6 w-6" />} title="No GRNs recorded" /></div>
         ) : (
           <Table>
             <Thead><tr><Th>GRN No.</Th><Th>PO Ref</Th><Th>Vendor</Th><Th>Received By</Th><Th>Received On</Th><Th>Items</Th><Th>Status</Th></tr></Thead>
             <Tbody>
-              {GRNS.map(g => (
+              {grns.map(g => (
                 <Tr key={g.id} onClick={() => setSelected(g)}>
                   <Td><span className="font-mono text-xs font-medium text-blue-600">{g.id}</span></Td>
                   <Td><span className="font-mono text-xs text-slate-600">{g.poRef}</span></Td>
@@ -72,10 +81,16 @@ export default function GoodsReceiptsPage() {
         )}
       </Card>
 
-      <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.id ?? ''} size="md"
+      <Modal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title={selected?.id ?? ''}
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
-          {selected?.status === 'Pending Verification' && <Button size="sm">Mark Verified</Button>}
+          {selected?.status === 'Pending Verification' && (
+            <Button size="sm" onClick={handleVerify}>Mark Verified</Button>
+          )}
         </>}
       >
         {selected && (

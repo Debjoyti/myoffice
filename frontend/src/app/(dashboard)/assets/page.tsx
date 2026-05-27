@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, SearchInput, Modal, Input, Select, EmptyState
+  StatCard, SearchInput, Modal, Input, Select, EmptyState, Alert
 } from '@/components/ui'
 import { Laptop, Monitor, Smartphone, Package, Plus, FlaskConical } from 'lucide-react'
 
@@ -15,7 +15,7 @@ type Asset = {
   assignedTo: string | null; value: number; purchased: string; status: AssetStatus
 }
 
-const ASSETS: Asset[] = [
+const MOCK_ASSETS: Asset[] = [
   { id: 'AST-001', name: 'MacBook Pro 14"', type: 'Laptop', serial: 'MBP-X1234', assignedTo: 'Priya Sharma', value: 145000, purchased: '01 Jan 2025', status: 'In Use' },
   { id: 'AST-002', name: 'Dell 27" 4K Monitor', type: 'Monitor', serial: 'DLL-M9872', assignedTo: 'Rahul Mehta', value: 32000, purchased: '15 Mar 2025', status: 'In Use' },
   { id: 'AST-003', name: 'iPhone 15 Pro', type: 'Phone', serial: 'APL-IP9901', assignedTo: null, value: 89000, purchased: '01 Oct 2024', status: 'Available' },
@@ -36,24 +36,54 @@ const STATUS_COLOR: Record<AssetStatus, 'success' | 'info' | 'warning' | 'neutra
   'In Use': 'success', Available: 'info', 'Under Repair': 'warning', Retired: 'neutral',
 }
 
+const INITIAL_FORM = { name: '', type: 'Laptop' as AssetType, serial: '', value: '', purchased: '', assignedTo: '' }
+
 export default function AssetsPage() {
+  const [assets, setAssets] = useState<Asset[]>(MOCK_ASSETS)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
   const [newModal, setNewModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [formError, setFormError] = useState('')
 
-  const totalValue = ASSETS.reduce((s, a) => s + a.value, 0)
-  const inUse = ASSETS.filter(a => a.status === 'In Use').length
-  const available = ASSETS.filter(a => a.status === 'Available').length
+  const totalValue = assets.reduce((s, a) => s + a.value, 0)
+  const inUse = assets.filter(a => a.status === 'In Use').length
+  const available = assets.filter(a => a.status === 'Available').length
 
   const filtered = useMemo(() => {
-    return ASSETS.filter(a => {
+    return assets.filter(a => {
       const matchType = typeFilter === 'All' || a.type === typeFilter
       const matchSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) ||
         a.serial.toLowerCase().includes(search.toLowerCase()) ||
         (a.assignedTo?.toLowerCase().includes(search.toLowerCase()) ?? false)
       return matchType && matchSearch
     })
-  }, [search, typeFilter])
+  }, [assets, search, typeFilter])
+
+  const handleAdd = async () => {
+    if (!form.name.trim()) { setFormError('Asset name is required'); return }
+    setSaving(true)
+    setFormError('')
+    await new Promise(r => setTimeout(r, 400))
+    const assignedTo = form.assignedTo.trim() || null
+    let purchased = '—'
+    try { purchased = form.purchased ? new Date(form.purchased).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' }
+    catch { /* keep default */ }
+    setAssets(prev => [{
+      id: `AST-${String(prev.length + 1).padStart(3, '0')}`,
+      name: form.name.trim(),
+      type: form.type,
+      serial: form.serial.trim() || '—',
+      assignedTo,
+      value: Number(form.value) || 0,
+      purchased,
+      status: assignedTo ? 'In Use' : 'Available',
+    }, ...prev])
+    setNewModal(false)
+    setForm(INITIAL_FORM)
+    setSaving(false)
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -65,11 +95,15 @@ export default function AssetsPage() {
       <PageHeader
         title="Asset Management"
         description="Track company hardware, software, and equipment assignments"
-        actions={<Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewModal(true)}>Add Asset</Button>}
+        actions={
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setNewModal(true); setFormError('') }}>
+            Add Asset
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Total Assets" value={ASSETS.length} icon={<Package className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
+        <StatCard label="Total Assets" value={assets.length} icon={<Package className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
         <StatCard label="In Use" value={inUse} icon={<Laptop className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
         <StatCard label="Available" value={available} icon={<Monitor className="h-4 w-4" />} iconColor="bg-violet-50 text-violet-600" />
         <StatCard label="Total Value" value={`₹${(totalValue / 100000).toFixed(1)}L`} icon={<Package className="h-4 w-4" />} iconColor="bg-amber-50 text-amber-600" />
@@ -92,7 +126,7 @@ export default function AssetsPage() {
           <div className="py-10"><EmptyState icon={<Package className="h-6 w-6" />} title="No assets found" /></div>
         ) : (
           <Table>
-            <Thead><tr><Th>Asset</Th><Th>Type</Th><Th>Serial No.</Th><Th>Assigned To</Th><Th>Value</Th><Th>Purchased</Th><Th>Status</Th></tr></Thead>
+            <Thead><tr><Th>Asset</Th><Th>Type</Th><Th>Serial No.</Th><Th>Assigned To</Th><Th align="right">Value</Th><Th>Purchased</Th><Th>Status</Th></tr></Thead>
             <Tbody>
               {filtered.map(a => (
                 <Tr key={a.id}>
@@ -129,26 +163,63 @@ export default function AssetsPage() {
         )}
       </Card>
 
-      <Modal open={newModal} onClose={() => setNewModal(false)} title="Add Asset" size="md"
+      <Modal
+        open={newModal}
+        onClose={() => { setNewModal(false); setFormError('') }}
+        title="Add Asset"
+        size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewModal(false)}>Cancel</Button>
-          <Button size="sm">Add Asset</Button>
+          <Button size="sm" loading={saving} onClick={handleAdd}>Add Asset</Button>
         </>}
       >
         <div className="space-y-4">
-          <Input label="Asset Name" placeholder="e.g. MacBook Pro 14 inch" required />
+          {formError && <Alert variant="danger">{formError}</Alert>}
+          <Input
+            label="Asset Name"
+            placeholder="e.g. MacBook Pro 14 inch"
+            required
+            value={form.name}
+            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Select label="Type" options={[
-              { label: 'Laptop', value: 'Laptop' }, { label: 'Monitor', value: 'Monitor' },
-              { label: 'Phone', value: 'Phone' }, { label: 'Furniture', value: 'Furniture' }, { label: 'Other', value: 'Other' },
-            ]} />
-            <Input label="Serial Number" placeholder="SN-XXXXXX" />
+            <Select
+              label="Type"
+              options={[
+                { label: 'Laptop', value: 'Laptop' }, { label: 'Monitor', value: 'Monitor' },
+                { label: 'Phone', value: 'Phone' }, { label: 'Furniture', value: 'Furniture' }, { label: 'Other', value: 'Other' },
+              ]}
+              value={form.type}
+              onChange={e => setForm(f => ({ ...f, type: (e.target as HTMLSelectElement).value as AssetType }))}
+            />
+            <Input
+              label="Serial Number"
+              placeholder="SN-XXXXXX"
+              value={form.serial}
+              onChange={e => setForm(f => ({ ...f, serial: e.target.value }))}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Purchase Value (₹)" type="number" placeholder="0" />
-            <Input label="Purchase Date" type="date" />
+            <Input
+              label="Purchase Value (₹)"
+              type="number"
+              placeholder="0"
+              value={form.value}
+              onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
+            />
+            <Input
+              label="Purchase Date"
+              type="date"
+              value={form.purchased}
+              onChange={e => setForm(f => ({ ...f, purchased: e.target.value }))}
+            />
           </div>
-          <Input label="Assign To (optional)" placeholder="Employee name" />
+          <Input
+            label="Assign To (optional)"
+            placeholder="Employee name"
+            value={form.assignedTo}
+            onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))}
+          />
         </div>
       </Modal>
     </div>
