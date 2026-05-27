@@ -1,18 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Building2, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { DEMO_PASSWORD, DEMO_USERS } from '@/lib/demo-accounts'
 
-const DEMO_LOGIN_USERS = [
-  { label: 'Super Admin', email: 'superadmin@prsk.demo' },
-  { label: 'HR Admin', email: 'hradmin@prsk.demo' },
-  { label: 'Accountant', email: 'accountant@prsk.demo' },
-  { label: 'Employee', email: 'employee@prsk.demo' },
-]
-
-const DEMO_PASSWORD = 'Demo@123456'
+const DEMO_LOGIN_USERS = DEMO_USERS.map((user) => ({
+  label: user.role === 'hr' ? 'HR Admin' : user.role === 'admin' ? 'Super Admin' : user.role[0].toUpperCase() + user.role.slice(1),
+  email: user.email,
+}))
 
 export default function LoginPage() {
   const [email,        setEmail]        = useState('')
@@ -26,10 +22,27 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false) }
-    else { router.push('/home'); router.refresh() }
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setError(data.error ?? 'Invalid credentials')
+        setLoading(false)
+        return
+      }
+
+      router.push('/home')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to sign in')
+      setLoading(false)
+    }
   }
 
   const fillDemoCredentials = (demoEmail: string) => {
