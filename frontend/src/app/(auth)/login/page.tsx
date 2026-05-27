@@ -87,7 +87,7 @@ export default function LoginPage() {
 
   const anyLoading = loading || oauthLoading !== null
 
-  const fillDemoCredentials = async (demoEmail: string) => {
+  const fillDemoCredentials = (demoEmail: string) => {
     setEmail(demoEmail)
     setPassword(DEMO_PASSWORD)
     setError(null)
