@@ -35,15 +35,19 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
+  const pathname = request.nextUrl.pathname
+  const isLoginRoute = pathname === '/login'
+  // Landing page and auth callback are publicly accessible
+  const isPublicRoute = pathname === '/' || pathname.startsWith('/auth/')
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isPublicRoute && !isLoginRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  if (user && isAuthRoute) {
+  // Authenticated users hitting login or landing → send to dashboard
+  if (user && (isLoginRoute || pathname === '/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/home'
     return NextResponse.redirect(url)
