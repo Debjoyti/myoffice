@@ -5,6 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Building2, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
+const DEMO_LOGIN_USERS = [
+  { label: 'Super Admin', email: 'superadmin@prsk.demo' },
+  { label: 'HR Admin', email: 'hradmin@prsk.demo' },
+  { label: 'Accountant', email: 'accountant@prsk.demo' },
+  { label: 'Employee', email: 'employee@prsk.demo' },
+]
+
+const DEMO_PASSWORD = 'Demo@123456'
+
 export default function LoginPage() {
   const [email,        setEmail]        = useState('')
   const [password,     setPassword]     = useState('')
@@ -21,6 +30,12 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false) }
     else { router.push('/home'); router.refresh() }
+  }
+
+  const fillDemoCredentials = (demoEmail: string) => {
+    setEmail(demoEmail)
+    setPassword(DEMO_PASSWORD)
+    setError(null)
   }
 
   return (
@@ -134,6 +149,24 @@ export default function LoginPage() {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
+
+          <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50 p-3">
+            <p className="mb-2 text-center text-xs font-medium text-blue-900">
+              Demo accounts
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {DEMO_LOGIN_USERS.map((demo) => (
+                <button
+                  key={demo.email}
+                  type="button"
+                  onClick={() => fillDemoCredentials(demo.email)}
+                  className="h-8 rounded-md border border-blue-200 bg-white px-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                >
+                  {demo.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <p className="mt-6 text-center text-xs text-slate-400">
             Secure enterprise sign-in
