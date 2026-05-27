@@ -1,7 +1,7 @@
 import { createClient } from './server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { DEV_SESSION_COOKIE } from '@/lib/dev-auth'
+import { isDevBypass, DEV_SESSION_COOKIE } from '@/lib/dev-auth'
 
 export type Employee = {
   id: string
@@ -34,13 +34,16 @@ type AuthResult = { employee: Employee; supabase: Awaited<ReturnType<typeof crea
 
 /** Returns the authenticated employee, or a 401/404 NextResponse. */
 export async function getAuthenticatedEmployee(): Promise<AuthResult | NextResponse> {
-  // Demo-account bypass: if prsk_dev_session cookie is set, return hardcoded employee
-  const cookieStore = await cookies()
-  const devCookie = cookieStore.get(DEV_SESSION_COOKIE)
-  if (devCookie) {
-    const employee = JSON.parse(devCookie.value) as Employee
-    const supabase = await createClient()
-    return { employee, supabase }
+  // Dev bypass: return hardcoded employee from cookie
+  if (isDevBypass()) {
+    const cookieStore = await cookies()
+    const devCookie = cookieStore.get(DEV_SESSION_COOKIE)
+    if (devCookie) {
+      const employee = JSON.parse(devCookie.value) as Employee
+      const supabase = await createClient()
+      return { employee, supabase }
+    }
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const supabase = await createClient()

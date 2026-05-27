@@ -7,14 +7,22 @@ export async function proxy(request: NextRequest) {
   const isLoginRoute = pathname === '/login'
   const isPublicRoute = pathname === '/' || pathname.startsWith('/auth/') || pathname === '/api/dev-login'
 
-  // Demo-account bypass: if the prsk_dev_session cookie is present, skip Supabase
-  // entirely (avoids the ISO-8859-1 fetch error and works on all environments).
-  // Only the 4 hardcoded @prsk.demo emails can ever set this cookie.
-  const devCookie = request.cookies.get(DEV_SESSION_COOKIE)
-  if (devCookie) {
-    if (isLoginRoute || pathname === '/') {
+  // Dev bypass: skip Supabase entirely so the ISO-8859-1 fetch error never fires
+  if (process.env.DEV_BYPASS_AUTH === 'true') {
+    const devCookie = request.cookies.get(DEV_SESSION_COOKIE)
+    if (devCookie) {
+      // Logged in — send away from login/landing
+      if (isLoginRoute || pathname === '/') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/home'
+        return NextResponse.redirect(url)
+      }
+      return NextResponse.next({ request })
+    }
+    // Not logged in — only allow public + login routes
+    if (!isPublicRoute && !isLoginRoute) {
       const url = request.nextUrl.clone()
-      url.pathname = '/home'
+      url.pathname = '/login'
       return NextResponse.redirect(url)
     }
     return NextResponse.next({ request })
@@ -52,6 +60,11 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  const pathname = request.nextUrl.pathname
+  const isLoginRoute = pathname === '/login'
+  // Landing page and auth callback are publicly accessible
+  const isPublicRoute = pathname === '/' || pathname.startsWith('/auth/')
 
   if (!user && !isPublicRoute && !isLoginRoute) {
     const url = request.nextUrl.clone()
