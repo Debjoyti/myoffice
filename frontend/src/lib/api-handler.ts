@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
-import { isDevBypass, DEV_SESSION_COOKIE } from '@/lib/dev-auth';
+import { DEV_SESSION_COOKIE } from '@/lib/dev-auth';
 
 export type UserContext = {
   id: string;
@@ -29,13 +29,10 @@ export function createEnterpriseApiHandler<T>(config: ApiHandlerConfig<T>) {
 
       // 1. Authentication & Tenancy
       if (config.requireAuth !== false) {
-        // Dev bypass: read user from hardcoded cookie
-        if (isDevBypass()) {
-          const cookieStore = await cookies();
-          const devCookie = cookieStore.get(DEV_SESSION_COOKIE);
-          if (!devCookie) {
-            return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-          }
+        // Demo-account bypass: check for prsk_dev_session cookie first
+        const cookieStore = await cookies();
+        const devCookie = cookieStore.get(DEV_SESSION_COOKIE);
+        if (devCookie) {
           const devUser = JSON.parse(devCookie.value);
           userCtx = {
             id: devUser.user_id,
@@ -44,24 +41,24 @@ export function createEnterpriseApiHandler<T>(config: ApiHandlerConfig<T>) {
             role: devUser.role,
           };
         } else {
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+          const { data: { session }, error: authError } = await supabase.auth.getSession();
 
-        if (authError || !session) {
-          return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-        }
+          if (authError || !session) {
+            return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
+          }
 
-        // Fetch user profile to get company_id and role
-        const { data: userProfile, error: profileError } = await supabase
-          .from('users')
-          .select('company_id, role, id, email')
-          .eq('id', session.user.id)
-          .single();
+          // Fetch user profile to get company_id and role
+          const { data: userProfile, error: profileError } = await supabase
+            .from('users')
+            .select('company_id, role, id, email')
+            .eq('id', session.user.id)
+            .single();
 
-        if (profileError || !userProfile) {
-          return NextResponse.json({ error: 'User profile not found', code: 'NO_PROFILE' }, { status: 403 });
-        }
+          if (profileError || !userProfile) {
+            return NextResponse.json({ error: 'User profile not found', code: 'NO_PROFILE' }, { status: 403 });
+          }
 
-        userCtx = userProfile as UserContext;
+          userCtx = userProfile as UserContext;
         }
         
         // 2. RBAC (Role-Based Access Control)

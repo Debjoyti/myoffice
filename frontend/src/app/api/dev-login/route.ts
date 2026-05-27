@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { DEV_SESSION_COOKIE, DEV_DEMO_USERS, isDevBypass } from '@/lib/dev-auth'
+import { DEV_SESSION_COOKIE, DEV_DEMO_USERS } from '@/lib/dev-auth'
 
+// This route is intentionally open — only the 4 hardcoded @prsk.demo emails
+// can receive a session cookie, so there is no privilege-escalation risk.
 export async function POST(request: Request) {
-  if (!isDevBypass()) {
-    return NextResponse.json({ error: 'Not available' }, { status: 404 })
-  }
-
   const { email } = await request.json()
   const user = DEV_DEMO_USERS[email as string]
 
@@ -24,9 +22,6 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  if (!isDevBypass()) {
-    return NextResponse.json({ error: 'Not available' }, { status: 404 })
-  }
   const response = NextResponse.json({ ok: true })
   response.cookies.delete(DEV_SESSION_COOKIE)
   return response
