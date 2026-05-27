@@ -185,6 +185,7 @@ supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 DEFAULT_ORG_ID = "default"
 DEFAULT_COMPANY_ID = "demo-comp-1"
 DEFAULT_DEMO_PASSWORD = "password123"
+DEFAULT_PRSK_DEMO_PASSWORD = "Demo@123456"
 DEFAULT_ENABLED_SERVICES = [
     "dashboard",
     "employees",
@@ -5665,8 +5666,59 @@ async def ensure_demo_users_seeded():
     subscription_end_iso = (now + timedelta(days=365)).isoformat()
 
     hashed_password = get_password_hash(DEFAULT_DEMO_PASSWORD)
+    prsk_hashed_password = get_password_hash(DEFAULT_PRSK_DEMO_PASSWORD)
 
     demo_users = [
+        {
+            "id": "usr-prsk-superadmin",
+            "email": "superadmin@prsk.demo",
+            "password": prsk_hashed_password,
+            "name": "PRSK Super Admin",
+            "role": "superadmin",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-prsk-hradmin",
+            "email": "hradmin@prsk.demo",
+            "password": prsk_hashed_password,
+            "name": "PRSK HR Admin",
+            "role": "hr",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_end_date": subscription_end_iso,
+            "enabled_services": DEFAULT_ENABLED_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-prsk-accountant",
+            "email": "accountant@prsk.demo",
+            "password": prsk_hashed_password,
+            "name": "PRSK Accountant",
+            "role": "accountant",
+            "company_id": DEFAULT_COMPANY_ID,
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "enabled_services": DEFAULT_ACCOUNTING_SERVICES,
+            "created_at": now_iso,
+        },
+        {
+            "id": "usr-prsk-employee",
+            "email": "employee@prsk.demo",
+            "password": prsk_hashed_password,
+            "name": "PRSK Employee",
+            "role": "employee",
+            "organization_id": DEFAULT_ORG_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "created_at": now_iso,
+        },
         {
             "id": "usr-superadmin",
             "email": "superadmin@demo.com",
