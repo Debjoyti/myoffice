@@ -8,7 +8,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import {
   Package, ShoppingCart, Truck, CheckCircle2, Plus, Download,
-  Star, Building2, FlaskConical, RefreshCw
+  Star, Building2, FlaskConical, RefreshCw, MapPin, Phone, User, Pencil, Trash2, Store
 } from 'lucide-react'
 
 // ─── Fallback mock data ──────────────────────────────────────────────────────
@@ -28,6 +28,12 @@ const MOCK_VENDORS = [
   { id: 'v5', name: 'Amazon Business', contact_email: 'b2b@amazon.in', status: 'active', created_at: '2025-01-01' },
 ]
 
+const MOCK_STORES = [
+  { id: 's1', name: 'Main Warehouse', location: 'Pune, Maharashtra', manager: 'Rajesh Kumar', contact: '+91 98765 43210', status: 'active', created_at: '2025-01-01' },
+  { id: 's2', name: 'Mumbai Branch Store', location: 'Andheri East, Mumbai', manager: 'Sunita Patil', contact: '+91 87654 32109', status: 'active', created_at: '2025-02-01' },
+  { id: 's3', name: 'Delhi Regional Hub', location: 'Okhla Phase II, New Delhi', manager: null, contact: null, status: 'inactive', created_at: '2025-03-01' },
+]
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 type PO = {
   id: string; po_number: string
@@ -35,6 +41,13 @@ type PO = {
   total_amount: number; order_date: string; expected_delivery?: string; status: string
 }
 type Vendor = { id: string; name: string; contact_email?: string; contact_phone?: string; status: string; created_at: string }
+type StoreLocation = {
+  id: string; name: string; location: string
+  manager?: string | null; contact?: string | null
+  status: string; created_at: string
+}
+
+const EMPTY_STORE_FORM = { name: '', location: '', manager: '', contact: '' }
 
 const PO_STATUS: Record<string, 'success' | 'info' | 'warning' | 'neutral' | 'danger'> = {
   received: 'success', issued: 'info', partially_received: 'info', draft: 'neutral', cancelled: 'danger', closed: 'neutral',
@@ -57,14 +70,22 @@ export default function ProcurementPage() {
   const [search, setSearch] = useState('')
   const [newPO, setNewPO] = useState(false)
   const [newVendor, setNewVendor] = useState(false)
+  const [newStore, setNewStore] = useState(false)
+  const [editStore, setEditStore] = useState<StoreLocation | null>(null)
+  const [deleteStore, setDeleteStore] = useState<StoreLocation | null>(null)
   const [selectedPO, setSelectedPO] = useState<PO | null>(null)
   const [loading, setLoading] = useState(true)
+  const [storesLoading, setStoresLoading] = useState(true)
   const [isPreview, setIsPreview] = useState(false)
+  const [isStoresPreview, setIsStoresPreview] = useState(false)
   const [orders, setOrders] = useState<PO[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
+  const [stores, setStores] = useState<StoreLocation[]>([])
   const [vendorForm, setVendorForm] = useState({ name: '', contact_email: '', contact_phone: '' })
   const [poForm, setPoForm] = useState({ vendor_id: '', po_number: '', expected_delivery: '', total_amount: '', description: '' })
+  const [storeForm, setStoreForm] = useState(EMPTY_STORE_FORM)
   const [saving, setSaving] = useState(false)
+  const [storeSearch, setStoreSearch] = useState('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -91,7 +112,29 @@ export default function ProcurementPage() {
     }
   }, [])
 
+  const fetchStores = useCallback(async () => {
+    setStoresLoading(true)
+    try {
+      const res = await fetch('/api/v1/stores')
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        setStores(data)
+        setIsStoresPreview(false)
+      } else {
+        setStores(MOCK_STORES)
+        setIsStoresPreview(true)
+      }
+    } catch {
+      setStores(MOCK_STORES)
+      setIsStoresPreview(true)
+    } finally {
+      setStoresLoading(false)
+    }
+  }, [])
+
   useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { if (tab === 'stores') fetchStores() }, [tab, fetchStores])
 
   const handleCreatePO = async () => {
     if (!poForm.vendor_id || !poForm.total_amount) return
@@ -138,10 +181,61 @@ export default function ProcurementPage() {
     }
   }
 
+  const handleSaveStore = async () => {
+    if (!storeForm.name.trim() || !storeForm.location.trim()) return
+    setSaving(true)
+    try {
+      const isEdit = !!editStore
+      const url = isEdit ? `/api/v1/stores/${editStore!.id}` : '/api/v1/stores'
+      const method = isEdit ? 'PATCH' : 'POST'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(storeForm),
+      })
+      if (res.ok) {
+        setNewStore(false)
+        setEditStore(null)
+        setStoreForm(EMPTY_STORE_FORM)
+        fetchStores()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleToggleStoreStatus = async (store: StoreLocation) => {
+    const newStatus = store.status === 'active' ? 'inactive' : 'active'
+    await fetch(`/api/v1/stores/${store.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    })
+    fetchStores()
+  }
+
+  const handleDeleteStore = async () => {
+    if (!deleteStore) return
+    setSaving(true)
+    try {
+      await fetch(`/api/v1/stores/${deleteStore.id}`, { method: 'DELETE' })
+      setDeleteStore(null)
+      fetchStores()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openEditStore = (store: StoreLocation) => {
+    setStoreForm({ name: store.name, location: store.location, manager: store.manager ?? '', contact: store.contact ?? '' })
+    setEditStore(store)
+  }
+
   const totalSpend = useMemo(() => orders.filter(p => p.status !== 'draft').reduce((s, p) => s + Number(p.total_amount), 0), [orders])
   const openPOs = useMemo(() => orders.filter(p => ['draft', 'issued'].includes(p.status)).length, [orders])
   const inTransit = useMemo(() => orders.filter(p => p.status === 'issued').length, [orders])
   const delivered = useMemo(() => orders.filter(p => ['received', 'closed'].includes(p.status)).length, [orders])
+  const activeStores = useMemo(() => stores.filter(s => s.status === 'active').length, [stores])
 
   const filteredPOs = useMemo(() =>
     orders.filter(p => !search ||
@@ -149,23 +243,38 @@ export default function ProcurementPage() {
       p.po_number.toLowerCase().includes(search.toLowerCase())
     ), [orders, search])
 
+  const filteredStores = useMemo(() =>
+    stores.filter(s => !storeSearch ||
+      s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
+      s.location.toLowerCase().includes(storeSearch.toLowerCase()) ||
+      (s.manager ?? '').toLowerCase().includes(storeSearch.toLowerCase())
+    ), [stores, storeSearch])
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      {isPreview && (
+      {isPreview && tab !== 'stores' && (
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
           <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
           <span><strong>Preview mode</strong> — Procurement data is illustrative. Create your first PO to see live data.</span>
         </div>
       )}
+      {isStoresPreview && tab === 'stores' && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+          <FlaskConical className="h-3.5 w-3.5 flex-shrink-0" />
+          <span><strong>Preview mode</strong> — Store data is illustrative. Create your first store to see live data.</span>
+        </div>
+      )}
 
       <PageHeader
         title="Procurement"
-        description="Purchase orders, vendor management, and spend analytics"
+        description="Purchase orders, vendor management, and store locations"
         actions={
           <>
-            <Button variant="outline" size="sm" leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />} onClick={fetchData}>Refresh</Button>
+            <Button variant="outline" size="sm" leftIcon={<RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />} onClick={tab === 'stores' ? fetchStores : fetchData}>Refresh</Button>
             <Button variant="outline" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />}>Export</Button>
-            <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewPO(true)}>New PO</Button>
+            {tab === 'po'     && <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewPO(true)}>New PO</Button>}
+            {tab === 'vendors'&& <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewVendor(true)}>Add Vendor</Button>}
+            {tab === 'stores' && <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setStoreForm(EMPTY_STORE_FORM); setEditStore(null); setNewStore(true) }}>Add Store</Button>}
           </>
         }
       />
@@ -174,18 +283,20 @@ export default function ProcurementPage() {
         <StatCard label="Total Spend MTD" value={formatCurrency(totalSpend)} icon={<ShoppingCart className="h-4 w-4" />} />
         <StatCard label="Open POs" value={openPOs} icon={<Package className="h-4 w-4" />} iconColor="bg-blue-50 text-blue-600" />
         <StatCard label="In Transit" value={inTransit} icon={<Truck className="h-4 w-4" />} iconColor="bg-sky-50 text-sky-600" />
-        <StatCard label="Delivered" value={delivered} icon={<CheckCircle2 className="h-4 w-4" />} iconColor="bg-emerald-50 text-emerald-600" />
+        <StatCard label="Active Stores" value={activeStores} icon={<Store className="h-4 w-4" />} iconColor="bg-violet-50 text-violet-600" />
       </div>
 
       <TabBar
         tabs={[
-          { id: 'po', label: 'Purchase Orders', count: orders.length },
-          { id: 'vendors', label: 'Vendors', count: vendors.length },
+          { id: 'po',      label: 'Purchase Orders', count: orders.length },
+          { id: 'vendors', label: 'Vendors',          count: vendors.length },
+          { id: 'stores',  label: 'Stores',           count: stores.length },
         ]}
         active={tab}
         onChange={setTab}
       />
 
+      {/* ── Purchase Orders ── */}
       {tab === 'po' && (
         <Card padding="none">
           <div className="px-5 pt-5 pb-4">
@@ -222,6 +333,7 @@ export default function ProcurementPage() {
         </Card>
       )}
 
+      {/* ── Vendors ── */}
       {tab === 'vendors' && (
         <Card padding="none">
           <div className="px-5 pt-5 pb-3 flex items-center justify-between">
@@ -267,7 +379,97 @@ export default function ProcurementPage() {
         </Card>
       )}
 
-      {/* PO Detail Modal */}
+      {/* ── Stores ── */}
+      {tab === 'stores' && (
+        <Card padding="none">
+          <div className="px-5 pt-5 pb-4 flex items-center justify-between">
+            <SearchInput placeholder="Search stores or locations..." value={storeSearch} onChange={setStoreSearch} className="w-72" />
+            <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => { setStoreForm(EMPTY_STORE_FORM); setEditStore(null); setNewStore(true) }}>Add Store</Button>
+          </div>
+          {storesLoading ? (
+            <div className="py-16 text-center text-slate-400 text-sm">Loading stores…</div>
+          ) : (
+            <Table>
+              <Thead>
+                <tr><Th>Store</Th><Th>Location</Th><Th>Manager</Th><Th>Contact</Th><Th>Status</Th><Th>Added</Th><Th></Th></tr>
+              </Thead>
+              <Tbody>
+                {filteredStores.length === 0 ? (
+                  <Tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">No stores found</td></Tr>
+                ) : filteredStores.map(store => (
+                  <Tr key={store.id}>
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
+                          <Store className="h-3.5 w-3.5 text-violet-600" />
+                        </div>
+                        <span className="font-medium text-slate-800 text-sm">{store.name}</span>
+                      </div>
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        {store.location}
+                      </div>
+                    </Td>
+                    <Td>
+                      {store.manager ? (
+                        <div className="flex items-center gap-1 text-xs text-slate-600">
+                          <User className="h-3 w-3 flex-shrink-0 text-slate-400" />
+                          {store.manager}
+                        </div>
+                      ) : <span className="text-xs text-slate-400">—</span>}
+                    </Td>
+                    <Td>
+                      {store.contact ? (
+                        <div className="flex items-center gap-1 text-xs text-slate-600">
+                          <Phone className="h-3 w-3 flex-shrink-0 text-slate-400" />
+                          {store.contact}
+                        </div>
+                      ) : <span className="text-xs text-slate-400">—</span>}
+                    </Td>
+                    <Td>
+                      <button
+                        onClick={() => handleToggleStoreStatus(store)}
+                        className="cursor-pointer"
+                        title={store.status === 'active' ? 'Click to deactivate' : 'Click to activate'}
+                      >
+                        <Badge variant={store.status === 'active' ? 'success' : 'neutral'} dot>
+                          {store.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </button>
+                    </Td>
+                    <Td><span className="text-xs text-slate-400">{fmtDate(store.created_at)}</span></Td>
+                    <Td>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openEditStore(store)}
+                          className="p-1.5 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteStore(store)}
+                          className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
+          <div className="px-5 py-3 border-t border-slate-100">
+            <p className="text-xs text-slate-400">{activeStores} active · {stores.length - activeStores} inactive · {stores.length} total</p>
+          </div>
+        </Card>
+      )}
+
+      {/* ── PO Detail Modal ── */}
       <Modal open={!!selectedPO} onClose={() => setSelectedPO(null)} title="Purchase Order" size="md"
         footer={<Button variant="ghost" size="sm" onClick={() => setSelectedPO(null)}>Close</Button>}
       >
@@ -288,7 +490,7 @@ export default function ProcurementPage() {
         )}
       </Modal>
 
-      {/* Add Vendor Modal */}
+      {/* ── Add Vendor Modal ── */}
       <Modal open={newVendor} onClose={() => setNewVendor(false)} title="Add Vendor" size="md"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewVendor(false)}>Cancel</Button>
@@ -302,7 +504,7 @@ export default function ProcurementPage() {
         </div>
       </Modal>
 
-      {/* New PO Modal */}
+      {/* ── New PO Modal ── */}
       <Modal open={newPO} onClose={() => setNewPO(false)} title="Create Purchase Order" size="lg"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setNewPO(false)}>Cancel</Button>
@@ -345,6 +547,71 @@ export default function ProcurementPage() {
             onChange={e => setPoForm(f => ({ ...f, description: e.target.value }))}
           />
         </div>
+      </Modal>
+
+      {/* ── Add / Edit Store Modal ── */}
+      <Modal
+        open={newStore || !!editStore}
+        onClose={() => { setNewStore(false); setEditStore(null) }}
+        title={editStore ? 'Edit Store' : 'Add Store'}
+        size="md"
+        footer={<>
+          <Button variant="ghost" size="sm" onClick={() => { setNewStore(false); setEditStore(null) }}>Cancel</Button>
+          <Button size="sm" loading={saving} onClick={handleSaveStore}>
+            {editStore ? 'Save Changes' : 'Add Store'}
+          </Button>
+        </>}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Input
+                label="Store Name"
+                placeholder="e.g. Main Warehouse, Mumbai Branch"
+                required
+                value={storeForm.name}
+                onChange={e => setStoreForm(f => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input
+                label="Location / Address"
+                placeholder="e.g. Andheri East, Mumbai, Maharashtra"
+                required
+                value={storeForm.location}
+                onChange={e => setStoreForm(f => ({ ...f, location: e.target.value }))}
+              />
+            </div>
+            <Input
+              label="Manager Name"
+              placeholder="e.g. Rajesh Kumar"
+              value={storeForm.manager}
+              onChange={e => setStoreForm(f => ({ ...f, manager: e.target.value }))}
+            />
+            <Input
+              label="Contact Number"
+              placeholder="+91 98765 43210"
+              value={storeForm.contact}
+              onChange={e => setStoreForm(f => ({ ...f, contact: e.target.value }))}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Delete Store Confirmation ── */}
+      <Modal
+        open={!!deleteStore}
+        onClose={() => setDeleteStore(null)}
+        title="Delete Store"
+        size="sm"
+        footer={<>
+          <Button variant="ghost" size="sm" onClick={() => setDeleteStore(null)}>Cancel</Button>
+          <Button variant="danger" size="sm" loading={saving} onClick={handleDeleteStore}>Delete</Button>
+        </>}
+      >
+        <p className="text-sm text-slate-600">
+          Are you sure you want to delete <strong>{deleteStore?.name}</strong>? This action cannot be undone.
+        </p>
       </Modal>
     </div>
   )
