@@ -4,11 +4,29 @@ import { toast } from 'sonner';
 
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
 const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+const DEMO_LOGIN_USERS = [
+  { label: 'PRSK Super Admin', email: 'superadmin@prsk.demo', password: 'Demo@123456' },
+  { label: 'PRSK HR Admin', email: 'hradmin@prsk.demo', password: 'Demo@123456' },
+  { label: 'PRSK Accountant', email: 'accountant@prsk.demo', password: 'Demo@123456' },
+  { label: 'PRSK Employee', email: 'employee@prsk.demo', password: 'Demo@123456' },
+  { label: 'Superadmin', email: 'superadmin@demo.com', password: 'password123' },
+  { label: 'Admin', email: 'admin@demo.com', password: 'password123' },
+  { label: 'HR', email: 'hr@demo.com', password: 'password123' },
+  { label: 'Manager', email: 'manager@demo.com', password: 'password123' },
+  { label: 'Employee', email: 'employee@demo.com', password: 'password123' },
+  { label: 'Accountant', email: 'accountant@demo.com', password: 'password123' },
+  { label: 'Client', email: 'client@demo.com', password: 'password123' },
+];
 
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [loading, setLoading] = useState(false);
+
+  const fillDemoCredentials = (demo) => {
+    setIsRegister(false);
+    setFormData({ email: demo.email, password: demo.password, name: '' });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,8 +37,8 @@ const Login = ({ onLogin }) => {
       toast.success(isRegister ? 'Account created successfully!' : 'Welcome back!');
       onLogin(response.data.user, response.data.access_token);
     } catch (error) {
-      if (!BACKEND_URL) {
-        toast.error('Backend URL is not configured. Set REACT_APP_BACKEND_URL in Vercel project environment variables.');
+      if (!error.response) {
+        toast.error('Unable to reach the backend. Check the API server or REACT_APP_BACKEND_URL.');
       } else {
         toast.error(error.response?.data?.detail || 'Authentication failed. Please try again.');
       }
@@ -270,6 +288,40 @@ const Login = ({ onLogin }) => {
                 : <>New here? <span style={{ color: '#818cf8', fontWeight: 600 }}>Create a free account</span></>}
             </button>
           </div>
+
+          {!isRegister && (
+            <div style={{
+              marginTop: '18px', padding: '14px 16px',
+              background: 'rgba(16,185,129,0.08)',
+              border: '1px solid rgba(16,185,129,0.2)',
+              borderRadius: '12px',
+            }}>
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '12px', margin: '0 0 10px', textAlign: 'center' }}>
+                Demo users available
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                {DEMO_LOGIN_USERS.map((demo) => (
+                  <button
+                    key={demo.email}
+                    type="button"
+                    onClick={() => fillDemoCredentials(demo)}
+                    style={{
+                      border: '1px solid rgba(16,185,129,0.28)',
+                      background: 'rgba(16,185,129,0.12)',
+                      color: '#a7f3d0',
+                      borderRadius: '999px',
+                      padding: '5px 10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {demo.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {!isRegister && (
             <div style={{

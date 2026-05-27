@@ -18,7 +18,16 @@ def get_password_hash(password: str):
 
 async def create_demo_users():
     # Clear existing demo users
-    emails = ["superadmin@demo.com", "admin@demo.com", "employee@demo.com", "accountant@demo.com"]
+    emails = [
+        "superadmin@demo.com",
+        "admin@demo.com",
+        "employee@demo.com",
+        "accountant@demo.com",
+        "superadmin@prsk.demo",
+        "hradmin@prsk.demo",
+        "accountant@prsk.demo",
+        "employee@prsk.demo",
+    ]
     await db.users.delete_many({"email": {"$in": emails}})
     
     ORGANIZATION_ID = "default"
@@ -30,6 +39,47 @@ async def create_demo_users():
         'projects', 'crm', 'inventory', 'finance', 'support', 
         'assets', 'announcements', 'kb', 'audit', 'insights'
     ]
+
+    PRSK_PASSWORD = "Demo@123456"
+
+    prsk_users = [
+        {
+            "email": "superadmin@prsk.demo",
+            "name": "PRSK Super Admin",
+            "role": "superadmin",
+            "enabled_services": ENABLED_SERVICES,
+        },
+        {
+            "email": "hradmin@prsk.demo",
+            "name": "PRSK HR Admin",
+            "role": "hr",
+            "enabled_services": ENABLED_SERVICES,
+        },
+        {
+            "email": "accountant@prsk.demo",
+            "name": "PRSK Accountant",
+            "role": "accountant",
+            "company_id": "demo-comp-1",
+            "enabled_services": ["ledger", "journal", "reports", "gst", "bank"],
+        },
+        {
+            "email": "employee@prsk.demo",
+            "name": "PRSK Employee",
+            "role": "employee",
+        },
+    ]
+
+    for user in prsk_users:
+        await db.users.insert_one({
+            "id": str(uuid.uuid4()),
+            "password": get_password_hash(PRSK_PASSWORD),
+            "organization_id": ORGANIZATION_ID,
+            "email_verified": True,
+            "subscription_status": "active",
+            "subscription_end_date": SUB_END,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            **user,
+        })
 
     # 1. SuperAdmin (System-wide access)
     await db.users.insert_one({
@@ -98,6 +148,10 @@ async def create_demo_users():
     print("   - admin@demo.com (Admin)")
     print("   - employee@demo.com (Employee)")
     print("   - accountant@demo.com (Accountant)")
+    print("   - superadmin@prsk.demo (SuperAdmin)")
+    print("   - hradmin@prsk.demo (HR Admin)")
+    print("   - accountant@prsk.demo (Accountant)")
+    print("   - employee@prsk.demo (Employee)")
 
 if __name__ == '__main__':
     asyncio.run(create_demo_users())
