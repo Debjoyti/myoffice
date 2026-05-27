@@ -10,7 +10,9 @@ import {
   Settings, Bell, ChevronLeft, ChevronRight,
   TrendingUp, Package, Target, Zap, MessageSquare,
   BarChart3, Home, LogOut, Building2, ShieldCheck, Crown,
-  UserCircle,
+  UserCircle, Briefcase, Receipt, CalendarCheck,
+  Megaphone, FileText, MapPin, Cpu, Truck,
+  PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -21,45 +23,71 @@ const ALL_NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { name: 'My Home',    href: '/home',       icon: Home },
-      { name: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard },
+      { name: 'My Home',      href: '/home',          icon: Home },
+      { name: 'Dashboard',    href: '/dashboard',     icon: LayoutDashboard },
+      { name: 'Cockpit',      href: '/cockpit',       icon: PieChart },
+      { name: 'Office Feed',  href: '/feed',          icon: Megaphone },
     ]
   },
   {
     label: 'People',
     items: [
-      { name: 'HRMS',       href: '/hrms',       icon: Users },
-      { name: 'Attendance', href: '/attendance', icon: Clock },
-      { name: 'Payroll',    href: '/payroll',    icon: Banknote },
-      { name: 'Salary',     href: '/salary',     icon: Wallet },
+      { name: 'HRMS',         href: '/hrms',          icon: Users },
+      { name: 'Attendance',   href: '/attendance',    icon: Clock },
+      { name: 'Payroll',      href: '/payroll',       icon: Banknote },
+      { name: 'Salary',       href: '/salary',        icon: Wallet },
+      { name: 'Leave',        href: '/leave',         icon: CalendarCheck },
+      { name: 'WFH Requests', href: '/wfh',           icon: Home },
+      { name: 'Resignations', href: '/resignations',  icon: UserMinus },
+    ]
+  },
+  {
+    label: 'Recruitment',
+    items: [
+      { name: 'Recruitment',  href: '/recruitment',   icon: Briefcase },
+      { name: 'Offer Letters',href: '/offer-letters', icon: FileText },
+      { name: 'Job Studio',   href: '/job-studio',    icon: Cpu },
     ]
   },
   {
     label: 'Business',
     items: [
-      { name: 'Finance',    href: '/finance',    icon: TrendingUp },
-      { name: 'Procurement',href: '/procurement',icon: Package },
-      { name: 'CRM',        href: '/crm',        icon: Target },
+      { name: 'Finance',      href: '/finance',       icon: TrendingUp },
+      { name: 'Expenses',     href: '/expenses',      icon: Receipt },
+      { name: 'Procurement',  href: '/procurement',   icon: Package },
+      { name: 'Biz Orders',   href: '/business-orders', icon: ShoppingCart },
+      { name: 'Goods Receipts',href: '/goods-receipts',icon: Truck },
+      { name: 'CRM',          href: '/crm',           icon: Target },
     ]
   },
   {
     label: 'Operations',
     items: [
-      { name: 'Projects',   href: '/projects',   icon: Zap },
-      { name: 'Support',    href: '/support',    icon: MessageSquare },
-      { name: 'Analytics',  href: '/analytics',  icon: BarChart3 },
+      { name: 'Projects',     href: '/projects',      icon: Zap },
+      { name: 'Timesheets',   href: '/timesheets',    icon: Clock },
+      { name: 'Travel',       href: '/travel',        icon: MapPin },
+      { name: 'Assets',       href: '/assets',        icon: Laptop },
+      { name: 'Team',         href: '/team',          icon: Users },
+      { name: 'Support',      href: '/support',       icon: MessageSquare },
+      { name: 'Analytics',    href: '/analytics',     icon: BarChart3 },
     ]
   },
   {
-    label: 'IATF & Compliance',
+    label: 'Knowledge & Compliance',
     items: [
-      { name: 'IATF Hub', href: '/iatf', icon: ShieldCheck },
+      { name: 'Knowledge Base', href: '/kb',           icon: Book },
+      { name: 'IATF Hub',       href: '/iatf',         icon: ShieldCheck },
+      { name: 'POSH',           href: '/posh',         icon: Shield },
+      { name: 'PIP',            href: '/pip',          icon: Target },
     ]
   },
   {
     label: 'Admin',
     items: [
-      { name: 'Settings',   href: '/settings',   icon: Settings },
+      { name: 'Settings',     href: '/settings',      icon: Settings },
+      { name: 'Audit Logs',   href: '/audit',         icon: FileText },
+      { name: 'Subscription', href: '/subscription',  icon: CreditCard },
+      { name: 'SaaS Admin',   href: '/saas-admin',    icon: Crown },
     ]
   }
 ]
@@ -67,10 +95,10 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 /* ── Role → allowed hrefs (null = all) ───────────────────────────── */
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
-  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/crm', '/analytics', '/iatf']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/support', '/salary']),
-  accountant: new Set(['/home', '/dashboard', '/finance', '/payroll', '/salary', '/procurement', '/analytics']),
-  employee:   new Set(['/home', '/attendance', '/salary']),
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics']),
+  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed']),
 }
 
 function getNavGroups(role: string): NavGroup[] {
