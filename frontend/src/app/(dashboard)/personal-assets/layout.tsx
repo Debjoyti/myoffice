@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard, Package, PlusCircle, BarChart3, Settings, Search
+  LayoutDashboard, Package, PlusCircle, BarChart3, Settings, Search, MapPin
 } from 'lucide-react'
 
 const TABS = [
   { name: 'Overview',   href: '/personal-assets',            icon: LayoutDashboard },
   { name: 'Inventory',  href: '/personal-assets/inventory',  icon: Package         },
+  { name: 'Tracker',    href: '/personal-assets/tracker',    icon: MapPin          },
   { name: 'Add Asset',  href: '/personal-assets/add',        icon: PlusCircle      },
   { name: 'Search',     href: '/personal-assets/search',     icon: Search          },
   { name: 'Reports',    href: '/personal-assets/reports',    icon: BarChart3       },
