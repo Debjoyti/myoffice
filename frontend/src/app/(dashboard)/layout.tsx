@@ -13,6 +13,7 @@ import {
   UserCircle, Briefcase, Receipt, CalendarCheck,
   Megaphone, FileText, MapPin, Cpu, Truck,
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
+  Gem,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -82,6 +83,12 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: 'Personal',
+    items: [
+      { name: 'Asset Store',  href: '/personal-assets', icon: Gem },
+    ]
+  },
+  {
     label: 'Admin',
     items: [
       { name: 'Settings',     href: '/settings',      icon: Settings },
@@ -95,10 +102,10 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 /* ── Role → allowed hrefs (null = all) ───────────────────────────── */
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
-  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb']),
-  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics']),
-  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed']),
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed', '/personal-assets']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/personal-assets']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/personal-assets']),
+  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed', '/personal-assets']),
 }
 
 function getNavGroups(role: string): NavGroup[] {
