@@ -1,0 +1,15 @@
+import { NextResponse } from 'next/server'
+import { getAuthenticatedEmployee } from '@/lib/supabase/employee'
+
+export async function POST(req: Request) {
+  const auth = await getAuthenticatedEmployee()
+  if (auth instanceof NextResponse) return auth
+  const { supabase } = auth
+  const body = await req.json()
+  const { data, error } = await supabase
+    .from('maint_why_why')
+    .insert(body)
+    .select().single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data, { status: 201 })
+}
