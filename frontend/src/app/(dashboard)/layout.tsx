@@ -15,7 +15,7 @@ import {
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle,
   Factory, Warehouse, Star, DollarSign, Scale, BookOpen, FlaskConical,
-  BadgeDollarSign, Landmark,
+  BadgeDollarSign, Landmark, ArrowUpDown,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -66,11 +66,22 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: 'Inventory & Warehouse',
+    items: [
+      { name: 'IMS / WMS Suite',    href: '/inventory-suite',         icon: Warehouse },
+      { name: 'Item Master',        href: '/inventory-suite/items',   icon: Package },
+      { name: 'Warehouses',         href: '/inventory-suite/warehouses', icon: Building2 },
+      { name: 'Purchase Requests',  href: '/inventory-suite/pr',      icon: FileText },
+      { name: 'Import Tracking',    href: '/inventory-suite/imports', icon: ArrowUpDown },
+      { name: 'Stock Ledger',       href: '/inventory-suite/ledger',  icon: BookOpen },
+      { name: 'Reorder Alerts',     href: '/inventory-suite/reorder', icon: AlertTriangle },
+    ]
+  },
+  {
     label: 'Supply Chain',
     items: [
       { name: 'Sales & Distribution', href: '/sales',    icon: ShoppingCart },
       { name: 'Procurement',   href: '/procurement',     icon: Package },
-      { name: 'Inventory',     href: '/inventory',       icon: Warehouse },
       { name: 'Vendor Mgmt',   href: '/vendor',          icon: Building2 },
       { name: 'Biz Orders',    href: '/business-orders', icon: Target },
       { name: 'Goods Receipts',href: '/goods-receipts',  icon: Truck },
