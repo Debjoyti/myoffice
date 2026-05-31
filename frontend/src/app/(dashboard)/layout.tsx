@@ -13,6 +13,7 @@ import {
   UserCircle, Briefcase, Receipt, CalendarCheck,
   Megaphone, FileText, MapPin, Cpu, Truck,
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
+  Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -82,6 +83,19 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: 'Maintenance',
+    items: [
+      { name: 'Maintenance',    href: '/maintenance',              icon: Wrench },
+      { name: 'Equipment',      href: '/maintenance/equipment',    icon: Package },
+      { name: 'Task Lists',     href: '/maintenance/task-lists',   icon: ClipboardList },
+      { name: 'Breakdowns',     href: '/maintenance/breakdowns',   icon: AlertTriangle },
+      { name: 'Why-Why',        href: '/maintenance/why-why',      icon: HelpCircle },
+      { name: 'MTTR & MTTF',    href: '/maintenance/mttr',         icon: BarChart2 },
+      { name: 'Meters',         href: '/maintenance/meters',       icon: Zap },
+      { name: 'PM / PdM Plan',  href: '/maintenance/pm-plan',      icon: Calendar },
+    ]
+  },
+  {
     label: 'Admin',
     items: [
       { name: 'Settings',     href: '/settings',      icon: Settings },
@@ -96,7 +110,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
   hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan']),
   accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics']),
   employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed']),
 }
