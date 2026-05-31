@@ -20,7 +20,22 @@ type ApiPosition = {
 }
 
 type Candidate = {
-  id: string; name: string; role: string; stage: string; score: number; applied: string
+  id: string
+  name: string
+  role: string
+  stage: string
+  score: number
+  applied: string
+  phone?: string
+  email?: string
+  source?: string
+  current_company?: string
+  experience_years?: string
+  current_ctc?: string
+  expected_ctc?: string
+  notice_period?: string
+  resume_url?: string
+  notes?: string
 }
 
 const MOCK_POSITIONS: ApiPosition[] = [
@@ -31,11 +46,11 @@ const MOCK_POSITIONS: ApiPosition[] = [
 ]
 
 const MOCK_CANDIDATES: Candidate[] = [
-  { id: '1', name: 'Arjun Menon', role: 'Senior Software Engineer', stage: 'Offer', score: 92, applied: '15 May 2026' },
-  { id: '2', name: 'Kavya Nair', role: 'Product Manager', stage: 'Interview', score: 85, applied: '18 May 2026' },
-  { id: '3', name: 'Rohit Gupta', role: 'DevOps Engineer', stage: 'Screening', score: 78, applied: '20 May 2026' },
-  { id: '4', name: 'Meera Pillai', role: 'UX Designer', stage: 'Application', score: 71, applied: '22 May 2026' },
-  { id: '5', name: 'Siddharth Rao', role: 'Senior Software Engineer', stage: 'Interview', score: 88, applied: '24 May 2026' },
+  { id: '1', name: 'Arjun Menon', role: 'Senior Software Engineer', stage: 'Offer', score: 92, applied: '15 May 2026', phone: '+91 98765 43210', email: 'arjun.menon@gmail.com', source: 'LinkedIn', current_company: 'Infosys', experience_years: '6', current_ctc: '1400000', expected_ctc: '2000000', notice_period: '30' },
+  { id: '2', name: 'Kavya Nair', role: 'Product Manager', stage: 'Interview', score: 85, applied: '18 May 2026', phone: '+91 87654 32109', email: 'kavya.nair@outlook.com', source: 'Referral', current_company: 'Flipkart', experience_years: '5', current_ctc: '1800000', expected_ctc: '2400000', notice_period: '60' },
+  { id: '3', name: 'Rohit Gupta', role: 'DevOps Engineer', stage: 'Screening', score: 78, applied: '20 May 2026', phone: '+91 76543 21098', email: 'rohit.gupta@gmail.com', source: 'Naukri', current_company: 'TCS', experience_years: '4', current_ctc: '1200000', expected_ctc: '1700000', notice_period: '45' },
+  { id: '4', name: 'Meera Pillai', role: 'UX Designer', stage: 'Application', score: 71, applied: '22 May 2026', phone: '+91 65432 10987', email: 'meera.pillai@gmail.com', source: 'Indeed', current_company: 'Razorpay', experience_years: '3', current_ctc: '1100000', expected_ctc: '1600000', notice_period: '30' },
+  { id: '5', name: 'Siddharth Rao', role: 'Senior Software Engineer', stage: 'Interview', score: 88, applied: '24 May 2026', phone: '+91 54321 09876', email: 'siddharth.rao@gmail.com', source: 'Walk-in', current_company: 'Wipro', experience_years: '7', current_ctc: '1600000', expected_ctc: '2200000', notice_period: '90' },
 ]
 
 const STAGE_COLOR: Record<string, 'neutral' | 'info' | 'warning' | 'success'> = {
@@ -50,8 +65,15 @@ function fmtDate(d: string) {
   catch { return d }
 }
 
-const INITIAL_JOB_FORM = { title: '', level: 'mid', department: '', min_ctc: '', max_ctc: '', description: '' }
-const INITIAL_CAND_FORM = { name: '', email: '', role: '', stage: 'Application', notes: '' }
+const INITIAL_JOB_FORM = {
+  title: '', level: 'mid', department: '', location: '', job_type: 'full_time',
+  experience_min: '', vacancies: '1', skills: '', min_ctc: '', max_ctc: '', description: '',
+}
+const INITIAL_CAND_FORM = {
+  name: '', email: '', phone: '', role: '', stage: 'Application',
+  source: '', current_company: '', experience_years: '',
+  current_ctc: '', expected_ctc: '', notice_period: '', resume_url: '', notes: '',
+}
 
 export default function RecruitmentPage() {
   const [positions, setPositions] = useState<ApiPosition[]>(MOCK_POSITIONS)
@@ -127,17 +149,27 @@ export default function RecruitmentPage() {
 
   const handleAddCandidate = async () => {
     if (!candForm.name.trim()) { setCandError('Candidate name is required'); return }
-    if (!candForm.role.trim()) { setCandError('Role is required'); return }
+    if (!candForm.role.trim()) { setCandError('Applying For is required'); return }
     setSavingCand(true)
     setCandError('')
     await new Promise(r => setTimeout(r, 400))
     setCandidates(prev => [{
       id: `temp-${Date.now()}`,
       name: candForm.name,
+      email: candForm.email,
+      phone: candForm.phone,
       role: candForm.role,
       stage: candForm.stage,
       score: 0,
       applied: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      source: candForm.source,
+      current_company: candForm.current_company,
+      experience_years: candForm.experience_years,
+      current_ctc: candForm.current_ctc,
+      expected_ctc: candForm.expected_ctc,
+      notice_period: candForm.notice_period,
+      resume_url: candForm.resume_url,
+      notes: candForm.notes,
     }, ...prev])
     setCandModal(false)
     setCandForm(INITIAL_CAND_FORM)
@@ -221,7 +253,17 @@ export default function RecruitmentPage() {
         <Card padding="none">
           <Table>
             <Thead>
-              <tr><Th>Candidate</Th><Th>Role</Th><Th>Stage</Th><Th>AI Score</Th><Th>Applied</Th></tr>
+              <tr>
+                <Th>Candidate</Th>
+                <Th>Role</Th>
+                <Th>Experience</Th>
+                <Th>CTC (Expected)</Th>
+                <Th>Notice</Th>
+                <Th>Source</Th>
+                <Th>Stage</Th>
+                <Th>AI Score</Th>
+                <Th>Applied</Th>
+              </tr>
             </Thead>
             <Tbody>
               {candidates.map(c => (
@@ -229,21 +271,36 @@ export default function RecruitmentPage() {
                   <Td>
                     <div className="flex items-center gap-2">
                       <Avatar name={c.name} size="sm" />
-                      <span className="text-xs font-semibold text-slate-800">{c.name}</span>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-800">{c.name}</p>
+                        {c.current_company && <p className="text-[11px] text-slate-400">{c.current_company}</p>}
+                        {c.phone && <p className="text-[11px] text-slate-400">{c.phone}</p>}
+                      </div>
                     </div>
                   </Td>
                   <Td><span className="text-xs text-slate-600">{c.role}</span></Td>
+                  <Td><span className="text-xs text-slate-600">{c.experience_years ? `${c.experience_years} yr` : '—'}</span></Td>
+                  <Td>
+                    <div>
+                      {c.expected_ctc ? <p className="text-xs font-medium text-blue-600">{fmt(Number(c.expected_ctc))}</p> : <span className="text-xs text-slate-400">—</span>}
+                      {c.current_ctc && <p className="text-[11px] text-slate-400">Curr: {fmt(Number(c.current_ctc))}</p>}
+                    </div>
+                  </Td>
+                  <Td><span className="text-xs text-slate-600">{c.notice_period ? `${c.notice_period}d` : '—'}</span></Td>
+                  <Td>
+                    {c.source ? <Badge variant="neutral" size="sm">{c.source}</Badge> : <span className="text-xs text-slate-400">—</span>}
+                  </Td>
                   <Td><Badge variant={STAGE_COLOR[c.stage] ?? 'neutral'} size="sm">{c.stage}</Badge></Td>
                   <Td>
                     {c.score > 0 ? (
-                      <div className="flex items-center gap-2 w-32">
+                      <div className="flex items-center gap-2 w-24">
                         <div className="flex-1 bg-slate-100 rounded-full h-1.5">
                           <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${c.score}%` }} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 tabular-nums">{c.score}</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-400">Not scored</span>
+                      <span className="text-xs text-slate-400">—</span>
                     )}
                   </Td>
                   <Td><span className="text-xs text-slate-400">{c.applied}</span></Td>
@@ -255,7 +312,7 @@ export default function RecruitmentPage() {
       )}
 
       {/* Post Job Modal */}
-      <Modal open={jobModal} onClose={() => { setJobModal(false); setJobError('') }} title="Post New Job" size="md"
+      <Modal open={jobModal} onClose={() => { setJobModal(false); setJobError('') }} title="Post New Job Opening" size="lg"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setJobModal(false)}>Cancel</Button>
           <Button size="sm" loading={savingJob} onClick={handlePostJob}>Post Job</Button>
@@ -263,40 +320,90 @@ export default function RecruitmentPage() {
       >
         <div className="space-y-4">
           {jobError && <Alert variant="danger">{jobError}</Alert>}
-          <Input label="Job Title" placeholder="e.g. Senior Software Engineer" required value={jobForm.title} onChange={e => setJobForm(f => ({ ...f, title: e.target.value }))} />
+
+          {/* Section: Basic */}
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Role Details</p>
+          <Input label="Job Title *" placeholder="e.g. Senior Software Engineer" required value={jobForm.title} onChange={e => setJobForm(f => ({ ...f, title: e.target.value }))} />
           <div className="grid grid-cols-2 gap-4">
+            <Input label="Department" placeholder="e.g. Engineering" value={jobForm.department} onChange={e => setJobForm(f => ({ ...f, department: e.target.value }))} />
+            <Input label="Location" placeholder="e.g. Bangalore / Remote" value={jobForm.location} onChange={e => setJobForm(f => ({ ...f, location: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Select label="Job Type" options={[
+              { label: 'Full-time', value: 'full_time' },
+              { label: 'Part-time', value: 'part_time' },
+              { label: 'Contract', value: 'contract' },
+              { label: 'Internship', value: 'internship' },
+              { label: 'Freelance', value: 'freelance' },
+            ]} value={jobForm.job_type} onChange={e => setJobForm(f => ({ ...f, job_type: (e.target as HTMLSelectElement).value }))} />
             <Select label="Level" options={[
               { label: 'Internship', value: 'internship' },
-              { label: 'Junior', value: 'junior' },
-              { label: 'Mid-level', value: 'mid' },
-              { label: 'Senior', value: 'senior' },
+              { label: 'Junior (0–2 yr)', value: 'junior' },
+              { label: 'Mid-level (2–5 yr)', value: 'mid' },
+              { label: 'Senior (5+ yr)', value: 'senior' },
               { label: 'Lead / Manager', value: 'lead' },
             ]} value={jobForm.level} onChange={e => setJobForm(f => ({ ...f, level: (e.target as HTMLSelectElement).value }))} />
-            <Input label="Department" placeholder="e.g. Engineering" value={jobForm.department} onChange={e => setJobForm(f => ({ ...f, department: e.target.value }))} />
+            <Input label="Vacancies" type="number" placeholder="1" value={jobForm.vacancies} onChange={e => setJobForm(f => ({ ...f, vacancies: e.target.value }))} />
           </div>
+          <Input label="Min. Experience Required (yrs)" type="number" placeholder="e.g. 3" value={jobForm.experience_min} onChange={e => setJobForm(f => ({ ...f, experience_min: e.target.value }))} />
+
+          {/* Section: Compensation */}
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">Compensation</p>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Min CTC (₹/yr)" type="number" placeholder="1200000" value={jobForm.min_ctc} onChange={e => setJobForm(f => ({ ...f, min_ctc: e.target.value }))} />
             <Input label="Max CTC (₹/yr)" type="number" placeholder="2000000" value={jobForm.max_ctc} onChange={e => setJobForm(f => ({ ...f, max_ctc: e.target.value }))} />
           </div>
-          <Textarea label="Job Description (optional)" placeholder="Briefly describe the role and requirements..." rows={3} value={jobForm.description} onChange={e => setJobForm(f => ({ ...f, description: e.target.value }))} />
+
+          {/* Section: Description */}
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">Additional Info</p>
+          <Input label="Key Skills (comma-separated)" placeholder="e.g. React, Node.js, AWS, PostgreSQL" value={jobForm.skills} onChange={e => setJobForm(f => ({ ...f, skills: e.target.value }))} />
+          <Textarea label="Job Description" placeholder="Describe responsibilities, requirements, and what makes this role great..." rows={4} value={jobForm.description} onChange={e => setJobForm(f => ({ ...f, description: e.target.value }))} />
         </div>
       </Modal>
 
       {/* Add Candidate Modal */}
-      <Modal open={candModal} onClose={() => { setCandModal(false); setCandError('') }} title="Add Candidate" size="md"
+      <Modal open={candModal} onClose={() => { setCandModal(false); setCandError('') }} title="Add New Candidate" size="lg"
         footer={<>
           <Button variant="ghost" size="sm" onClick={() => setCandModal(false)}>Cancel</Button>
-          <Button size="sm" loading={savingCand} onClick={handleAddCandidate}>Add Candidate</Button>
+          <Button size="sm" loading={savingCand} onClick={handleAddCandidate}>Add to Pipeline</Button>
         </>}
       >
         <div className="space-y-4">
           {candError && <Alert variant="danger">{candError}</Alert>}
+
+          {/* Section: Personal Info */}
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Personal Information</p>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Full Name" placeholder="Candidate name" required value={candForm.name} onChange={e => setCandForm(f => ({ ...f, name: e.target.value }))} />
-            <Input label="Email" type="email" placeholder="candidate@email.com" value={candForm.email} onChange={e => setCandForm(f => ({ ...f, email: e.target.value }))} />
+            <Input label="Full Name *" placeholder="e.g. Rahul Sharma" required value={candForm.name} onChange={e => setCandForm(f => ({ ...f, name: e.target.value }))} />
+            <Input label="Email Address *" type="email" placeholder="rahul@gmail.com" required value={candForm.email} onChange={e => setCandForm(f => ({ ...f, email: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Applying For" placeholder="Job title" required value={candForm.role} onChange={e => setCandForm(f => ({ ...f, role: e.target.value }))} />
+            <Input label="Phone Number" placeholder="+91 98765 43210" value={candForm.phone} onChange={e => setCandForm(f => ({ ...f, phone: e.target.value }))} />
+            <Select label="Source" options={[
+              { label: 'Select source…', value: '' },
+              { label: 'LinkedIn', value: 'LinkedIn' },
+              { label: 'Naukri', value: 'Naukri' },
+              { label: 'Indeed', value: 'Indeed' },
+              { label: 'Referral', value: 'Referral' },
+              { label: 'Walk-in', value: 'Walk-in' },
+              { label: 'Campus Placement', value: 'Campus' },
+              { label: 'Company Website', value: 'Website' },
+              { label: 'Other', value: 'Other' },
+            ]} value={candForm.source} onChange={e => setCandForm(f => ({ ...f, source: (e.target as HTMLSelectElement).value }))} />
+          </div>
+
+          {/* Section: Application */}
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">Application Details</p>
+          <div className="grid grid-cols-2 gap-4">
+            <Select label="Applying For *" options={[
+              { label: 'Select role…', value: '' },
+              ...positions.map(p => ({ label: p.title, value: p.title })),
+              { label: '— Custom —', value: '__custom__' },
+            ]} value={positions.find(p => p.title === candForm.role) ? candForm.role : (candForm.role ? '__custom__' : '')}
+              onChange={e => {
+                const v = (e.target as HTMLSelectElement).value
+                if (v !== '__custom__') setCandForm(f => ({ ...f, role: v }))
+              }} />
             <Select label="Current Stage" options={[
               { label: 'Application', value: 'Application' },
               { label: 'Screening', value: 'Screening' },
@@ -304,7 +411,24 @@ export default function RecruitmentPage() {
               { label: 'Offer', value: 'Offer' },
             ]} value={candForm.stage} onChange={e => setCandForm(f => ({ ...f, stage: (e.target as HTMLSelectElement).value }))} />
           </div>
-          <Textarea label="Notes" placeholder="Any notes about this candidate..." rows={2} value={candForm.notes} onChange={e => setCandForm(f => ({ ...f, notes: e.target.value }))} />
+          {/* Custom role text field if "Other" selected */}
+          {(!positions.find(p => p.title === candForm.role) || candForm.role === '') && (
+            <Input label="Or type role name" placeholder="e.g. Product Manager" value={candForm.role === '__custom__' ? '' : candForm.role} onChange={e => setCandForm(f => ({ ...f, role: e.target.value }))} />
+          )}
+
+          {/* Section: Professional Background */}
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-1">Professional Background</p>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Current Company" placeholder="e.g. Infosys" value={candForm.current_company} onChange={e => setCandForm(f => ({ ...f, current_company: e.target.value }))} />
+            <Input label="Total Experience (years)" type="number" placeholder="e.g. 5" value={candForm.experience_years} onChange={e => setCandForm(f => ({ ...f, experience_years: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Input label="Current CTC (₹/yr)" type="number" placeholder="1400000" value={candForm.current_ctc} onChange={e => setCandForm(f => ({ ...f, current_ctc: e.target.value }))} />
+            <Input label="Expected CTC (₹/yr)" type="number" placeholder="2000000" value={candForm.expected_ctc} onChange={e => setCandForm(f => ({ ...f, expected_ctc: e.target.value }))} />
+            <Input label="Notice Period (days)" type="number" placeholder="30" value={candForm.notice_period} onChange={e => setCandForm(f => ({ ...f, notice_period: e.target.value }))} />
+          </div>
+          <Input label="Resume / Portfolio URL" placeholder="https://drive.google.com/… or LinkedIn URL" value={candForm.resume_url} onChange={e => setCandForm(f => ({ ...f, resume_url: e.target.value }))} />
+          <Textarea label="Notes" placeholder="Anything to note about this candidate — screening call summary, referrer name, etc." rows={2} value={candForm.notes} onChange={e => setCandForm(f => ({ ...f, notes: e.target.value }))} />
         </div>
       </Modal>
     </div>

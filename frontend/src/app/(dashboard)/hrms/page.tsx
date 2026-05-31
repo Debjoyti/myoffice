@@ -51,10 +51,19 @@ const ROLE_LABEL: Record<string, string> = {
 
 /* ── Add Employee Form ──────────────────────────────────────────────────────── */
 const DEFAULT_FORM = {
-  full_name: '', email: '', phone: '', designation: '',
-  department: '', department_id: '', employment_type: 'full_time', role: 'employee',
-  date_of_joining: new Date().toISOString().split('T')[0],
+  // Step 1 – Basic
+  full_name: '', email: '', phone: '', date_of_birth: '', gender: '', blood_group: '',
+  // Step 2 – Job
+  designation: '', department: '', department_id: '', employment_type: 'full_time',
+  role: 'employee', date_of_joining: new Date().toISOString().split('T')[0], work_location: '',
+  // Step 3 – Compliance
+  pan_number: '', aadhaar_number: '', uan_number: '',
+  // Step 4 – Bank & Emergency
+  bank_name: '', bank_account: '', bank_ifsc: '',
+  emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relation: '',
 }
+
+const ADD_EMP_STEPS = ['Basic Info', 'Job Details', 'Compliance', 'Bank & Emergency']
 
 function AddEmployeeModal({
   open, onClose, departments, onSuccess,
@@ -62,22 +71,40 @@ function AddEmployeeModal({
   open: boolean; onClose: () => void
   departments: Department[]; onSuccess: () => void
 }) {
+  const [step, setStep]     = useState(0)
   const [form, setForm]     = useState(DEFAULT_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
 
-  useEffect(() => { if (!open) { setForm(DEFAULT_FORM); setError(null) } }, [open])
+  useEffect(() => { if (!open) { setForm(DEFAULT_FORM); setError(null); setStep(0) } }, [open])
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const validateStep = (): string | null => {
+    if (step === 0) {
+      if (!form.full_name.trim()) return 'Full Name is required'
+      if (!form.email.trim()) return 'Work Email is required'
+    }
+    if (step === 1) {
+      if (!form.designation.trim()) return 'Designation is required'
+    }
+    return null
+  }
+
+  const handleNext = () => {
+    const err = validateStep()
+    if (err) { setError(err); return }
+    setError(null)
+    setStep(s => s + 1)
+  }
+
+  const handleSubmit = async () => {
     setSaving(true)
     setError(null)
     try {
-      const payload: Record<string, string> = { ...form }
-      if (!payload.department_id) delete payload.department_id
-      if (!payload.phone) delete payload.phone
+      const payload: Record<string, string> = {}
+      // Only send non-empty fields
+      Object.entries(form).forEach(([k, v]) => { if (v) payload[k] = v })
 
       const res = await fetch('/api/v1/employees', {
         method: 'POST',
@@ -100,54 +127,163 @@ function AddEmployeeModal({
     ...departments.map(d => ({ label: d.name, value: d.id })),
   ]
 
+  const stepContent = [
+    /* Step 0 – Basic Info */
+    <div key="basic" className="space-y-4">
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Personal Details</p>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Full Name *" required value={form.full_name}
+          onChange={e => set('full_name', e.target.value)} placeholder="e.g. Rahul Sharma" />
+        <Input label="Work Email *" type="email" required value={form.email}
+          onChange={e => set('email', e.target.value)} placeholder="rahul@company.com" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Phone Number" value={form.phone}
+          onChange={e => set('phone', e.target.value)} placeholder="+91 98765 43210" />
+        <Input label="Date of Birth" type="date" value={form.date_of_birth}
+          onChange={e => set('date_of_birth', e.target.value)} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Select label="Gender" value={form.gender} onChange={e => set('gender', (e.target as HTMLSelectElement).value)}
+          options={[
+            { label: 'Select…', value: '' },
+            { label: 'Male', value: 'male' },
+            { label: 'Female', value: 'female' },
+            { label: 'Non-binary', value: 'non_binary' },
+            { label: 'Prefer not to say', value: 'prefer_not_to_say' },
+          ]}
+        />
+        <Select label="Blood Group" value={form.blood_group} onChange={e => set('blood_group', (e.target as HTMLSelectElement).value)}
+          options={[
+            { label: 'Select…', value: '' },
+            ...['A+','A−','B+','B−','AB+','AB−','O+','O−'].map(g => ({ label: g, value: g })),
+          ]}
+        />
+      </div>
+    </div>,
+
+    /* Step 1 – Job Details */
+    <div key="job" className="space-y-4">
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Job & Role</p>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Designation *" required value={form.designation}
+          onChange={e => set('designation', e.target.value)} placeholder="e.g. Software Engineer" />
+        <Select label="Department" value={form.department_id}
+          onChange={e => {
+            const dept = departments.find(d => d.id === e.target.value)
+            set('department_id', e.target.value)
+            set('department', dept?.name ?? '')
+          }}
+          options={deptOptions}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Select label="Employment Type" value={form.employment_type}
+          onChange={e => set('employment_type', (e.target as HTMLSelectElement).value)}
+          options={[
+            { label: 'Full-time', value: 'full_time' },
+            { label: 'Part-time', value: 'part_time' },
+            { label: 'Contract', value: 'contract' },
+            { label: 'Intern', value: 'intern' },
+          ]}
+        />
+        <Select label="System Role" value={form.role}
+          onChange={e => set('role', (e.target as HTMLSelectElement).value)}
+          options={[
+            { label: 'Employee', value: 'employee' },
+            { label: 'Manager', value: 'manager' },
+            { label: 'HR', value: 'hr' },
+            { label: 'Accountant', value: 'accountant' },
+            { label: 'Admin', value: 'admin' },
+          ]}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Date of Joining" type="date" value={form.date_of_joining}
+          onChange={e => set('date_of_joining', e.target.value)} />
+        <Input label="Work Location / Office" value={form.work_location}
+          onChange={e => set('work_location', e.target.value)} placeholder="e.g. Kolkata HQ / Remote" />
+      </div>
+    </div>,
+
+    /* Step 2 – Compliance */
+    <div key="compliance" className="space-y-4">
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Statutory & Compliance</p>
+      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+        <p className="text-xs text-blue-700">These details are used for PF, ESI, TDS, and payslip generation. They can also be added later from the employee profile.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="PAN Number" value={form.pan_number}
+          onChange={e => set('pan_number', e.target.value.toUpperCase())} placeholder="e.g. ABCDE1234F"
+          maxLength={10} />
+        <Input label="Aadhaar Number" value={form.aadhaar_number}
+          onChange={e => set('aadhaar_number', e.target.value)} placeholder="12-digit Aadhaar"
+          maxLength={12} />
+      </div>
+      <Input label="UAN (Universal Account Number)" value={form.uan_number}
+        onChange={e => set('uan_number', e.target.value)} placeholder="12-digit UAN for PF" maxLength={12} />
+    </div>,
+
+    /* Step 3 – Bank & Emergency */
+    <div key="bank" className="space-y-4">
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bank Account</p>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Bank Name" value={form.bank_name}
+          onChange={e => set('bank_name', e.target.value)} placeholder="e.g. State Bank of India" />
+        <Input label="Account Number" value={form.bank_account}
+          onChange={e => set('bank_account', e.target.value)} placeholder="Account number" />
+      </div>
+      <Input label="IFSC Code" value={form.bank_ifsc}
+        onChange={e => set('bank_ifsc', e.target.value.toUpperCase())} placeholder="e.g. SBIN0001234" maxLength={11} />
+
+      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pt-2">Emergency Contact</p>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="Contact Name" value={form.emergency_contact_name}
+          onChange={e => set('emergency_contact_name', e.target.value)} placeholder="e.g. Sunita Sharma" />
+        <Input label="Relation" value={form.emergency_contact_relation}
+          onChange={e => set('emergency_contact_relation', e.target.value)} placeholder="e.g. Spouse / Parent" />
+      </div>
+      <Input label="Contact Phone" value={form.emergency_contact_phone}
+        onChange={e => set('emergency_contact_phone', e.target.value)} placeholder="+91 98765 43210" />
+    </div>,
+  ]
+
   return (
     <Modal open={open} onClose={onClose} title="Add New Employee" size="lg"
       footer={<>
         <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-        <Button size="sm" loading={saving} onClick={e => handleSubmit(e as any)}>Create Employee</Button>
+        {step > 0 && (
+          <Button variant="outline" size="sm" onClick={() => { setError(null); setStep(s => s - 1) }} disabled={saving}>← Back</Button>
+        )}
+        {step < ADD_EMP_STEPS.length - 1
+          ? <Button size="sm" onClick={handleNext}>Next →</Button>
+          : <Button size="sm" loading={saving} onClick={handleSubmit}>Create Employee</Button>
+        }
       </>}
     >
+      {/* Step indicator */}
+      <div className="flex items-center gap-0 mb-6">
+        {ADD_EMP_STEPS.map((label, i) => (
+          <div key={i} className="flex items-center flex-1">
+            <div className="flex flex-col items-center flex-1">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors
+                ${i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                {i < step ? '✓' : i + 1}
+              </div>
+              <span className={`text-[10px] mt-1 font-medium whitespace-nowrap
+                ${i === step ? 'text-blue-600' : i < step ? 'text-emerald-600' : 'text-slate-400'}`}>
+                {label}
+              </span>
+            </div>
+            {i < ADD_EMP_STEPS.length - 1 && (
+              <div className={`h-px flex-1 mx-1 mb-3 transition-colors ${i < step ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+            )}
+          </div>
+        ))}
+      </div>
+
       {error && <div className="mb-4"><Alert variant="danger">{error}</Alert></div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Full Name" required value={form.full_name}
-            onChange={e => set('full_name', e.target.value)} placeholder="e.g. Rahul Sharma" />
-          <Input label="Work Email" type="email" required value={form.email}
-            onChange={e => set('email', e.target.value)} placeholder="rahul@company.com" />
-          <Input label="Phone" value={form.phone}
-            onChange={e => set('phone', e.target.value)} placeholder="+91 98765 43210" />
-          <Input label="Designation" required value={form.designation}
-            onChange={e => set('designation', e.target.value)} placeholder="Software Engineer" />
-          <Select label="Department" value={form.department_id}
-            onChange={e => {
-              const dept = departments.find(d => d.id === e.target.value)
-              set('department_id', e.target.value)
-              set('department', dept?.name ?? '')
-            }}
-            options={deptOptions}
-          />
-          <Select label="Employment Type" value={form.employment_type}
-            onChange={e => set('employment_type', e.target.value)}
-            options={[
-              { label: 'Full-time', value: 'full_time' },
-              { label: 'Part-time', value: 'part_time' },
-              { label: 'Contract', value: 'contract' },
-              { label: 'Intern', value: 'intern' },
-            ]}
-          />
-          <Select label="Role" value={form.role}
-            onChange={e => set('role', e.target.value)}
-            options={[
-              { label: 'Employee', value: 'employee' },
-              { label: 'Manager', value: 'manager' },
-              { label: 'HR', value: 'hr' },
-              { label: 'Admin', value: 'admin' },
-            ]}
-          />
-          <Input label="Date of Joining" type="date" value={form.date_of_joining}
-            onChange={e => set('date_of_joining', e.target.value)} />
-        </div>
-      </form>
+      {stepContent[step]}
     </Modal>
   )
 }
