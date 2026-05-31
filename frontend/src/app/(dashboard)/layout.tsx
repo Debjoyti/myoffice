@@ -14,6 +14,8 @@ import {
   Megaphone, FileText, MapPin, Cpu, Truck,
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle,
+  Factory, Warehouse, Star, DollarSign, Scale, BookOpen, FlaskConical,
+  BadgeDollarSign, Landmark,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -51,14 +53,35 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
-    label: 'Business',
+    label: 'Finance & Accounting',
     items: [
-      { name: 'Finance',      href: '/finance',       icon: TrendingUp },
-      { name: 'Expenses',     href: '/expenses',      icon: Receipt },
-      { name: 'Procurement',  href: '/procurement',   icon: Package },
-      { name: 'Biz Orders',   href: '/business-orders', icon: ShoppingCart },
-      { name: 'Goods Receipts',href: '/goods-receipts',icon: Truck },
-      { name: 'CRM',          href: '/crm',           icon: Target },
+      { name: 'Finance',        href: '/finance',       icon: TrendingUp },
+      { name: 'Accounting (GL)', href: '/accounting',   icon: BookOpen },
+      { name: 'GST',            href: '/gst',           icon: Landmark },
+      { name: 'TDS / TCS',      href: '/tds',           icon: BadgeDollarSign },
+      { name: 'Fixed Assets',   href: '/fixed-assets',  icon: Cpu },
+      { name: 'Budgeting',      href: '/budgeting',     icon: BarChart3 },
+      { name: 'Statutory',      href: '/statutory',     icon: Scale },
+      { name: 'Expenses',       href: '/expenses',      icon: Receipt },
+    ]
+  },
+  {
+    label: 'Supply Chain',
+    items: [
+      { name: 'Sales & Distribution', href: '/sales',    icon: ShoppingCart },
+      { name: 'Procurement',   href: '/procurement',     icon: Package },
+      { name: 'Inventory',     href: '/inventory',       icon: Warehouse },
+      { name: 'Vendor Mgmt',   href: '/vendor',          icon: Building2 },
+      { name: 'Biz Orders',    href: '/business-orders', icon: Target },
+      { name: 'Goods Receipts',href: '/goods-receipts',  icon: Truck },
+      { name: 'CRM',           href: '/crm',             icon: Target },
+    ]
+  },
+  {
+    label: 'Manufacturing',
+    items: [
+      { name: 'Production',    href: '/production',      icon: Factory },
+      { name: 'Quality (QM)',  href: '/quality',         icon: FlaskConical },
     ]
   },
   {
@@ -110,8 +133,8 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
   hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan']),
-  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/production', '/quality', '/inventory', '/sales']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/accounting', '/gst', '/tds', '/fixed-assets', '/budgeting', '/statutory', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/vendor', '/sales', '/inventory']),
   employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed']),
 }
 
