@@ -14,6 +14,8 @@ import {
   Megaphone, FileText, MapPin, Cpu, Truck,
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle, Network,
+  Video, Warehouse, Factory, GraduationCap, FlaskConical, BookOpen,
+  ArrowUpDown, BadgeDollarSign, Landmark, Scale, BarChart,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
