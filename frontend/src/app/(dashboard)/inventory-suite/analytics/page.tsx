@@ -95,7 +95,7 @@ export default function InventoryAnalyticsPage() {
           <CardHeader title="Value by Category" />
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={CATEGORY_VALUE} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={false} fontSize={9}>
+              <Pie data={CATEGORY_VALUE} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${((percent ?? 0)*100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                 {CATEGORY_VALUE.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
               <Tooltip formatter={(v) => [formatCurrency(v as number)]} />
