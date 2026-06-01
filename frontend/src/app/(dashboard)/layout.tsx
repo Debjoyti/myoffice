@@ -14,11 +14,6 @@ import {
   Megaphone, FileText, MapPin, Cpu, Truck,
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle,
-  Factory, Warehouse, Star, DollarSign, Scale, BookOpen, FlaskConical,
-  BadgeDollarSign, Landmark, ArrowUpDown, Network,
-  Video, Brain, GraduationCap, Mail, ClipboardCheck,
-  FolderOpen, PenTool, FileSignature, CalendarDays,
-  GitBranch, Share2, Globe, Award,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -136,30 +131,6 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
-    label: 'Marketing & Engagement',
-    items: [
-      { name: 'Campaigns',       href: '/campaigns',        icon: Mail },
-      { name: 'Surveys',         href: '/surveys',          icon: ClipboardCheck },
-      { name: 'Bookings',        href: '/bookings',         icon: CalendarDays },
-      { name: 'Social Media',    href: '/social',           icon: Share2 },
-    ]
-  },
-  {
-    label: 'Collaboration',
-    items: [
-      { name: 'Documents',       href: '/documents',        icon: FolderOpen },
-      { name: 'e-Signature',     href: '/esign',            icon: PenTool },
-      { name: 'Contracts',       href: '/contracts',        icon: FileText },
-    ]
-  },
-  {
-    label: 'Automation & Portal',
-    items: [
-      { name: 'Workflows',       href: '/workflows',        icon: GitBranch },
-      { name: 'Customer Portal', href: '/customer-portal',  icon: Globe },
-    ]
-  },
-  {
     label: 'Admin',
     items: [
       { name: 'Settings',     href: '/settings',      icon: Settings },
@@ -173,9 +144,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 /* ── Role → allowed hrefs (null = all) ───────────────────────────── */
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
-  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/ai-interviews', '/offer-letters', '/job-studio', '/lms', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed', '/surveys', '/bookings', '/documents', '/esign', '/contracts']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/production', '/quality', '/inventory', '/sales']),
-  accountant: new Set(['/home', '/dashboard', '/finance', '/accounting', '/gst', '/tds', '/fixed-assets', '/budgeting', '/statutory', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/vendor', '/sales', '/inventory']),
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics']),
   employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed']),
 }
 
