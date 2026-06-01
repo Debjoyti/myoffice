@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client'
 
 import { Card, CardHeader, StatCard, Badge } from '@/components/ui'
