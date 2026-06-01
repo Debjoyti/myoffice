@@ -15,7 +15,7 @@ import {
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle,
   Factory, Warehouse, Star, DollarSign, Scale, BookOpen, FlaskConical,
-  BadgeDollarSign, Landmark, ArrowUpDown,
+  BadgeDollarSign, Landmark, ArrowUpDown, Network,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -35,6 +35,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
   {
     label: 'People',
     items: [
+      { name: 'Org Chart',     href: '/org-chart',     icon: Network },
       { name: 'HRMS',         href: '/hrms',          icon: Users },
       { name: 'Attendance',   href: '/attendance',    icon: Clock },
       { name: 'Payroll',      href: '/payroll',       icon: Banknote },
