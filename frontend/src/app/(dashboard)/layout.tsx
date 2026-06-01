@@ -33,6 +33,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
   {
     label: 'People',
     items: [
+      { name: 'Org Chart',     href: '/org-chart',     icon: Network },
       { name: 'HRMS',         href: '/hrms',          icon: Users },
       { name: 'Attendance',   href: '/attendance',    icon: Clock },
       { name: 'Payroll',      href: '/payroll',       icon: Banknote },
@@ -43,11 +44,13 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
-    label: 'Recruitment',
+    label: 'Recruitment & Talent',
     items: [
-      { name: 'Recruitment',  href: '/recruitment',   icon: Briefcase },
-      { name: 'Offer Letters',href: '/offer-letters', icon: FileText },
-      { name: 'Job Studio',   href: '/job-studio',    icon: Cpu },
+      { name: 'Recruitment',    href: '/recruitment',    icon: Briefcase },
+      { name: 'AI Interviews',  href: '/ai-interviews',  icon: Video },
+      { name: 'Offer Letters',  href: '/offer-letters',  icon: FileText },
+      { name: 'Job Studio',     href: '/job-studio',     icon: Cpu },
+      { name: 'LMS / Learning', href: '/lms',            icon: GraduationCap },
     ]
   },
   {
