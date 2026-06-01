@@ -13,7 +13,7 @@ import {
   UserCircle, Briefcase, Receipt, CalendarCheck,
   Megaphone, FileText, MapPin, Cpu, Truck,
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
-  Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle,
+  Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle, Network,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
