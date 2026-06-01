@@ -2,10 +2,21 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { DEV_SESSION_COOKIE } from '@/lib/dev-auth'
 
+/** Strip BOM (U+FEFF) and other non-ISO-8859-1 chars from env vars. */
+function sanitize(val: string | undefined): string {
+  return Array.from(val ?? '')
+    .filter((ch) => (ch.codePointAt(0) ?? 0) <= 255)
+    .join('')
+    .trim()
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isLoginRoute = pathname === '/login'
-  const isPublicRoute = pathname === '/' || pathname.startsWith('/auth/') || pathname === '/api/dev-login'
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/api/')
 
   // Demo-account bypass: if the prsk_dev_session cookie is present, skip Supabase
   // entirely (avoids the ISO-8859-1 fetch error and works on all environments).
@@ -20,13 +31,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request })
   }
 
+  // Don't call Supabase on the login page or public routes — avoids the
+  // "Database error querying schema" error when env vars have BOM characters.
+  if (isLoginRoute || isPublicRoute) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    sanitize(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    sanitize(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     {
       cookies: {
         getAll() {
