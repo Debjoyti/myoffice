@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
-type NavItem = { name: string; href: string; icon: React.ElementType }
+type NavItem = { name: string; href: string; icon: React.ElementType; children?: NavItem[] }
 type NavGroup = { label: string; items: NavItem[] }
 
 const ALL_NAV_GROUPS: NavGroup[] = [
@@ -36,7 +36,10 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     label: 'People',
     items: [
       { name: 'Org Chart',     href: '/org-chart',     icon: Network },
-      { name: 'HRMS',         href: '/hrms',          icon: Users },
+      { name: 'HRMS',         href: '/hrms',          icon: Users, children: [
+        { name: 'Employees',               href: '/hrms',            icon: Users },
+        { name: 'Onboarding & Verification', href: '/hrms/onboarding', icon: ShieldCheck },
+      ]},
       { name: 'Attendance',   href: '/attendance',    icon: Clock },
       { name: 'Payroll',      href: '/payroll',       icon: Banknote },
       { name: 'Salary',       href: '/salary',        icon: Wallet },
@@ -187,6 +190,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen,  setMobileOpen]  = useState(false)
   const [user,        setUser]        = useState<UserProfile | null>(null)
   const [notifCount,  setNotifCount]  = useState(0)
+  const [expanded,    setExpanded]    = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (name: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
 
   useEffect(() => {
     async function loadUser() {
@@ -225,7 +238,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navGroups = getNavGroups(user?.role ?? 'employee')
 
-  const currentPage = ALL_NAV_GROUPS.flatMap(g => g.items)
+  const allNavItems = ALL_NAV_GROUPS.flatMap(g => g.items.flatMap(i => [i, ...(i.children ?? [])]))
+  const currentPage = [...allNavItems].sort((a, b) => b.href.length - a.href.length)
     .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
 
   const roleConfig = ROLE_CONFIG[user?.role ?? 'employee'] ?? ROLE_CONFIG.employee
@@ -290,27 +304,81 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <ul className="space-y-0.5">
               {group.items.map(item => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                const hasChildren = !!item.children?.length
+                const isExpanded = expanded.has(item.name) || isActive
                 return (
                   <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      title={collapsed ? item.name : undefined}
-                      className={cn(
-                        'flex items-center rounded-lg text-[13px] font-medium transition-all duration-150',
-                        collapsed ? 'justify-center h-9 w-9 mx-auto' : 'gap-2.5 px-2.5 h-8',
-                        isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
-                      )}
-                    >
-                      <item.icon className={cn(
-                        'flex-shrink-0 transition-colors',
-                        collapsed ? 'h-[18px] w-[18px]' : 'h-[15px] w-[15px]',
-                        isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-                      )} />
-                      {!collapsed && item.name}
-                    </Link>
+                    {hasChildren && !collapsed ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(item.name)}
+                        title={collapsed ? item.name : undefined}
+                        className={cn(
+                          'w-full flex items-center rounded-lg text-[13px] font-medium transition-all duration-150 gap-2.5 px-2.5 h-8',
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                        )}
+                      >
+                        <item.icon className={cn(
+                          'flex-shrink-0 h-[15px] w-[15px] transition-colors',
+                          isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                        )} />
+                        <span className="flex-1 text-left">{item.name}</span>
+                        <ChevronRight className={cn(
+                          'h-3 w-3 flex-shrink-0 text-slate-400 transition-transform duration-150',
+                          isExpanded && 'rotate-90'
+                        )} />
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        title={collapsed ? item.name : undefined}
+                        className={cn(
+                          'flex items-center rounded-lg text-[13px] font-medium transition-all duration-150',
+                          collapsed ? 'justify-center h-9 w-9 mx-auto' : 'gap-2.5 px-2.5 h-8',
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                        )}
+                      >
+                        <item.icon className={cn(
+                          'flex-shrink-0 transition-colors',
+                          collapsed ? 'h-[18px] w-[18px]' : 'h-[15px] w-[15px]',
+                          isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                        )} />
+                        {!collapsed && item.name}
+                      </Link>
+                    )}
+
+                    {hasChildren && !collapsed && isExpanded && (
+                      <ul className="mt-0.5 ml-[13px] pl-3.5 border-l border-slate-200 space-y-0.5">
+                        {item.children!.map(child => {
+                          const childActive = pathname === child.href || pathname.startsWith(child.href + '/')
+                          return (
+                            <li key={child.name}>
+                              <Link
+                                href={child.href}
+                                onClick={() => setMobileOpen(false)}
+                                className={cn(
+                                  'flex items-center gap-2 rounded-lg text-[12.5px] font-medium transition-all duration-150 px-2.5 h-7.5 py-1.5',
+                                  childActive
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                                )}
+                              >
+                                <child.icon className={cn(
+                                  'flex-shrink-0 h-[13px] w-[13px]',
+                                  childActive ? 'text-blue-600' : 'text-slate-400'
+                                )} />
+                                {child.name}
+                              </Link>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
                   </li>
                 )
               })}
