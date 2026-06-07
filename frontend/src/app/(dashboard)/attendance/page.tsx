@@ -25,8 +25,8 @@ type TodaySession = {
 type Session = {
   id: string
   date: string
-  check_in_time: string | null
-  check_out_time: string | null
+  check_in_at: string | null
+  check_out_at: string | null
   duration_minutes: number | null
   is_late: boolean
   employee_id: string
@@ -447,7 +447,7 @@ export default function AttendancePage() {
   // Stats
   const today = new Date().toLocaleDateString('en-CA', { timeZone: timezone }) // YYYY-MM-DD in local tz
   const thisMonthSessions = sessions.filter(s => s.date?.startsWith(today.slice(0, 7)))
-  const presentDays  = thisMonthSessions.filter(s => s.check_in_time).length
+  const presentDays  = thisMonthSessions.filter(s => s.check_in_at).length
   const lateDays     = thisMonthSessions.filter(s => s.is_late).length
   const totalHours   = Math.round(
     thisMonthSessions.reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0) / 60 * 10
@@ -557,7 +557,7 @@ export default function AttendancePage() {
                 <Tbody>
                   {filteredSessions.map(s => {
                     const isToday = s.date === today
-                    const status  = !s.check_in_time ? 'Absent' : s.is_late ? 'Late' : 'Present'
+                    const status  = !s.check_in_at ? 'Absent' : s.is_late ? 'Late' : 'Present'
                     return (
                       <Tr key={s.id}>
                         <Td>
@@ -570,8 +570,8 @@ export default function AttendancePage() {
                             )}
                           </span>
                         </Td>
-                        <Td>{fmtTime(s.check_in_time, timezone)}</Td>
-                        <Td>{fmtTime(s.check_out_time, timezone)}</Td>
+                        <Td>{fmtTime(s.check_in_at, timezone)}</Td>
+                        <Td>{fmtTime(s.check_out_at, timezone)}</Td>
                         <Td><span className="font-mono text-sm">{fmtDuration(s.duration_minutes)}</span></Td>
                         <Td>
                           <Badge

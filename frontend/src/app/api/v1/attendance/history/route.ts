@@ -45,9 +45,35 @@ export async function GET(req: Request) {
   const { data, error, count } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  const rawSessions = data ?? []
+
+  // `is_late` isn't stored on the session — derive it from the employee's
+  // per-weekday work schedule (start_time + a 10-minute grace window).
+  const { data: schedules } = await supabase
+    .from('work_schedules')
+    .select('day_of_week, start_time')
+    .eq('employee_id', targetId)
+
+  const startTimeByDay = new Map<number, string>(
+    (schedules ?? []).map(s => [s.day_of_week, s.start_time ?? '09:00'])
+  )
+  const GRACE_MINUTES = 10
+
+  const isLate = (session: { date: string; check_in_at: string | null }): boolean => {
+    if (!session.check_in_at) return false
+    const checkIn  = new Date(session.check_in_at)
+    const dayOfWk  = new Date(`${session.date}T00:00:00`).getDay()
+    const startStr = startTimeByDay.get(dayOfWk) ?? '09:00'
+    const [h, m]   = startStr.split(':').map(Number)
+    const scheduled = new Date(checkIn)
+    scheduled.setHours(h, (m || 0) + GRACE_MINUTES, 0, 0)
+    return checkIn > scheduled
+  }
+
+  const sessions = rawSessions.map(s => ({ ...s, is_late: isLate(s) }))
+
   // Compute summary stats for the returned window
-  const sessions   = data ?? []
-  const present    = sessions.filter(s => s.check_in_time).length
+  const present    = sessions.filter(s => s.check_in_at).length
   const late       = sessions.filter(s => s.is_late).length
   const totalMins  = sessions.reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0)
 

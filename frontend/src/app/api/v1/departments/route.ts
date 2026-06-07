@@ -15,7 +15,7 @@ const createSchema = z.object({
 export async function GET() {
   const result = await getAuthenticatedEmployee()
   if (result instanceof NextResponse) return result
-  const { supabase } = result
+  const { employee, supabase } = result
 
   const { data, error } = await supabase
     .from('departments')
@@ -24,6 +24,7 @@ export async function GET() {
       head:head_id (id, full_name, designation, avatar_url),
       parent:parent_id (id, name)
     `)
+    .eq('company_id', employee.company_id)
     .eq('is_active', true)
     .order('name')
 
@@ -33,6 +34,7 @@ export async function GET() {
   const { data: empCounts } = await supabase
     .from('employees')
     .select('department_id')
+    .eq('company_id', employee.company_id)
     .eq('status', 'active')
 
   const counts: Record<string, number> = {}
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await supabase
     .from('departments')
-    .insert(parsed.data)
+    .insert({ ...parsed.data, company_id: actor.company_id })
     .select()
     .single()
 
