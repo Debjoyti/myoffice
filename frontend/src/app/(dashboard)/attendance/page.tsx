@@ -9,7 +9,8 @@ import {
 import { formatDate } from '@/lib/utils'
 import {
   Clock, CheckCircle2, XCircle, AlertTriangle, UserCheck,
-  Check, X, RefreshCw, Calendar, LogIn, LogOut, Timer, MapPin
+  Check, X, RefreshCw, Calendar, LogIn, LogOut, Timer, MapPin,
+  ChevronLeft, ChevronRight, PartyPopper
 } from 'lucide-react'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
@@ -49,6 +50,11 @@ type LeaveRequest = {
 type LeaveBalance = {
   id: string; leave_type: string; total_days: number
   used_days: number; available_days: number
+}
+
+type Holiday = {
+  id: string; name: string; date: string
+  type: 'national' | 'company' | 'optional'; description: string | null
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -342,6 +348,171 @@ function ApprovalActionModal({ request, onClose, onDone }: {
   )
 }
 
+/* ── Mark Attendance Calendar ───────────────────────────────────────────────── */
+const DAY_STATUS_STYLE: Record<string, { cell: string; dot: string; label: string }> = {
+  present: { cell: 'bg-emerald-50 border-emerald-200 text-emerald-700', dot: 'bg-emerald-500', label: 'Present' },
+  late:    { cell: 'bg-amber-50 border-amber-200 text-amber-700',       dot: 'bg-amber-500',   label: 'Late'    },
+  absent:  { cell: 'bg-rose-50 border-rose-200 text-rose-600',          dot: 'bg-rose-500',    label: 'Absent'  },
+  leave:   { cell: 'bg-violet-50 border-violet-200 text-violet-700',    dot: 'bg-violet-500',  label: 'On Leave'},
+  holiday: { cell: 'bg-sky-50 border-sky-200 text-sky-700',             dot: 'bg-sky-500',     label: 'Holiday' },
+  weekend: { cell: 'bg-slate-50 border-slate-100 text-slate-300',       dot: 'bg-slate-300',   label: 'Weekend' },
+  future:  { cell: 'bg-white border-slate-100 text-slate-400',          dot: 'bg-slate-200',   label: 'Upcoming'},
+}
+
+const pad2 = (n: number) => n.toString().padStart(2, '0')
+const ymd = (y: number, m: number, d: number) => `${y}-${pad2(m + 1)}-${pad2(d)}`
+
+function MarkAttendanceCalendar({
+  month, onPrev, onNext, sessions, holidays, leaveDates, todayStr,
+}: {
+  month: Date
+  onPrev: () => void
+  onNext: () => void
+  sessions: Session[]
+  holidays: Holiday[]
+  leaveDates: Set<string>
+  todayStr: string
+}) {
+  const year  = month.getFullYear()
+  const mIdx  = month.getMonth()
+  const monthLabel = month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+
+  const sessionByDate = useMemo(() => {
+    const map = new Map<string, Session>()
+    for (const s of sessions) map.set(s.date, s)
+    return map
+  }, [sessions])
+  const holidayByDate = useMemo(() => {
+    const map = new Map<string, Holiday>()
+    for (const h of holidays) map.set(h.date, h)
+    return map
+  }, [holidays])
+
+  const firstDow    = new Date(year, mIdx, 1).getDay()      // 0=Sun
+  const daysInMonth = new Date(year, mIdx + 1, 0).getDate()
+
+  type Cell = { day: number; dateStr: string; status: keyof typeof DAY_STATUS_STYLE; title: string; isToday: boolean } | null
+  const cells: Cell[] = []
+  for (let i = 0; i < firstDow; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = ymd(year, mIdx, d)
+    const dow     = new Date(year, mIdx, d).getDay()
+    const isWeekend = dow === 0 || dow === 6
+    const session   = sessionByDate.get(dateStr)
+    const holiday   = holidayByDate.get(dateStr)
+    const isFuture  = dateStr > todayStr
+    const isToday   = dateStr === todayStr
+
+    let status: keyof typeof DAY_STATUS_STYLE
+    let title = ''
+    if (session?.check_in_at) {
+      status = session.is_late ? 'late' : 'present'
+      title  = `${DAY_STATUS_STYLE[status].label} · ${fmtTime(session.check_in_at)}`
+    } else if (holiday) {
+      status = 'holiday'; title = holiday.name
+    } else if (leaveDates.has(dateStr)) {
+      status = 'leave'; title = 'On approved leave'
+    } else if (isWeekend) {
+      status = 'weekend'; title = 'Weekend'
+    } else if (isFuture) {
+      status = 'future'; title = 'Upcoming'
+    } else {
+      status = 'absent'; title = 'No attendance recorded'
+    }
+    cells.push({ day: d, dateStr, status, title, isToday })
+  }
+
+  const legend = ['present', 'late', 'absent', 'leave', 'holiday', 'weekend'] as const
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-semibold text-slate-800">Mark Attendance</h3>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={onPrev} aria-label="Previous month">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium text-slate-700 min-w-[130px] text-center tabular-nums">{monthLabel}</span>
+          <Button variant="ghost" size="icon" onClick={onNext} aria-label="Next month">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+          <div key={d} className="text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wide py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {cells.map((c, i) => c === null ? (
+          <div key={`blank-${i}`} />
+        ) : (
+          <div
+            key={c.dateStr}
+            title={c.title}
+            className={`aspect-square rounded-lg border flex flex-col items-center justify-center text-sm transition-colors ${DAY_STATUS_STYLE[c.status].cell} ${c.isToday ? 'ring-2 ring-blue-500 ring-offset-1 font-bold' : ''}`}
+          >
+            <span className="leading-none">{c.day}</span>
+            <span className={`mt-1 h-1.5 w-1.5 rounded-full ${DAY_STATUS_STYLE[c.status].dot}`} />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-slate-100">
+        {legend.map(s => (
+          <div key={s} className="flex items-center gap-1.5">
+            <span className={`h-2 w-2 rounded-full ${DAY_STATUS_STYLE[s].dot}`} />
+            <span className="text-[11px] text-slate-500">{DAY_STATUS_STYLE[s].label}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+/* ── Upcoming Holidays ──────────────────────────────────────────────────────── */
+function HolidaysCard({ holidays }: { holidays: Holiday[] }) {
+  const today = new Date().toLocaleDateString('en-CA')
+  const upcoming = holidays.filter(h => h.date >= today).slice(0, 6)
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        <PartyPopper className="h-4 w-4 text-sky-500" />
+        <h3 className="text-sm font-semibold text-slate-800">Upcoming Holidays</h3>
+      </div>
+      {upcoming.length === 0 ? (
+        <p className="text-sm text-slate-400 py-4 text-center">No upcoming holidays</p>
+      ) : (
+        <div className="space-y-2">
+          {upcoming.map(h => {
+            const dt = new Date(`${h.date}T00:00:00`)
+            return (
+              <div key={h.id} className="flex items-center gap-3">
+                <div className="flex flex-col items-center justify-center bg-sky-50 border border-sky-100 rounded-lg w-11 h-11 flex-shrink-0">
+                  <span className="text-sm font-bold text-sky-700 leading-none">{dt.getDate()}</span>
+                  <span className="text-[10px] text-sky-500 uppercase">{dt.toLocaleDateString('en-IN', { month: 'short' })}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{h.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {dt.toLocaleDateString('en-IN', { weekday: 'long' })}
+                    {h.type !== 'national' && <span className="ml-1.5 capitalize">· {h.type}</span>}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 /* ── Main Page ──────────────────────────────────────────────────────────────── */
 export default function AttendancePage() {
   const [todaySession,  setTodaySession]  = useState<TodaySession | null>(null)
@@ -349,6 +520,8 @@ export default function AttendancePage() {
   const [myRequests,    setMyRequests]    = useState<LeaveRequest[]>([])
   const [pendingReqs,   setPendingReqs]   = useState<LeaveRequest[]>([])
   const [balances,      setBalances]      = useState<LeaveBalance[]>([])
+  const [holidays,      setHolidays]      = useState<Holiday[]>([])
+  const [calMonth,      setCalMonth]      = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
   const [pageLoading,   setPageLoading]   = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMsg,     setActionMsg]     = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -411,6 +584,40 @@ export default function AttendancePage() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
+  // Holidays for the visible calendar month (+ surrounding weeks)
+  useEffect(() => {
+    const y = calMonth.getFullYear(), m = calMonth.getMonth()
+    const from = ymd(y, m, 1)
+    const to   = ymd(y, m, new Date(y, m + 1, 0).getDate())
+    fetch(`/api/v1/holidays?from=${from}&to=${to}`)
+      .then(r => r.ok ? r.json() : { holidays: [] })
+      .then(d => setHolidays(d.holidays ?? []))
+      .catch(() => {})
+  }, [calMonth])
+
+  // Upcoming holidays for the side panel (independent of calendar navigation)
+  const [upcomingHolidays, setUpcomingHolidays] = useState<Holiday[]>([])
+  useEffect(() => {
+    fetch('/api/v1/holidays')
+      .then(r => r.ok ? r.json() : { holidays: [] })
+      .then(d => setUpcomingHolidays(d.holidays ?? []))
+      .catch(() => {})
+  }, [])
+
+  // Approved leave/wfh days → Set of YYYY-MM-DD for calendar shading
+  const leaveDates = useMemo(() => {
+    const set = new Set<string>()
+    for (const r of myRequests) {
+      if (r.status !== 'approved') continue
+      const start = new Date(`${r.from_date}T00:00:00`)
+      const end   = new Date(`${r.to_date || r.from_date}T00:00:00`)
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        set.add(ymd(d.getFullYear(), d.getMonth(), d.getDate()))
+      }
+    }
+    return set
+  }, [myRequests])
+
   // Dismiss action message after 4s
   useEffect(() => {
     if (!actionMsg) return
@@ -452,6 +659,7 @@ export default function AttendancePage() {
   const totalHours   = Math.round(
     thisMonthSessions.reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0) / 60 * 10
   ) / 10
+  const absentDays   = thisMonthSessions.filter(s => !s.check_in_at).length
   const pendingCount = myRequests.filter(r => r.status === 'pending').length
 
   const filteredSessions = useMemo(() =>
@@ -492,15 +700,35 @@ export default function AttendancePage() {
       />
 
       {/* Monthly Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard label="Present This Month" value={presentDays} accent="emerald"
           icon={<UserCheck className="h-4 w-4" />} loading={pageLoading} />
-        <StatCard label="Hours Worked" value={`${totalHours}h`} accent="blue"
-          icon={<Clock className="h-4 w-4" />} loading={pageLoading} />
+        <StatCard label="Absent" value={absentDays} accent="rose"
+          icon={<XCircle className="h-4 w-4" />} loading={pageLoading} />
         <StatCard label="Late Arrivals" value={lateDays} accent="amber"
           icon={<AlertTriangle className="h-4 w-4" />} loading={pageLoading} />
+        <StatCard label="Hours Worked" value={`${totalHours}h`} accent="blue"
+          icon={<Clock className="h-4 w-4" />} loading={pageLoading} />
         <StatCard label="Pending Leaves" value={pendingCount} accent="violet"
           icon={<Calendar className="h-4 w-4" />} loading={pageLoading} />
+      </div>
+
+      {/* Mark Attendance calendar + Upcoming holidays */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <MarkAttendanceCalendar
+            month={calMonth}
+            onPrev={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+            onNext={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+            sessions={sessions}
+            holidays={holidays}
+            leaveDates={leaveDates}
+            todayStr={today}
+          />
+        </div>
+        <div>
+          <HolidaysCard holidays={upcomingHolidays} />
+        </div>
       </div>
 
       {/* Leave Balances */}

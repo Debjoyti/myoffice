@@ -21,6 +21,18 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date))
 }
 
+/**
+ * Today's date as YYYY-MM-DD in the business timezone (India / Asia-Kolkata).
+ * Server routes must NOT use `new Date().toISOString()` for the attendance
+ * "date" — that's UTC and rolls over at 05:30 IST, so a 9am IST check-in and
+ * a 1am IST check-out could land on different calendar days. This keeps every
+ * attendance write/read anchored to the same business day.
+ */
+export function businessToday(timeZone = 'Asia/Kolkata'): string {
+  // en-CA formats as YYYY-MM-DD
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date())
+}
+
 export function formatPercent(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 }
