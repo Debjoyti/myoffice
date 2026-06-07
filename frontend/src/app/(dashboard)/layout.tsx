@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -192,12 +192,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user,        setUser]        = useState<UserProfile | null>(null)
   const [notifCount,  setNotifCount]  = useState(0)
   const [expanded,    setExpanded]    = useState<Set<string>>(new Set())
+  const [openGroups,  setOpenGroups]  = useState<Set<string>>(new Set())
 
   const toggleExpanded = (name: string) => {
     setExpanded(prev => {
       const next = new Set(prev)
       if (next.has(name)) next.delete(name)
       else next.add(name)
+      return next
+    })
+  }
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
       return next
     })
   }
@@ -242,6 +252,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const allNavItems = ALL_NAV_GROUPS.flatMap(g => g.items.flatMap(i => [i, ...(i.children ?? [])]))
   const currentPage = [...allNavItems].sort((a, b) => b.href.length - a.href.length)
     .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+
+  // Which top-level group contains the current route?
+  const activeGroupLabel = useMemo(() => {
+    const matches = (href: string) => pathname === href || pathname.startsWith(href + '/')
+    for (const g of navGroups) {
+      for (const it of g.items) {
+        if (matches(it.href)) return g.label
+        if (it.children?.some(c => matches(c.href))) return g.label
+      }
+    }
+    return undefined
+  }, [navGroups, pathname])
+
+  // Keep the active group open as the user navigates (others stay as set).
+  useEffect(() => {
+    if (activeGroupLabel) {
+      setOpenGroups(prev => prev.has(activeGroupLabel) ? prev : new Set(prev).add(activeGroupLabel))
+    }
+  }, [activeGroupLabel])
 
   const roleConfig = ROLE_CONFIG[user?.role ?? 'employee'] ?? ROLE_CONFIG.employee
 
@@ -293,16 +322,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-5">
-        {navGroups.map(group => (
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+        {navGroups.map(group => {
+          // When the rail is collapsed every group shows (icon-only); when
+          // expanded each group is a dropdown that opens on click.
+          const groupActive = group.label === activeGroupLabel
+          const isGroupOpen = collapsed || openGroups.has(group.label) || groupActive
+          return (
           <div key={group.label}>
-            {!collapsed && (
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] px-2 mb-1">
-                {group.label}
-              </p>
+            {!collapsed ? (
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                className={cn(
+                  'w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md group/header transition-colors',
+                  'hover:bg-slate-50',
+                  groupActive ? 'text-slate-700' : 'text-slate-400'
+                )}
+              >
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em]">
+                  {group.label}
+                </span>
+                <ChevronRight className={cn(
+                  'h-3 w-3 flex-shrink-0 transition-transform duration-150',
+                  isGroupOpen && 'rotate-90'
+                )} />
+              </button>
+            ) : (
+              <div className="h-px bg-slate-100 mx-1 mb-2" />
             )}
-            {collapsed && <div className="h-px bg-slate-100 mx-1 mb-2" />}
-            <ul className="space-y-0.5">
+            {isGroupOpen && (
+            <ul className="space-y-0.5 mt-0.5">
               {group.items.map(item => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 const hasChildren = !!item.children?.length
@@ -384,8 +434,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )
               })}
             </ul>
+            )}
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       {/* User */}
