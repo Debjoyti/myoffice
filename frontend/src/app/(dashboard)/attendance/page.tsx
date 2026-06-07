@@ -569,7 +569,14 @@ export default function AttendancePage() {
       }
       if (sessRes.ok)  { const d = await sessRes.json();  setSessions(d.sessions ?? []) }
       if (myReqRes.ok) { const d = await myReqRes.json(); setMyRequests(d.approvals ?? []) }
-      if (balRes.ok)   { const d = await balRes.json();   setBalances(d.balances ?? []) }
+      if (balRes.ok)   {
+        const d = await balRes.json()
+        // `available_days` may be absent depending on DB schema — derive it.
+        setBalances((d.balances ?? []).map((b: any) => ({
+          ...b,
+          available_days: b.available_days ?? ((b.total_days ?? 0) - (b.used_days ?? 0)),
+        })))
+      }
 
       if (meEmployee && ['admin', 'hr', 'manager'].includes(meEmployee.role)) {
         const pendRes = await fetch('/api/v1/approvals?mode=pending_for_me')

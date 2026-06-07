@@ -49,13 +49,18 @@ export async function GET(req: Request) {
 
   // `is_late` isn't stored on the session — derive it from the employee's
   // per-weekday work schedule (start_time + a 10-minute grace window).
+  // Select * so this works regardless of schema drift between environments
+  // (live uses shift_start; the repo schema uses start_time).
   const { data: schedules } = await supabase
     .from('work_schedules')
-    .select('day_of_week, start_time')
+    .select('*')
     .eq('employee_id', targetId)
 
   const startTimeByDay = new Map<number, string>(
-    (schedules ?? []).map(s => [s.day_of_week, s.start_time ?? '09:00'])
+    (schedules ?? []).map((s: any) => {
+      const raw = s.shift_start ?? s.start_time ?? '09:00'
+      return [s.day_of_week as number, String(raw).slice(0, 5)]  // "09:00:00" → "09:00"
+    })
   )
   const GRACE_MINUTES = 10
 
