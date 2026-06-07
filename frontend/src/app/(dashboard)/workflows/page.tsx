@@ -7,7 +7,7 @@ import {
 } from '@/components/ui'
 import {
   Zap, Plus, Play, Pause, Edit2, BarChart3, CheckCircle2, Clock,
-  AlertTriangle, ArrowRight, Settings, RefreshCw, GitBranch
+  AlertTriangle, ArrowRight, Settings, RefreshCw, GitBranch, Eye
 } from 'lucide-react'
 
 const MOCK_WORKFLOWS = [

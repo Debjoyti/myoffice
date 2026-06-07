@@ -407,6 +407,96 @@ function calcSalaryComponents(ctcMonthly: number) {
   }
 }
 
+/* ── Manage Departments Modal ─────────────────────────────────────────────────── */
+function ManageDepartmentsModal({
+  open, onClose, departments, onChanged,
+}: {
+  open: boolean; onClose: () => void
+  departments: (Department & { code?: string | null; headcount?: number })[]
+  onChanged: () => void
+}) {
+  const [name, setName]       = useState('')
+  const [code, setCode]       = useState('')
+  const [saving, setSaving]   = useState(false)
+  const [error, setError]     = useState<string | null>(null)
+
+  useEffect(() => { if (!open) { setName(''); setCode(''); setError(null) } }, [open])
+
+  const handleAdd = async () => {
+    if (!name.trim()) { setError('Department name is required'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      const payload: Record<string, string> = { name: name.trim() }
+      if (code.trim()) payload.code = code.trim().toUpperCase()
+      const res = await fetch('/api/v1/departments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.formErrors?.[0] ?? data.error?.fieldErrors?.name?.[0] ?? data.error ?? 'Failed to create department')
+      setName(''); setCode('')
+      onChanged()
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Manage Departments" size="md"
+      footer={<Button variant="outline" onClick={onClose}>Close</Button>}
+    >
+      <div className="space-y-4">
+        {error && <Alert variant="danger">{error}</Alert>}
+
+        <div>
+          <p className="text-xs font-semibold text-slate-700 mb-2">Add a new department</p>
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Input label="Department Name" placeholder="e.g. Engineering" value={name} onChange={e => setName(e.target.value)} />
+            </div>
+            <div className="w-28">
+              <Input label="Code (optional)" placeholder="ENG" value={code} onChange={e => setCode(e.target.value)} />
+            </div>
+            <Button onClick={handleAdd} loading={saving}>Add</Button>
+          </div>
+          <p className="text-xs text-slate-400 mt-1.5">
+            Departments power segregation across HRMS — filtering employees, org chart grouping, and reporting.
+          </p>
+        </div>
+
+        <Divider />
+
+        <div>
+          <p className="text-xs font-semibold text-slate-700 mb-2">Existing departments ({departments.length})</p>
+          {departments.length === 0 ? (
+            <EmptyState
+              icon={<Briefcase className="h-8 w-8" />}
+              title="No departments yet"
+              description="Add your first department above to start segregating employees by team."
+            />
+          ) : (
+            <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+              {departments.map(d => (
+                <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-medium text-slate-800 truncate">{d.name}</span>
+                    {d.code && <Badge variant="neutral" size="sm">{d.code}</Badge>}
+                  </div>
+                  <span className="text-xs text-slate-400 flex-shrink-0">{d.headcount ?? 0} employees</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 /* ── Set Salary Modal ────────────────────────────────────────────────────────── */
 function SetSalaryModal({ employee, open, onClose, onSuccess }: {
   employee: Employee | null; open: boolean; onClose: () => void; onSuccess: () => void
@@ -553,6 +643,7 @@ export default function HRMSPage() {
   const [deacting,       setDeacting]       = useState(false)
   const [canCreate,      setCanCreate]      = useState(false)
   const [salaryTarget,   setSalaryTarget]   = useState<Employee | null>(null)
+  const [deptManageOpen, setDeptManageOpen] = useState(false)
 
   /* Fetch employees + check role */
   const fetchEmployees = useCallback(async () => {
@@ -587,11 +678,15 @@ export default function HRMSPage() {
   }, [statusFilter, deptFilter])
 
   /* Fetch departments for filter + add form */
-  useEffect(() => {
+  const fetchDepartments = useCallback(() => {
     fetch('/api/v1/departments')
       .then(r => r.json())
       .then(d => setDepartments(d.departments ?? []))
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetchDepartments()
   }, [])
 
   useEffect(() => { fetchEmployees() }, [fetchEmployees])
@@ -694,6 +789,11 @@ export default function HRMSPage() {
             </select>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {canCreate && (
+              <Button variant="outline" size="sm" leftIcon={<Briefcase className="h-3 w-3" />} onClick={() => setDeptManageOpen(true)}>
+                Manage Departments
+              </Button>
+            )}
             <Button variant="outline" size="sm" leftIcon={<RefreshCw className="h-3 w-3" />} onClick={() => fetchEmployees()}>
               Refresh
             </Button>
@@ -814,6 +914,12 @@ export default function HRMSPage() {
         open={!!salaryTarget}
         onClose={() => setSalaryTarget(null)}
         onSuccess={fetchEmployees}
+      />
+      <ManageDepartmentsModal
+        open={deptManageOpen}
+        onClose={() => setDeptManageOpen(false)}
+        departments={departments}
+        onChanged={fetchDepartments}
       />
       <ConfirmDialog
         open={!!confirmDeact} onClose={() => setConfirmDeact(null)}
