@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, SearchInput
+  StatCard, SearchInput, Input
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { BookOpen, Download, RefreshCw, TrendingUp, TrendingDown, ArrowUpDown, FlaskConical } from 'lucide-react'
