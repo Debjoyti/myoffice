@@ -15,7 +15,7 @@ import {
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle, Network,
   Video, Warehouse, Factory, GraduationCap, FlaskConical, BookOpen,
-  ArrowUpDown, BadgeDollarSign, Landmark, Scale, BarChart,
+  ArrowUpDown, BadgeDollarSign, Landmark, Scale, BarChart, UploadCloud,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -39,6 +39,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { name: 'HRMS',         href: '/hrms',          icon: Users, children: [
         { name: 'Employees',               href: '/hrms',            icon: Users },
         { name: 'Onboarding & Verification', href: '/hrms/onboarding', icon: ShieldCheck },
+        { name: 'Bulk Company Import',       href: '/hrms/migration', icon: UploadCloud },
       ]},
       { name: 'Attendance',   href: '/attendance',    icon: Clock },
       { name: 'Payroll',      href: '/payroll',       icon: Banknote },
