@@ -16,6 +16,7 @@ import {
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle, Network,
   Video, Warehouse, Factory, GraduationCap, FlaskConical, BookOpen,
   ArrowUpDown, BadgeDollarSign, Landmark, Scale, BarChart, UploadCloud,
+  Store, ShoppingBag, Tag, Boxes,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -85,6 +86,18 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: 'Commerce / Marketplace',
+    items: [
+      { name: 'Seller Center',  href: '/marketplace',            icon: Store },
+      { name: 'Storefront',     href: '/marketplace/storefront',  icon: ShoppingBag },
+      { name: 'Products',       href: '/marketplace/products',    icon: Package },
+      { name: 'Orders',         href: '/marketplace/orders',      icon: Receipt },
+      { name: 'Cart',           href: '/marketplace/cart',        icon: ShoppingCart },
+      { name: 'Categories',     href: '/marketplace/categories',  icon: Tag },
+      { name: 'Store Settings', href: '/marketplace/settings',    icon: Boxes },
+    ]
+  },
+  {
     label: 'Supply Chain',
     items: [
       { name: 'Sales & Distribution', href: '/sales',    icon: ShoppingCart },
@@ -151,9 +164,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
   hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan']),
-  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics']),
-  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/marketplace/settings']),
+  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed', '/marketplace/storefront', '/marketplace/cart']),
 }
 
 function getNavGroups(role: string): NavGroup[] {
