@@ -45,6 +45,16 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: 'CRM Suite',
+    items: [
+      { name: 'CRM Home',    href: '/crm-suite',            icon: Target },
+      { name: 'Deals',       href: '/crm-suite/deals',      icon: Briefcase },
+      { name: 'Contacts',    href: '/crm-suite/contacts',   icon: Users },
+      { name: 'Accounts',    href: '/crm-suite/accounts',   icon: Building2 },
+      { name: 'Activities',  href: '/crm-suite/activities', icon: ClipboardList },
+    ]
+  },
+  {
     label: 'People',
     items: [
       { name: 'Org Chart',     href: '/org-chart',     icon: Network },
@@ -174,9 +184,9 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 /* ── Role → allowed hrefs (null = all) ───────────────────────────── */
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
-  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed', '/insights', '/insights/hr', '/insights/crm']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/insights', '/insights/commerce', '/insights/inventory', '/insights/hr', '/insights/crm']),
-  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/marketplace/settings', '/insights', '/insights/commerce', '/insights/inventory', '/insights/crm', '/insights/finance']),
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed', '/insights', '/insights/hr', '/insights/crm', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/insights', '/insights/commerce', '/insights/inventory', '/insights/hr', '/insights/crm', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities']),
+  accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/marketplace/settings', '/insights', '/insights/commerce', '/insights/inventory', '/insights/crm', '/insights/finance', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities']),
   employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed', '/marketplace/storefront', '/marketplace/cart']),
 }
 
