@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       submit:  { status: 'submitted', field: 'submitted_at' },
       approve: { status: 'approved',  field: 'approved_at',   role: ['admin', 'manager'] },
       reject:  { status: 'rejected',  field: 'rejected_at',   role: ['admin', 'manager'] },
-      cancel:  { status: 'cancelled', field: null },
+      cancel:  { status: 'cancelled' },
     }
 
     const transition = transitions[body.action]

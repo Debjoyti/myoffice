@@ -156,7 +156,7 @@ export default function InventoryPage() {
             <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setNewMovement(true)}>New Movement</Button>
           </div>
           <Table>
-            <Thead><tr><Th>Date</Th><Th>Item</Th><Th>Movement Type</Th><Th>Reference</Th><Th align="right">Qty</Th><Th>Warehouse</Th></Tr></Thead>
+            <Thead><Tr><Th>Date</Th><Th>Item</Th><Th>Movement Type</Th><Th>Reference</Th><Th align="right">Qty</Th><Th>Warehouse</Th></Tr></Thead>
             <Tbody>
               {MOCK_MOVEMENTS.map(m => (
                 <Tr key={m.id}>
