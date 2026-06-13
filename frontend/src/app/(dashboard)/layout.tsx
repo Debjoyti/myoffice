@@ -17,6 +17,7 @@ import {
   Video, Warehouse, Factory, GraduationCap, FlaskConical, BookOpen,
   ArrowUpDown, BadgeDollarSign, Landmark, Scale, BarChart, UploadCloud,
   Store, ShoppingBag, Tag, Boxes,
+  Sparkles, Rocket, ClipboardCheck, UsersRound, Globe,
 } from 'lucide-react'
 
 /* ── Nav item definition ─────────────────────────────────────────── */
@@ -69,6 +70,17 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { name: 'Leave',        href: '/leave',         icon: CalendarCheck },
       { name: 'WFH Requests', href: '/wfh',           icon: Home },
       { name: 'Resignations', href: '/resignations',  icon: UserMinus },
+    ]
+  },
+  {
+    label: 'Career Portal',
+    items: [
+      { name: 'Hiring Cockpit', href: '/careers',            icon: Rocket },
+      { name: 'Job Postings',   href: '/careers/jobs',       icon: Briefcase },
+      { name: 'ATS Pipeline',   href: '/careers/pipeline',   icon: ClipboardCheck },
+      { name: 'Talent Pool',    href: '/careers/candidates', icon: UsersRound },
+      { name: 'AI Interviews',  href: '/careers/interviews', icon: Sparkles },
+      { name: 'Job Board',      href: '/careers/board',      icon: Globe },
     ]
   },
   {
@@ -184,10 +196,10 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 /* ── Role → allowed hrefs (null = all) ───────────────────────────── */
 const ROLE_ACCESS: Record<string, Set<string> | null> = {
   admin:      null, // sees everything
-  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed', '/insights', '/insights/hr', '/insights/crm', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities']),
-  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/insights', '/insights/commerce', '/insights/inventory', '/insights/hr', '/insights/crm', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities']),
+  hr:         new Set(['/home', '/dashboard', '/hrms', '/attendance', '/payroll', '/salary', '/leave', '/wfh', '/resignations', '/recruitment', '/offer-letters', '/job-studio', '/crm', '/analytics', '/iatf', '/posh', '/pip', '/kb', '/feed', '/insights', '/insights/hr', '/insights/crm', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities', '/careers', '/careers/jobs', '/careers/pipeline', '/careers/candidates', '/careers/interviews', '/careers/board']),
+  manager:    new Set(['/home', '/dashboard', '/hrms', '/attendance', '/projects', '/timesheets', '/support', '/salary', '/leave', '/wfh', '/travel', '/feed', '/kb', '/maintenance', '/maintenance/equipment', '/maintenance/task-lists', '/maintenance/breakdowns', '/maintenance/why-why', '/maintenance/mttr', '/maintenance/meters', '/maintenance/pm-plan', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/insights', '/insights/commerce', '/insights/inventory', '/insights/hr', '/insights/crm', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities', '/careers', '/careers/pipeline', '/careers/candidates', '/careers/interviews', '/careers/board']),
   accountant: new Set(['/home', '/dashboard', '/finance', '/expenses', '/payroll', '/salary', '/procurement', '/business-orders', '/goods-receipts', '/analytics', '/marketplace', '/marketplace/storefront', '/marketplace/products', '/marketplace/orders', '/marketplace/cart', '/marketplace/categories', '/marketplace/settings', '/insights', '/insights/commerce', '/insights/inventory', '/insights/crm', '/insights/finance', '/crm-suite', '/crm-suite/deals', '/crm-suite/contacts', '/crm-suite/accounts', '/crm-suite/activities']),
-  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed', '/marketplace/storefront', '/marketplace/cart']),
+  employee:   new Set(['/home', '/attendance', '/salary', '/leave', '/wfh', '/timesheets', '/expenses', '/travel', '/kb', '/feed', '/marketplace/storefront', '/marketplace/cart', '/careers/board']),
 }
 
 function getNavGroups(role: string): NavGroup[] {
