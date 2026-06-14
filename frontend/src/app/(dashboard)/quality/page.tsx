@@ -3,12 +3,11 @@
 import { useState } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea
+  StatCard, TabBar, Modal, Input, Select, Textarea
 } from '@/components/ui'
-import { formatCurrency } from '@/lib/utils'
 import {
-  ShieldCheck, Plus, Download, Eye, Edit2, AlertTriangle, CheckCircle2,
-  XCircle, BarChart3, TrendingDown, ClipboardList, RefreshCw
+  Plus, Download, AlertTriangle, CheckCircle2,
+  XCircle, ClipboardList
 } from 'lucide-react'
 
 const MOCK_INSPECTIONS = [
@@ -46,7 +45,6 @@ const STATUS_VARIANT: Record<string, any> = {
 
 export default function QualityPage() {
   const [tab, setTab] = useState('inspections')
-  const [search, setSearch] = useState('')
   const [newNCR, setNewNCR] = useState(false)
   const [newInspection, setNewInspection] = useState(false)
 

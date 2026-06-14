@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Textarea, Divider
+  StatCard, TabBar, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import {
-  Calendar, Plus, Copy, Eye, Edit2, Clock, Users, CheckCircle2,
-  MapPin, Video, Link, Settings, Zap, BarChart3
+  Calendar, Plus, Copy, Eye, Edit2, Clock, CheckCircle2,
+  MapPin, Video, Link, Settings
 } from 'lucide-react'
 
 const MOCK_SERVICES = [

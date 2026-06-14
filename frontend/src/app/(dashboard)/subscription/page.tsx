@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, PageHeader, Badge, Button, Alert } from '@/components/ui'
-import { CreditCard, Users, Briefcase, CheckCircle2, Calendar, Zap, AlertTriangle } from 'lucide-react'
+import { CreditCard, CheckCircle2 } from 'lucide-react'
 
 const PLAN = {
   name: 'Growth',

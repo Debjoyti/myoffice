@@ -7,7 +7,7 @@ import {
 } from '@/components/insights'
 import { formatCurrency } from '@/lib/utils'
 import {
-  Boxes, IndianRupee, AlertTriangle, PackageX, Warehouse, ArrowDownToLine,
+  IndianRupee, AlertTriangle, Warehouse, ArrowDownToLine,
   ArrowUpFromLine, FileText, Truck,
 } from 'lucide-react'
 

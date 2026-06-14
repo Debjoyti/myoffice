@@ -7,8 +7,8 @@ import {
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  BookOpen, Plus, Download, RefreshCw, Eye, Edit2, TrendingUp,
-  TrendingDown, DollarSign, BarChart3, FileText, CheckCircle2
+  Plus, Download, Eye, Edit2, TrendingUp,
+  TrendingDown, DollarSign, BarChart3, CheckCircle2
 } from 'lucide-react'
 
 const MOCK_ACCOUNTS = [

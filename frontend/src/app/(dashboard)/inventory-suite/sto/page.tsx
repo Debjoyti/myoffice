@@ -7,7 +7,7 @@ import {
   StatCard, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { ArrowUpDown, Plus, Download, Eye, RefreshCw, XCircle, FlaskConical } from 'lucide-react'
+import { ArrowUpDown, Plus, Download, Eye, XCircle, FlaskConical } from 'lucide-react'
 
 const STATUS_VARIANT: Record<string, any> = {
   draft: 'neutral', approved: 'info', dispatched: 'warning',

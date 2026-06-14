@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  StatCard, SearchInput, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
   FileText, Plus, Eye, Edit2, Download, AlertTriangle, CheckCircle2,
-  Clock, Calendar, Users, TrendingUp, RefreshCw, PenTool, Filter
+  TrendingUp, RefreshCw, PenTool
 } from 'lucide-react'
 
 const MOCK_CONTRACTS = [
@@ -34,7 +34,6 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 export default function ContractsPage() {
-  const [tab, setTab] = useState('contracts')
   const [search, setSearch] = useState('')
   const [newContract, setNewContract] = useState(false)
   const [viewContract, setViewContract] = useState<any>(null)

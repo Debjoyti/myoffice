@@ -7,8 +7,8 @@ import {
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  Package, Plus, Download, RefreshCw, Eye, Edit2, AlertTriangle,
-  ArrowUpDown, BarChart3, Warehouse, TrendingDown, CheckCircle2
+  Package, Plus, Download, Eye, Edit2, AlertTriangle,
+  ArrowUpDown, BarChart3, Warehouse
 } from 'lucide-react'
 
 const MOCK_ITEMS = [

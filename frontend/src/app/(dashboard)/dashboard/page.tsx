@@ -6,7 +6,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
-  Users, Clock, Banknote, TrendingUp, ArrowRight,
+  Users, Clock, Banknote, ArrowRight,
   FileText, CheckCircle2, Wallet,
   Building2, UserCheck, AlertCircle,
   IndianRupee, RefreshCw, UserPlus, CalendarCheck,

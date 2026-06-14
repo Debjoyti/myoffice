@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  PageHeader, TabBar, Card, CardHeader, Badge, Button, EmptyState, Modal, Input, Textarea, Select, Skeleton
+  PageHeader, TabBar, Card, Badge, Button, EmptyState, Modal, Input, Textarea, Select, Skeleton
 } from '@/components/ui'
 import { Plus, GitBranch } from 'lucide-react'
 

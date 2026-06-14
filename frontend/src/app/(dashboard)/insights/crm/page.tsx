@@ -6,7 +6,7 @@ import {
   useLiveData, InsightHeader, KpiTile, Panel, AreaSpark, RankList, Ring, exportToCsv, Empty, ACCENT_HEX,
 } from '@/components/insights'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Target, TrendingUp, Trophy, XCircle, Briefcase, IndianRupee } from 'lucide-react'
+import { Target, TrendingUp, Trophy, Briefcase, IndianRupee } from 'lucide-react'
 
 const RANGES = [{ id: '30d', label: '30D' }, { id: '90d', label: '90D' }, { id: '12m', label: '12M' }]
 const STAGE_LABEL = { new: 'New', contacted: 'Contacted', proposal: 'Proposal', negotiation: 'Negotiation', won: 'Won', lost: 'Lost' }

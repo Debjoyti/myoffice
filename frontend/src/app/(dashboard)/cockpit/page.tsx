@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Card, StatCard, PageHeader, Badge, Alert } from '@/components/ui'
+import { Card, StatCard, PageHeader, Badge } from '@/components/ui'
 import { TrendingUp, TrendingDown, DollarSign, Users, Briefcase, AlertCircle, CheckCircle2, Zap, RefreshCw, FlaskConical } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 

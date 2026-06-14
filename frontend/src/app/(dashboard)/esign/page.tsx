@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button,
   StatCard, TabBar, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import {
-  PenTool, Plus, Send, Eye, CheckCircle2, Clock, AlertCircle,
-  FileText, Download, Users, Zap, Shield, Copy
+  PenTool, Plus, Send, Eye, CheckCircle2, Clock,
+  FileText, Download, Zap, Shield, Copy
 } from 'lucide-react'
 
 const MOCK_DOCUMENTS = [

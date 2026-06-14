@@ -3,7 +3,7 @@ import { getAuthenticatedEmployee } from '@/lib/supabase/employee'
 
 const ALLOWED = new Set(['admin', 'hr', 'manager'])
 
-export async function GET(req: Request) {
+export async function GET() {
   const result = await getAuthenticatedEmployee()
   if (result instanceof NextResponse) return result
   const { employee, supabase } = result

@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui'
 import Link from 'next/link'
 import {
   Clock, CheckCircle2, LogIn, LogOut, Calendar, Bell,
-  BriefcaseIcon, Users, AlertTriangle, ChevronRight,
-  Coffee, Sun, Sunset, Moon, Wifi, CircleCheck,
+  BriefcaseIcon, AlertTriangle,
+  Coffee, Sun, Sunset, Moon,
   FileText, Plane, Home, Receipt, TrendingUp, PartyPopper,
-  MapPin, RefreshCw, LayoutDashboard, ArrowRight, X,
-  Banknote, ShieldCheck, BarChart3
+  RefreshCw, LayoutDashboard, ArrowRight, X,
+  Banknote, BarChart3
 } from 'lucide-react'
 
 // ── Admin / HR / Accountant shortcut banner ───────────────────────────────────

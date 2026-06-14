@@ -8,7 +8,7 @@ import {
 } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
 import {
-  UserPlus, ShieldCheck, FileCheck2, Clock3, AlertTriangle,
+  UserPlus, ShieldCheck, FileCheck2, Clock3,
   RefreshCw, ClipboardCheck, ShieldAlert,
 } from 'lucide-react'
 

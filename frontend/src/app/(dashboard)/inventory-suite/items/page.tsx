@@ -9,7 +9,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import {
   Package, Plus, Download, Eye, Edit2, AlertTriangle, RefreshCw, Ship,
-  FlaskConical, Filter
+  FlaskConical
 } from 'lucide-react'
 
 const ITEM_CATEGORIES = ['Raw Material','WIP','Finished Goods','Spare Parts','Trading','Consumable','Capital Item']

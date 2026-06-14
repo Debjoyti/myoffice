@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import {
-  PageHeader, Card, Badge, Avatar, Button, SearchInput, Modal, Input, Select, Textarea, EmptyState
+  PageHeader, Card, Avatar, Button, SearchInput, Modal, Input, Select, Textarea, EmptyState
 } from '@/components/ui'
 import { Book, FileText, ExternalLink, Plus, FlaskConical } from 'lucide-react'
 

@@ -8,7 +8,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import {
   Cpu, Plus, Download, Eye, Edit2, TrendingDown, BarChart3,
-  AlertTriangle, CheckCircle2, RefreshCw, Wrench
+  AlertTriangle, RefreshCw
 } from 'lucide-react'
 
 const MOCK_ASSETS = [

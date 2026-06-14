@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, DetailGrid, Divider
+  StatCard, TabBar, SearchInput, Modal, Input, Select, DetailGrid, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {

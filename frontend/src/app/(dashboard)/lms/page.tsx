@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
+  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import {
-  BookOpen, Plus, Play, CheckCircle2, Clock, Users, Award, BarChart3,
-  Video, FileText, Brain, Star, TrendingUp, Eye, Edit2, Lock, Unlock
+  BookOpen, Plus, Clock, Users, Award,
+  Video, Brain, Star, TrendingUp, Lock
 } from 'lucide-react'
 
 const MOCK_COURSES = [

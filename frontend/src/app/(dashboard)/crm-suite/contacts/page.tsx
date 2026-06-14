@@ -8,7 +8,7 @@ import {
 } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
 import {
-  Plus, RefreshCw, Mail, Phone, Building2, User, StickyNote, Users as UsersIcon, CheckCircle2,
+  Plus, RefreshCw, Mail, Phone, User, StickyNote, Users as UsersIcon, CheckCircle2,
 } from 'lucide-react'
 
 const LIFECYCLE = ['subscriber', 'lead', 'mql', 'sql', 'opportunity', 'customer', 'evangelist']

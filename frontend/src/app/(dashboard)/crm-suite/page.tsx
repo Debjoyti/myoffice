@@ -2,11 +2,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useLiveData, InsightHeader, KpiTile, Panel, Donut, Bars, RankList, Empty, ACCENT_HEX } from '@/components/insights'
+import { useLiveData, InsightHeader, KpiTile, Panel, Donut, Bars, RankList, Empty } from '@/components/insights'
 import { formatCurrency } from '@/lib/utils'
 import {
   Briefcase, Target, Trophy, TrendingUp, Users, Building2, CheckSquare, AlertCircle,
-  ArrowRight, Plus,
+  ArrowRight,
 } from 'lucide-react'
 
 const LIFECYCLE_LABEL = { subscriber: 'Subscriber', lead: 'Lead', mql: 'MQL', sql: 'SQL', opportunity: 'Opportunity', customer: 'Customer', evangelist: 'Evangelist' }

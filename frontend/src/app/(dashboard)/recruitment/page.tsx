@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Textarea, EmptyState, Alert, SkeletonTable
+  StatCard, TabBar, Modal, Input, Select, Textarea, EmptyState, Alert
 } from '@/components/ui'
 import { Briefcase, Users, TrendingUp, CheckCircle2, Plus, FlaskConical, RefreshCw } from 'lucide-react'
 

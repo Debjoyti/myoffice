@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  ShoppingCart, Plus, Download, Eye, Edit2, TrendingUp, Users,
-  FileText, CheckCircle2, Clock, AlertCircle, Send, Package
+  ShoppingCart, Plus, Download, Eye, Edit2, Users,
+  CheckCircle2, Clock, Send
 } from 'lucide-react'
 
 const MOCK_QUOTATIONS = [

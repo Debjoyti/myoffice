@@ -7,7 +7,7 @@ import {
   SearchInput, Modal, Input, Select, Textarea, Divider, KV, EmptyState, TabBar,
 } from '@/components/ui'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Plus, RefreshCw, Building2, Globe, Users, Briefcase } from 'lucide-react'
+import { Plus, RefreshCw, Building2, Globe } from 'lucide-react'
 
 const TYPES = ['prospect', 'customer', 'partner', 'vendor', 'other']
 const TYPE_BADGE = { customer: 'success', prospect: 'info', partner: 'warning', vendor: 'neutral', other: 'neutral' }

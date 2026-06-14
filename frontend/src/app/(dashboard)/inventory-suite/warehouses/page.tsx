@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Textarea, Divider
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  StatCard, TabBar, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { Warehouse, Plus, Download, Eye, Edit2, Package, MapPin, FlaskConical } from 'lucide-react'
+import { Warehouse, Plus, Eye, Edit2, Package, MapPin, FlaskConical } from 'lucide-react'
 
 const MOCK_WAREHOUSES = [
   { id:'1', code:'WH-01', name:'Main Warehouse', type:'general', city:'Pune', state:'Maharashtra', area_sqft:5000, has_bin_mgmt:true, is_bonded:false, temp_controlled:false, status:'active', stock_value:1673500, total_qty:5920, bin_count:48, manager:'Rakesh Sharma' },
@@ -90,7 +90,6 @@ export default function WarehousesPage() {
       {tab === 'warehouses' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {warehouses.map(wh => {
-            const usedPct = wh.area_sqft > 0 ? Math.min(Math.round((wh.stock_value / 5000) * 100), 100) : 0
             return (
               <Card key={wh.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setSelectedWH(wh); setTab('bins') }}>
                 <div className="flex items-start justify-between mb-3">

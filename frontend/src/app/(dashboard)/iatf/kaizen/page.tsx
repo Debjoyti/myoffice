@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  PageHeader, TabBar, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, TabBar, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, Modal, Input, Select, Textarea, EmptyState, SearchInput, Skeleton
 } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
-import { Plus, Lightbulb, CheckCircle, XCircle, Settings, TrendingUp, Filter } from 'lucide-react'
+import { Plus, Lightbulb, CheckCircle, XCircle, TrendingUp, Filter } from 'lucide-react'
 
 type KaizenSuggestion = {
   id: string

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   PageHeader, TabBar, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  Alert, EmptyState, Modal, Input, Select, Skeleton, Divider
+  Alert, EmptyState, Modal, Input, Select, Skeleton
 } from '@/components/ui'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { ShieldCheck, Plus, CheckCircle, AlertCircle, Clock } from 'lucide-react'

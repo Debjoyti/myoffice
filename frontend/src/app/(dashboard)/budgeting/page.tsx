@@ -7,8 +7,8 @@ import {
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  BarChart3, Plus, Download, Eye, Edit2, TrendingUp, TrendingDown,
-  AlertTriangle, CheckCircle2, Target
+  BarChart3, Plus, Download, TrendingUp,
+  AlertTriangle, Target
 } from 'lucide-react'
 
 const MOCK_BUDGETS = [

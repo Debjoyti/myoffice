@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
-  PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, SearchInput, TabBar, Modal, Input, Select, Textarea, EmptyState,
   Alert, SkeletonTable
 } from '@/components/ui'

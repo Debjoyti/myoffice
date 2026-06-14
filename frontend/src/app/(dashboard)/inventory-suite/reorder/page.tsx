@@ -3,10 +3,10 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td, StatCard
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td, StatCard
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { AlertTriangle, Plus, ShoppingCart, CheckCircle2, Clock, Truck } from 'lucide-react'
+import { AlertTriangle, Plus, ShoppingCart, Clock, Truck } from 'lucide-react'
 
 const MOCK_REORDER = [
   { id:'1', sku:'RAW-STL-001', name:'Steel Sheet 2mm', category:'Raw Material', item_type:'domestic', warehouse:'WH-02', qty_on_hand:80, reorder_level:200, safety_stock:150, reorder_qty:500, lead_time_days:5, last_vendor:'ABC Steel Traders', last_rate:85, suggested_po_value:42500, status:'critical' },

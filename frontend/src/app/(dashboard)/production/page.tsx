@@ -3,12 +3,11 @@
 import { useState } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
+  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea
 } from '@/components/ui'
-import { formatCurrency } from '@/lib/utils'
 import {
-  Factory, Plus, Download, Eye, Edit2, TrendingUp, BarChart3,
-  Clock, CheckCircle2, AlertCircle, RefreshCw, Package, Zap
+  Factory, Plus, Download, Eye, Edit2, TrendingUp,
+  CheckCircle2, AlertCircle, RefreshCw
 } from 'lucide-react'
 
 const MOCK_WORK_ORDERS = [

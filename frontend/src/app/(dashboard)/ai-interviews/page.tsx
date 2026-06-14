@@ -2,14 +2,13 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, CardHeader, Badge, Button,
   StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
-import { formatCurrency } from '@/lib/utils'
 import {
-  Video, Plus, Brain, Star, Eye, Send, Copy, CheckCircle2, Clock,
-  AlertTriangle, Mic, Monitor, Users, BarChart3, Zap, Shield,
-  PlayCircle, FileText, TrendingUp, Settings, Download
+  Video, Plus, Brain, Star, Eye, Send, Copy, CheckCircle2,
+  AlertTriangle, Zap, Shield,
+  PlayCircle, Settings, Download
 } from 'lucide-react'
 
 // ── Mock data ──────────────────────────────────────────────────────────

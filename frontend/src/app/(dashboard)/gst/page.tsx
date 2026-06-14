@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
+  StatCard, TabBar, Modal, Input, Select, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  FileText, Download, Plus, RefreshCw, CheckCircle2, Clock, AlertCircle,
-  Send, Eye, Zap, Shield, TrendingUp, Receipt, Building2
+  Download, Plus, RefreshCw, AlertCircle,
+  Send, Eye, Zap, TrendingUp, Receipt
 } from 'lucide-react'
 
 const MOCK_GSTR1 = [

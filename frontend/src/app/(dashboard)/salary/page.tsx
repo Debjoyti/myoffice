@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
 } from 'recharts'
 import {
-  Banknote, TrendingUp, Wallet, Shield, FileText, History,
-  RefreshCw, ChevronRight, Download, Eye, Plus, X,
-  CheckCircle2, Clock, AlertCircle, ArrowUpRight, ArrowDownRight,
-  Calendar, Building2, Award, Info,
+  Banknote, TrendingUp, Wallet, Shield, FileText,
+  RefreshCw, Download, Eye, Plus, X,
+  CheckCircle2, Clock, AlertCircle, ArrowUpRight,
+  Building2, Award, Info,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -411,9 +410,7 @@ export default function SalaryPage() {
   )
 
   // ── Derived values ──────────────────────────────────────────────────────────
-  const latestPayslip = payslips[0] ?? null
   const ytdGross = annual?.ytd.gross_total ?? 0
-  const ytdNet   = annual?.ytd.net_total   ?? 0
   const approvedReimb = reimbursements?.reimbursements.filter(r => r.status === 'approved' || r.status === 'paid').reduce((s, r) => s + Number(r.amount), 0) ?? 0
   const pendingReimb  = reimbursements?.reimbursements.filter(r => r.status === 'pending').reduce((s, r) => s + Number(r.amount), 0) ?? 0
 
