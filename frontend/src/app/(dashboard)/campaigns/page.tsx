@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Textarea, Divider
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  StatCard, TabBar, Modal, Input, Select, Divider
 } from '@/components/ui'
 import {
-  Mail, Plus, Send, Eye, Edit2, BarChart3, Users, TrendingUp,
-  CheckCircle2, Clock, AlertCircle, Zap, Target, MousePointerClick
+  Mail, Plus, Send, Eye, Edit2, BarChart3, Users,
+  Zap, MousePointerClick
 } from 'lucide-react'
 
 const MOCK_CAMPAIGNS = [

@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
+  PageHeader, Card, Badge, Button,
+  StatCard, TabBar, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  Ship, Plus, Download, Eye, Edit2, AlertTriangle, CheckCircle2, Clock,
-  FileText, RefreshCw, TrendingUp, Anchor, Globe, FlaskConical
+  Ship, Plus, Download, Eye, Edit2,
+  FileText, Anchor, Globe, FlaskConical
 } from 'lucide-react'
 
 const STATUS_STEPS = ['ordered','shipped','at_port','at_customs','customs_cleared','in_transit','delivered']

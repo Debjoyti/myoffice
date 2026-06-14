@@ -7,7 +7,7 @@ import {
   StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { ShoppingCart, Plus, Download, Eye, Edit2, CheckCircle2, Send, Ship, RefreshCw, XCircle, FlaskConical } from 'lucide-react'
+import { ShoppingCart, Plus, Download, Eye, Send, Ship, RefreshCw, XCircle, FlaskConical } from 'lucide-react'
 
 const STATUS_VARIANT: Record<string,any> = {
   draft:'neutral', approved:'info', sent_to_vendor:'info', acknowledged:'info',

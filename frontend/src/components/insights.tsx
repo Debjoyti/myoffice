@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
-import { Activity, RefreshCw, Download, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { RefreshCw, Download, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
 /* ── Live data hook ─────────────────────────────────────────────────────── */
 export function useLiveData<T = any>(url: string, intervalMs = 15000) {

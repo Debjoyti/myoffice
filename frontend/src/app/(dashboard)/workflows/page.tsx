@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, TabBar, Modal, Input, Select, Divider
 } from '@/components/ui'
 import {
-  Zap, Plus, Play, Pause, Edit2, BarChart3, CheckCircle2, Clock,
-  AlertTriangle, ArrowRight, Settings, RefreshCw, GitBranch, Eye
+  Zap, Plus, Play, Pause, Edit2, BarChart3, CheckCircle2,
+  AlertTriangle, ArrowRight, RefreshCw, Eye
 } from 'lucide-react'
 
 const MOCK_WORKFLOWS = [

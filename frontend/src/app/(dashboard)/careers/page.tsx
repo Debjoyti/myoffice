@@ -7,7 +7,7 @@ import {
   ProgressBar, Spinner,
 } from '@/components/ui'
 import {
-  Rocket, Briefcase, Users, Sparkles, ClipboardCheck, Globe, TrendingUp,
+  Briefcase, Users, Sparkles, ClipboardCheck, Globe, TrendingUp,
   Award, Clock, RefreshCw, Database, ArrowRight, UsersRound,
 } from 'lucide-react'
 

@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Textarea
+  PageHeader, Card, CardHeader, Badge, Button,
+  StatCard, TabBar, Modal, Input, Textarea
 } from '@/components/ui'
 import {
-  Share2, Plus, Calendar, BarChart3, Eye, Heart, MessageSquare,
-  TrendingUp, Users, CheckCircle2, Clock, Edit2, Repeat2, ThumbsUp
+  Plus, Calendar, Eye, Heart, MessageSquare,
+  TrendingUp, CheckCircle2, Clock, Edit2, Repeat2
 } from 'lucide-react'
 
 const PLATFORMS = [

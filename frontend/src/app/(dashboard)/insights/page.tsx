@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useLiveData, InsightHeader, KpiTile, Panel, AreaSpark, ACCENT_SOFT } from '@/components/insights'
 import { formatCurrency } from '@/lib/utils'
 import {
-  IndianRupee, Users, Boxes, ShoppingBag, TrendingUp, Target,
+  IndianRupee, Users, Boxes, ShoppingBag, Target,
   Warehouse, Wallet, ArrowRight, Activity,
 } from 'lucide-react'
 

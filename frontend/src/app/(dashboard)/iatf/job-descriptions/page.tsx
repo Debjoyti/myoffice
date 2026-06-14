@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   EmptyState, Modal, Input, Textarea, Select, SearchInput, Skeleton
 } from '@/components/ui'
 import { formatDate } from '@/lib/utils'

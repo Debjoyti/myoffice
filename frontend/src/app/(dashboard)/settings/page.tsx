@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { PageHeader, Card, Button, Input, Select, Alert, Divider, Badge, Avatar } from '@/components/ui'
-import { Building2, Users, Shield, Bell, Palette, Check, RefreshCw, Save } from 'lucide-react'
+import { PageHeader, Card, Button, Input, Select, Alert, Divider, Avatar } from '@/components/ui'
+import { Building2, Users, Shield, Bell, Palette, Save } from 'lucide-react'
 
 type Section = 'org' | 'users' | 'security' | 'notifications' | 'appearance'
 

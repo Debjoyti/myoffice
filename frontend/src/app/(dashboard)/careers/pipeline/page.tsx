@@ -7,7 +7,7 @@ import {
 } from '@/components/ui'
 import { ACTIVE_STAGES, STAGE_LABEL, STAGE_TRANSITIONS, type Stage } from '@/lib/services/careers'
 import {
-  ClipboardCheck, RefreshCw, Sparkles, ChevronRight, ChevronLeft, Star, X,
+  ClipboardCheck, RefreshCw, Sparkles, ChevronRight, ChevronLeft, Star,
   Clock, Award, MessageSquare,
 } from 'lucide-react'
 

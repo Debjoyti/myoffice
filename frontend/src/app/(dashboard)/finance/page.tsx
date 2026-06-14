@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, DetailGrid, Divider
+  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, Plus, Download,
-  FileText, CheckCircle2, Clock, AlertCircle, Eye, Edit2, FlaskConical, RefreshCw
+  AlertCircle, Eye, Edit2, FlaskConical, RefreshCw
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 

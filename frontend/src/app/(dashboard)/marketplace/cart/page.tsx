@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Card, Button, Input, Select, Divider, EmptyState, Badge } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { computeOrderTotals } from '@/lib/services/marketplace'
@@ -20,7 +19,6 @@ const PAYMENTS = [
 ]
 
 export default function CartPage() {
-  const router = useRouter()
   const [cart, setCart] = useState({ items: [] })
   const [settings, setSettings] = useState(null)
   const [loading, setLoading] = useState(true)

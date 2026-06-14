@@ -15,7 +15,7 @@ import {
   PieChart, ShoppingCart, Laptop, Shield, Book, CreditCard, UserMinus,
   Wrench, AlertTriangle, ClipboardList, BarChart2, Calendar, HelpCircle, Network,
   Video, Warehouse, Factory, GraduationCap, FlaskConical, BookOpen,
-  ArrowUpDown, BadgeDollarSign, Landmark, Scale, BarChart, UploadCloud,
+  ArrowUpDown, BadgeDollarSign, Landmark, Scale, UploadCloud,
   Store, ShoppingBag, Tag, Boxes,
   Sparkles, Rocket, ClipboardCheck, UsersRound, Globe,
 } from 'lucide-react'

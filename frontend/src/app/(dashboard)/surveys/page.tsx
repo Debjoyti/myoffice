@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Textarea, Divider
+  PageHeader, Card, CardHeader, Badge, Button,
+  StatCard, TabBar, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import {
-  ClipboardList, Plus, Eye, BarChart3, Send, Users, TrendingUp,
-  CheckCircle2, Star, MessageSquare, Copy, Edit2, Trash2
+  ClipboardList, Plus, Eye, Send, Users, TrendingUp,
+  Star
 } from 'lucide-react'
 
 const MOCK_SURVEYS = [
@@ -35,7 +35,6 @@ export default function SurveysPage() {
   const [viewSurvey, setViewSurvey] = useState<any>(null)
 
   const totalResponses = MOCK_SURVEYS.reduce((s, sv) => s + sv.responses, 0)
-  const avgNPS = MOCK_SURVEYS.find(s => s.title.includes('NPS'))?.avg_score ?? 0
   const npsScore = Math.round((42 + 62 - 22 - 12 - 7) / 248 * 100)
 
   const promoters  = ((42 + 62) / 248 * 100).toFixed(0)

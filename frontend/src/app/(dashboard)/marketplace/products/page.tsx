@@ -9,7 +9,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import {
   Package, Plus, Edit2, Trash2, RefreshCw, Star, ImageIcon, X, Link2,
-  Eye, CheckCircle2, AlertTriangle, Boxes,
+  Eye, CheckCircle2, AlertTriangle,
 } from 'lucide-react'
 
 const STATUS_BADGE = { active: 'success', draft: 'neutral', inactive: 'warning', archived: 'danger' }

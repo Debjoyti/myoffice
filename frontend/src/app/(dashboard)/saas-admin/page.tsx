@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import {
   PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, Modal, Input, EmptyState, Alert
+  StatCard, Modal, Input, Alert
 } from '@/components/ui'
-import { Settings, Shield, Users, Briefcase, Plus, Building2, AlertTriangle } from 'lucide-react'
+import { Settings, Users, Briefcase, Plus, Building2, AlertTriangle } from 'lucide-react'
 
 type ClientStatus = 'Active' | 'Trial' | 'Suspended' | 'Churned'
 

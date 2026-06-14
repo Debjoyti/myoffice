@@ -3,11 +3,11 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { ClipboardList, Plus, Download, Eye, CheckCircle2, AlertTriangle, FlaskConical } from 'lucide-react'
+import { ClipboardList, Plus, Download, Eye, AlertTriangle } from 'lucide-react'
 
 const STATUS_VARIANT: Record<string, any> = {
   planned: 'neutral', in_progress: 'info', counted: 'warning',

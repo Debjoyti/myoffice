@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   PageHeader, TabBar, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, Modal, Input, Select, Textarea, EmptyState, ProgressBar, Skeleton
+  StatCard, Modal, Input, Select, EmptyState, ProgressBar, Skeleton
 } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
 import { Plus, GraduationCap, Calendar, Users, Star, CheckCircle, Clock, BarChart3 } from 'lucide-react'

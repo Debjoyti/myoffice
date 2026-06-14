@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { PageHeader, Card, StatCard, Button, Badge, EmptyState } from '@/components/ui'
+import { PageHeader, Card, StatCard, Button, EmptyState } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
   ShoppingBag, Package, TrendingUp, IndianRupee, Boxes, Truck,

@@ -24,7 +24,7 @@ const statusPatchSchema = z.object({
   status: z.enum(['draft', 'open', 'closed']),
 })
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

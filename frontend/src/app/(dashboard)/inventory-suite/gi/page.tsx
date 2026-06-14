@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea, Divider
+  StatCard, Modal, Input, Select, Textarea, Divider
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { TrendingDown, Plus, Download, Eye, RefreshCw, XCircle, FlaskConical } from 'lucide-react'
@@ -28,9 +28,8 @@ export default function GIPage() {
   const [gis, setGIs] = useState(MOCK_GIS)
   const [loading, setLoading] = useState(true)
   const [isPreview, setIsPreview] = useState(true)
-  const [tab, setTab] = useState('all')
   const [newGI, setNewGI] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [saving] = useState(false)
   const [lines, setLines] = useState([{ ...EMPTY_LINE }])
   const [header, setHeader] = useState({
     issue_type: 'production', reference_no: '', issue_date: new Date().toISOString().split('T')[0],

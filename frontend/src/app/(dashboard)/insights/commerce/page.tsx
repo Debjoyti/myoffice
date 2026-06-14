@@ -7,7 +7,7 @@ import {
 } from '@/components/insights'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
-  IndianRupee, ShoppingBag, Boxes, TrendingUp, Percent, UserPlus, Package, Truck,
+  IndianRupee, ShoppingBag, Boxes, TrendingUp, Percent, UserPlus,
 } from 'lucide-react'
 
 const RANGES = [{ id: '7d', label: '7D' }, { id: '30d', label: '30D' }, { id: '90d', label: '90D' }, { id: '12m', label: '12M' }]

@@ -8,7 +8,7 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   Plus, RefreshCw, Target, Trophy, IndianRupee, TrendingUp, GripVertical,
-  Building2, User, Calendar, Flag, Trash2, CheckCircle2, XCircle, Phone, Mail, Users, StickyNote,
+  Building2, Calendar, CheckCircle2, Phone, Mail, Users, StickyNote,
 } from 'lucide-react'
 
 const PRIORITY = { high: 'danger', medium: 'warning', low: 'neutral' }
@@ -105,7 +105,6 @@ export default function DealsBoard() {
 
   const wonStage = stages.find(s => s.is_won)
   const lostStage = stages.find(s => s.is_lost)
-  const openStages = stages.filter(s => !s.is_won && !s.is_lost)
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -216,7 +215,7 @@ function Stat({ icon, label, value, color }) {
   )
 }
 
-function DealDetail({ deal, stages, wonStage, lostStage, onMove, onChanged }) {
+function DealDetail({ deal, stages, onMove, onChanged }) {
   const [logType, setLogType] = useState('note')
   const [logSubject, setLogSubject] = useState('')
   const [logBusy, setLogBusy] = useState(false)

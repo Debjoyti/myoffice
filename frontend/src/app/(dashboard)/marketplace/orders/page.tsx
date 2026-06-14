@@ -8,8 +8,8 @@ import {
 } from '@/components/ui'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
-  ShoppingBag, RefreshCw, IndianRupee, Boxes, Truck, CheckCircle2,
-  Package, MapPin, Clock, XCircle,
+  ShoppingBag, RefreshCw, IndianRupee, Truck, CheckCircle2,
+  Package, MapPin, Clock,
 } from 'lucide-react'
 
 const ORDER_BADGE = {

@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 import {
   Package, Warehouse, Ship, AlertTriangle, TrendingUp, TrendingDown,
-  ShoppingCart, Truck, Clock, CheckCircle2, ArrowUpDown, BarChart3,
+  ShoppingCart, ArrowUpDown,
   ArrowDown, FileText, RefreshCw, FlaskConical
 } from 'lucide-react'
 

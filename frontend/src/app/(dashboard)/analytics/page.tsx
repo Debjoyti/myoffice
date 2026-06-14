@@ -5,8 +5,8 @@ import { PageHeader, Card, CardHeader, StatCard, Button } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import { TrendingUp, Users, Clock, IndianRupee, Download, RefreshCw } from 'lucide-react'
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 
 const PIE_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6', '#f43f5e']

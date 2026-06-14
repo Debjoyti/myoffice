@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, SearchInput, Modal, Input, Select
+  PageHeader, Card, Button, Table, Thead, Th, Tbody, Tr, Td,
+  StatCard, TabBar, SearchInput, Modal, Select
 } from '@/components/ui'
 import {
   FileText, FolderOpen, Plus, Upload, Eye, Download, Share2,
-  Edit2, Trash2, Star, Clock, Users, HardDrive, Lock, Unlock,
+  Edit2, Star, HardDrive,
   File, Image, Sheet, Presentation
 } from 'lucide-react'
 

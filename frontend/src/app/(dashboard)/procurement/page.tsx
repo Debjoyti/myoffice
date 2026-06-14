@@ -7,8 +7,8 @@ import {
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  Package, ShoppingCart, Truck, CheckCircle2, Plus, Download,
-  Star, Building2, FlaskConical, RefreshCw, MapPin, Phone, User, Pencil, Trash2, Store
+  Package, ShoppingCart, Truck, Plus, Download,
+  Building2, FlaskConical, RefreshCw, MapPin, Phone, User, Pencil, Trash2, Store
 } from 'lucide-react'
 
 // ─── Fallback mock data ──────────────────────────────────────────────────────
@@ -234,7 +234,6 @@ export default function ProcurementPage() {
   const totalSpend = useMemo(() => orders.filter(p => p.status !== 'draft').reduce((s, p) => s + Number(p.total_amount), 0), [orders])
   const openPOs = useMemo(() => orders.filter(p => ['draft', 'issued'].includes(p.status)).length, [orders])
   const inTransit = useMemo(() => orders.filter(p => p.status === 'issued').length, [orders])
-  const delivered = useMemo(() => orders.filter(p => ['received', 'closed'].includes(p.status)).length, [orders])
   const activeStores = useMemo(() => stores.filter(s => s.status === 'active').length, [stores])
 
   const filteredPOs = useMemo(() =>

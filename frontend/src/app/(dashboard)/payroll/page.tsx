@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, DetailGrid, Divider, Alert, Input, Select, EmptyState
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  StatCard, Modal, DetailGrid, Alert, Input, EmptyState
 } from '@/components/ui'
-import { formatCurrency, formatDate } from '@/lib/utils'
-import { Banknote, Users, CheckCircle2, Lock, Play, RefreshCw, IndianRupee, Clock, FileText } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import { Banknote, Users, CheckCircle2, Lock, Play, RefreshCw, IndianRupee } from 'lucide-react'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 type PayrollRun = {
@@ -273,7 +273,6 @@ export default function PayrollPage() {
   useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
 
   const latest = payrolls[0]
-  const totalGross = payrolls.slice(0, 3).reduce((s, p) => s + (p.total_gross ?? 0), 0)
   const lockedCount = payrolls.filter(p => p.status === 'locked').length
 
   return (

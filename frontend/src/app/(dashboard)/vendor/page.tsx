@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import {
-  PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
+  PageHeader, Card, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
   StatCard, TabBar, SearchInput, Modal, Input, Select, Textarea
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
   Building2, Plus, Download, Eye, Edit2, Star, TrendingUp, AlertTriangle,
-  CheckCircle2, Clock, Package, FileText
+  CheckCircle2
 } from 'lucide-react'
 
 const MOCK_VENDORS = [

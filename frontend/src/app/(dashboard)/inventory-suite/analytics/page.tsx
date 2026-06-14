@@ -1,10 +1,10 @@
 // @ts-nocheck
 'use client'
 
-import { Card, CardHeader, StatCard, Badge } from '@/components/ui'
+import { Card, CardHeader, StatCard } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { BarChart3, TrendingUp, TrendingDown, Package, Ship, Warehouse, Clock, AlertTriangle } from 'lucide-react'
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { TrendingUp, Package, Ship, Clock } from 'lucide-react'
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 const MONTHLY_MOVEMENT = [
   { month: 'Dec', inward: 3200000, outward: 2800000 },

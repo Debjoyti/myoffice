@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   PageHeader, Card, StatCard, Button, Badge, Table, Thead, Th, Tbody, Tr, Td,
-  Modal, Input, Select, Textarea, EmptyState, Alert, SkeletonTable, SearchInput, Spinner,
+  Modal, Input, Select, Textarea, EmptyState, Alert, SkeletonTable, SearchInput,
 } from '@/components/ui'
 import { formatSalary, formatExperience } from '@/lib/services/careers'
 import {

@@ -18,7 +18,7 @@ const BATCH_SIZE = 250 // keeps each DB round-trip small even for a 30k-row rost
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await requireHR()
   if (result instanceof NextResponse) return result
-  const { employee: actor, supabase } = result
+  const { supabase } = result
   const { id } = await params
 
   const { data: migration, error: migErr } = await supabase

@@ -5,7 +5,7 @@ import {
   Crown, Users, Briefcase, Building2, ShieldCheck, Target,
   Truck, Package, UserCheck, Star, BarChart3, Wrench,
   FlaskConical, ChevronDown, ChevronRight, Search,
-  ZoomIn, ZoomOut, Maximize2, Download, Filter,
+  ZoomIn, ZoomOut, Maximize2,
 } from 'lucide-react'
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -711,7 +711,7 @@ function OrgTree({
                   width: `calc(100% - 4rem + 208px)`,
                 }}
               />
-              {children.map((child, i) => (
+              {children.map((child) => (
                 <div key={child.id} className="flex flex-col items-center">
                   {/* Short vertical line from horizontal bar down */}
                   <div className="w-px h-6 bg-gray-600" />
@@ -806,7 +806,6 @@ export default function OrgChartPage() {
   const [selectedNode, setSelectedNode] = useState<OrgNode | null>(null)
   const [search, setSearch] = useState('')
   const [zoom, setZoom] = useState(1)
-  const [filterLevel, setFilterLevel] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const allNodes = flattenTree(ORG_DATA)

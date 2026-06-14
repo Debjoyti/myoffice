@@ -8,7 +8,7 @@ import {
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  ArrowDown, Plus, Download, Eye, Edit2, CheckCircle2, XCircle,
+  ArrowDown, Plus, Download, Eye, CheckCircle2, XCircle,
   FlaskConical, RefreshCw, AlertTriangle, Ship, Truck
 } from 'lucide-react'
 

@@ -4,12 +4,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   PageHeader, Card, Badge, Avatar, Button, Table, Thead, Th, Tbody, Tr, Td,
   SearchInput, TabBar, StatCard, Modal, Input, Select, EmptyState, DetailGrid,
-  Divider, Textarea, ConfirmDialog, PageLoader, Skeleton, Alert
+  Divider, ConfirmDialog, Alert
 } from '@/components/ui'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
-  UserPlus, Download, Users, UserCheck, UserX, MoreHorizontal,
-  Mail, Phone, Briefcase, Calendar, Edit2, RefreshCw, IndianRupee
+  UserPlus, Users, UserCheck, UserX, MoreHorizontal,
+  Briefcase, Calendar, RefreshCw, IndianRupee
 } from 'lucide-react'
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */

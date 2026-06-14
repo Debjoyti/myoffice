@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Package, Plus, Search, Edit2, X } from 'lucide-react'
+import { Package, Plus, Search, X } from 'lucide-react'
 
 const CATEGORIES = [
   { code: 'C', name: 'Construction Machine' }, { code: 'D', name: 'DSD Vehicle' },

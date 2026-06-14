@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import {
   PageHeader, Card, CardHeader, Badge, Button, Table, Thead, Th, Tbody, Tr, Td,
-  StatCard, TabBar, Modal, Input, Select, Divider
+  StatCard, TabBar, Modal, Input, Select
 } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
 import {
-  Shield, Plus, Download, Eye, Send, RefreshCw, CheckCircle2, AlertCircle, FileText
+  Shield, Plus, Download, Eye, Send, CheckCircle2, AlertCircle, FileText
 } from 'lucide-react'
 
 const MOCK_TDS_DEDUCTIONS = [
